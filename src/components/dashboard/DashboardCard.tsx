@@ -1,5 +1,5 @@
-import { Card, CardContent } from '@/components/ui/card';
-import Link from 'next/link';
+import { Card, CardContent } from "@/components/ui/card";
+import Link from "next/link";
 
 interface DashboardCardProps {
   playerName: string;
@@ -28,20 +28,28 @@ export function DashboardCard({
       <Card className="border-gray-200 hover:shadow-lg hover:border-blue-300 transition cursor-pointer">
         <CardContent className="pt-4">
           <div className="mb-3">
-            <h3 className="text-base font-semibold text-gray-900">{playerName}</h3>
-            <p className="text-xs text-gray-600">{position} • {team}</p>
+            <h3 className="text-base font-semibold text-gray-900">
+              {playerName}
+            </h3>
+            <p className="text-xs text-gray-600">
+              {position} • {team}
+            </p>
           </div>
 
           {/* Metrics Grid */}
           <div className="grid grid-cols-3 gap-2 mb-3">
             <div className="bg-blue-50 p-2 rounded text-center">
               <p className="text-xs text-gray-600">U5</p>
-              <p className="text-sm font-bold text-blue-600">{u5.value}/{u5.total}</p>
+              <p className="text-sm font-bold text-blue-600">
+                {u5.value}/{u5.total}
+              </p>
               <p className="text-xs text-gray-500">{u5Percentage}%</p>
             </div>
             <div className="bg-green-50 p-2 rounded text-center">
               <p className="text-xs text-gray-600">U10</p>
-              <p className="text-sm font-bold text-green-600">{u10.value}/{u10.total}</p>
+              <p className="text-sm font-bold text-green-600">
+                {u10.value}/{u10.total}
+              </p>
               <p className="text-xs text-gray-500">{u10Percentage}%</p>
             </div>
             <div className="bg-gray-50 p-2 rounded text-center">

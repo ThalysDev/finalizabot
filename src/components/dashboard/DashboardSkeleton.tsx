@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 export function DashboardSkeleton() {
   return (
@@ -16,7 +16,10 @@ export function DashboardSkeleton() {
                 <div className="h-3 bg-gray-100 rounded w-1/2 animate-pulse" />
                 <div className="grid grid-cols-3 gap-2 mt-4">
                   {[1, 2, 3].map((j) => (
-                    <div key={j} className="h-12 bg-gray-100 rounded animate-pulse" />
+                    <div
+                      key={j}
+                      className="h-12 bg-gray-100 rounded animate-pulse"
+                    />
                   ))}
                 </div>
               </div>

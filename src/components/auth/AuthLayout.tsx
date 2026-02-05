@@ -1,5 +1,5 @@
-import { ClerkLoaded, ClerkLoading } from '@clerk/nextjs';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -40,7 +40,7 @@ export function AuthLayout({ children, heading, subheading }: AuthLayoutProps) {
         {/* Footer link */}
         <div className="mt-6 text-center text-sm text-gray-600">
           <p>
-            FinalizaBOT © {new Date().getFullYear()}{' '}
+            FinalizaBOT © {new Date().getFullYear()}{" "}
             <a href="/" className="text-blue-600 hover:text-blue-700">
               Voltar para home
             </a>

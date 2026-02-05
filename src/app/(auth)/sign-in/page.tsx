@@ -1,10 +1,10 @@
-import type { Metadata } from 'next';
-import { SignIn } from '@clerk/nextjs';
-import { AuthLayout } from '@/components/auth/AuthLayout';
+import type { Metadata } from "next";
+import { SignIn } from "@clerk/nextjs";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 
 export const metadata: Metadata = {
-  title: 'Entrar - FinalizaBOT',
-  description: 'Entre na sua conta para acessar análises de finalizações',
+  title: "Entrar - FinalizaBOT",
+  description: "Entre na sua conta para acessar análises de finalizações",
 };
 
 export default function SignInPage() {

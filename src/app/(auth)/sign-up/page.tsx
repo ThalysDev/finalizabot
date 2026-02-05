@@ -1,10 +1,10 @@
-import type { Metadata } from 'next';
-import { SignUp } from '@clerk/nextjs';
-import { AuthLayout } from '@/components/auth/AuthLayout';
+import type { Metadata } from "next";
+import { SignUp } from "@clerk/nextjs";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 
 export const metadata: Metadata = {
-  title: 'Cadastro - FinalizaBOT',
-  description: 'Cadastre-se para começar a analisar finalizações de jogadores',
+  title: "Cadastro - FinalizaBOT",
+  description: "Cadastre-se para começar a analisar finalizações de jogadores",
 };
 
 export default function SignUpPage() {

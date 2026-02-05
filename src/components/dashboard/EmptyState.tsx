@@ -1,5 +1,5 @@
-import { Card, CardContent } from '@/components/ui/card';
-import Link from 'next/link';
+import { Card, CardContent } from "@/components/ui/card";
+import Link from "next/link";
 
 export function EmptyState() {
   return (
@@ -10,7 +10,8 @@ export function EmptyState() {
           Nenhum favorito ainda
         </h3>
         <p className="text-gray-600 mb-6">
-          Explore matches e salve seus jogadores favoritos para acompanhar análises em tempo real.
+          Explore matches e salve seus jogadores favoritos para acompanhar
+          análises em tempo real.
         </p>
         <Link href="/">
           <button className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">

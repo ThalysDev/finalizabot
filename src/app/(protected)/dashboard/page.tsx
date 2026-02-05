@@ -1,26 +1,26 @@
-import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { auth } from '@clerk/nextjs/server';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { DashboardCard } from '@/components/dashboard/DashboardCard';
-import { EmptyState } from '@/components/dashboard/EmptyState';
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { DashboardCard } from "@/components/dashboard/DashboardCard";
+import { EmptyState } from "@/components/dashboard/EmptyState";
 
 export const metadata: Metadata = {
-  title: 'Dashboard - FinalizaBOT',
-  description: 'Seu dashboard de análises de finalizações',
+  title: "Dashboard - FinalizaBOT",
+  description: "Seu dashboard de análises de finalizações",
 };
 
 async function getMatches() {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const response = await fetch(`${baseUrl}/api/matches`, {
-      cache: 'no-store',
+      cache: "no-store",
     });
-    if (!response.ok) throw new Error('Failed to fetch matches');
+    if (!response.ok) throw new Error("Failed to fetch matches");
     return response.json();
   } catch (error) {
-    console.error('Error fetching matches:', error);
+    console.error("Error fetching matches:", error);
     return [];
   }
 }
@@ -39,7 +39,7 @@ export default async function DashboardPage() {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect('/sign-in');
+    redirect("/sign-in");
   }
 
   const matches = await getMatches();
@@ -57,8 +57,8 @@ export default async function DashboardPage() {
             <p className="text-gray-600">
               Acompanhe os últimos matches e seus jogadores favoritos
             </p>
-          </div>Match
-
+          </div>
+          Match
           {/* Recent Matches Section */}
           <section className="mb-12">
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">
@@ -70,9 +70,9 @@ export default async function DashboardPage() {
                 {matches.slice(0, 6).map((match: any) => (
                   <DashboardCard
                     key={match.id}
-                    playerName={match.playerName || 'Jogador'}
-                    position={match.position || 'N/A'}
-                    team={match.team || 'Time'}
+                    playerName={match.playerName || "Jogador"}
+                    position={match.position || "N/A"}
+                    team={match.team || "Time"}
                     u5={{ value: match.u5 || 0, total: 5 }}
                     u10={{ value: match.u10 || 0, total: 10 }}
                     cv={match.cv || 0}
@@ -84,7 +84,6 @@ export default async function DashboardPage() {
               <EmptyState />
             )}
           </section>
-
           {/* Favorites Section (Placeholder) */}
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">
