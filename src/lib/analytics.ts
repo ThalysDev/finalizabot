@@ -95,7 +95,7 @@ export const trackEngagement = (
   itemType: string,
   itemId: string
 ) => {
-  const eventMap = {
+  const eventMap: Record<string, AnalyticsEvent> = {
     favorite: 'favorite_save',
     share: 'share_analysis',
     save: 'favorite_save',

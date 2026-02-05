@@ -12,9 +12,6 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 31536000, // 1 year
   },
 
-  // Font Optimization (already using next/font)
-  optimizeFonts: true,
-
   // Compression
   compress: true,
 

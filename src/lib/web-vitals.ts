@@ -3,12 +3,12 @@
  * Tracks Core Web Vitals and sends metrics to analytics
  */
 
-import { getCLS, getFID, getFCP, getLCP, getTTFB } from 'web-vitals';
+import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals';
 import { trackEvent } from '@/lib/analytics';
 
 export function reportWebVitals() {
   // Largest Contentful Paint (LCP)
-  getLCP((metric) => {
+  onLCP((metric) => {
     trackEvent({
       event: 'page_view',
       properties: {
@@ -19,12 +19,12 @@ export function reportWebVitals() {
     });
   });
 
-  // First Input Delay (FID)
-  getFID((metric) => {
+  // Interaction to Next Paint (INP) - replaces FID
+  onINP((metric) => {
     trackEvent({
       event: 'page_view',
       properties: {
-        metric_name: 'FID',
+        metric_name: 'INP',
         metric_value: Math.round(metric.value),
         metric_rating: metric.rating,
       },
@@ -32,7 +32,7 @@ export function reportWebVitals() {
   });
 
   // Cumulative Layout Shift (CLS)
-  getCLS((metric) => {
+  onCLS((metric) => {
     trackEvent({
       event: 'page_view',
       properties: {
@@ -44,7 +44,7 @@ export function reportWebVitals() {
   });
 
   // First Contentful Paint (FCP)
-  getFCP((metric) => {
+  onFCP((metric) => {
     trackEvent({
       event: 'page_view',
       properties: {
@@ -56,7 +56,7 @@ export function reportWebVitals() {
   });
 
   // Time to First Byte (TTFB)
-  getTTFB((metric) => {
+  onTTFB((metric) => {
     trackEvent({
       event: 'page_view',
       properties: {
