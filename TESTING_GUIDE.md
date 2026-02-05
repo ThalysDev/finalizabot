@@ -3,6 +3,7 @@
 ## Responsiveness Testing Checklist
 
 ### Mobile Devices (375px - 425px)
+
 - [ ] Hero section stacks properly
 - [ ] Buttons are touch-friendly (min 44x44px)
 - [ ] Text is readable without zoom
@@ -11,6 +12,7 @@
 - [ ] Footer links are clickable
 
 ### Tablets (768px - 1024px)
+
 - [ ] Grid layouts adapt to 2 columns
 - [ ] Benefits section shows 2-3 columns
 - [ ] Demo card scales properly
@@ -18,6 +20,7 @@
 - [ ] Images load correctly
 
 ### Desktop (1024px - 1280px)
+
 - [ ] Full layout with all columns visible
 - [ ] Benefits section shows 3 columns
 - [ ] How it works shows proper connector lines
@@ -25,6 +28,7 @@
 - [ ] All hover states work
 
 ### Desktop Large (1280px+)
+
 - [ ] Max-width constraints respected
 - [ ] Container padding appropriate
 - [ ] No horizontal scrolling
@@ -33,6 +37,7 @@
 ## Cross-Browser Testing
 
 ### Chrome/Chromium
+
 - [ ] Latest version tested
 - [ ] Mobile emulation works
 - [ ] Dev tools responsive design
@@ -40,6 +45,7 @@
 - [ ] JavaScript execution correct
 
 ### Firefox
+
 - [ ] Latest version tested
 - [ ] Flex layouts display correctly
 - [ ] CSS Grid works
@@ -47,6 +53,7 @@
 - [ ] Fonts render consistently
 
 ### Safari
+
 - [ ] Latest macOS version
 - [ ] iOS Safari mobile testing
 - [ ] Webkit prefixes work
@@ -54,6 +61,7 @@
 - [ ] Performance acceptable
 
 ### Edge
+
 - [ ] Chromium-based Edge works
 - [ ] Similar to Chrome behavior
 - [ ] CSS compatibility verified
@@ -61,6 +69,7 @@
 ## Accessibility Testing
 
 ### Keyboard Navigation
+
 - [ ] Tab key navigates all interactive elements
 - [ ] Shift+Tab reverses navigation order
 - [ ] Focus indicator visible on all elements
@@ -68,6 +77,7 @@
 - [ ] Form submission with keyboard
 
 ### Screen Reader (NVDA/JAWS/VoiceOver)
+
 - [ ] Headings announced correctly
 - [ ] Alt text for all images
 - [ ] Form labels associated with inputs
@@ -76,12 +86,14 @@
 - [ ] Dynamic content announced
 
 ### Color & Contrast
+
 - [ ] Text contrast ratio >= 4.5:1
 - [ ] Large text contrast >= 3:1
 - [ ] Color not sole means of communication
 - [ ] Focus indicators visible
 
 ### Semantic HTML
+
 - [ ] Proper heading hierarchy (h1 > h2 > h3)
 - [ ] One h1 per page
 - [ ] Landmark elements (main, nav, footer)
@@ -91,22 +103,26 @@
 ## Performance Testing
 
 ### Lighthouse Audit
+
 Run: `npm run build && npm run start`
 Then use Chrome DevTools → Lighthouse
 
 **Targets:**
+
 - Performance: >= 90
 - Accessibility: >= 95
 - Best Practices: >= 95
 - SEO: >= 95
 
 ### Load Times
+
 - First Contentful Paint (FCP): < 1.8s
 - Largest Contentful Paint (LCP): < 2.5s
 - Cumulative Layout Shift (CLS): < 0.1
 - Total Blocking Time (TBT): < 200ms
 
 ### Bundle Size
+
 - Main JavaScript: < 150KB (gzipped)
 - CSS: < 30KB (gzipped)
 - Images optimized: WebP/AVIF formats
@@ -114,6 +130,7 @@ Then use Chrome DevTools → Lighthouse
 ## Functionality Testing
 
 ### Authentication (Clerk)
+
 - [ ] Sign Up flow works
 - [ ] Sign In flow works
 - [ ] Sign Out clears session
@@ -122,18 +139,21 @@ Then use Chrome DevTools → Lighthouse
 - [ ] Clerk UI components render
 
 ### Navigation
+
 - [ ] Links navigate correctly
 - [ ] Back button works
 - [ ] Anchor links scroll to sections
 - [ ] Route transitions smooth
 
 ### Forms
+
 - [ ] Input validation works
 - [ ] Error messages display
 - [ ] Success feedback appears
 - [ ] Form submission functions
 
 ### API Endpoints
+
 - [ ] GET /api/matches returns data
 - [ ] GET /api/matches/[id] returns detail
 - [ ] GET /api/players/[id] returns player data
@@ -142,12 +162,14 @@ Then use Chrome DevTools → Lighthouse
 ## Analytics Testing
 
 ### Events Tracked
+
 - [ ] Page views recorded
 - [ ] CTA clicks tracked
 - [ ] Form submissions logged
 - [ ] User interactions captured
 
 ### Data Verification
+
 - [ ] Events appear in GA4
 - [ ] Timestamps correct
 - [ ] User sessions tracked
@@ -156,6 +178,7 @@ Then use Chrome DevTools → Lighthouse
 ## Manual Test Cases
 
 ### Test Case 1: New User Landing
+
 1. Visit http://localhost:3000
 2. Verify hero section displays
 3. See Call-to-Action buttons
@@ -163,6 +186,7 @@ Then use Chrome DevTools → Lighthouse
 5. Verify demo card section visible
 
 ### Test Case 2: Sign Up Flow
+
 1. Click "Criar Conta Grátis"
 2. Enter email and password
 3. Verify account created
@@ -170,6 +194,7 @@ Then use Chrome DevTools → Lighthouse
 5. See UserButton in header
 
 ### Test Case 3: Responsive Design
+
 1. Open DevTools → Toggle Device Toolbar
 2. Test: 375px, 768px, 1024px, 1280px
 3. Verify layout adapts
@@ -177,6 +202,7 @@ Then use Chrome DevTools → Lighthouse
 5. Text readable without zoom
 
 ### Test Case 4: Performance
+
 1. Open DevTools → Network tab
 2. Reload page (Cmd/Ctrl + Shift + R)
 3. Check resource sizes
@@ -186,11 +212,13 @@ Then use Chrome DevTools → Lighthouse
 ## Automated Test Setup
 
 ### Jest + React Testing Library
+
 ```bash
 npm install --save-dev jest @testing-library/react
 ```
 
 ### Example Test
+
 ```typescript
 import { render, screen } from '@testing-library/react';
 import HeroSection from '@/components/landing/HeroSection';
@@ -216,12 +244,14 @@ describe('HeroSection', () => {
 
 **Title:** [Clear title]
 
-**Device/Browser:** 
+**Device/Browser:**
+
 - OS: [e.g., Windows 11, macOS]
 - Browser: [e.g., Chrome 120]
 - Viewport: [e.g., 1920x1080]
 
 **Steps to Reproduce:**
+
 1. ...
 2. ...
 3. ...
@@ -264,6 +294,7 @@ npx axe-core
 ## Test Environment Setup
 
 ### Local Testing
+
 ```bash
 cd C:\Users\Thalys\finalizabot
 npm run dev
@@ -271,6 +302,7 @@ npm run dev
 ```
 
 ### Production Build Testing
+
 ```bash
 npm run build
 npm run start
@@ -278,6 +310,7 @@ npm run start
 ```
 
 ### Database Testing
+
 ```bash
 npx prisma studio
 # Verify data in UI
@@ -291,31 +324,37 @@ After testing, create a report:
 # Test Report - [Date]
 
 ## Summary
+
 - Tests Passed: X/Y
 - Critical Issues: 0
 - Minor Issues: 0
 
 ## Device Coverage
+
 - ✅ Mobile
 - ✅ Tablet
 - ✅ Desktop
 
 ## Browser Coverage
+
 - ✅ Chrome
 - ✅ Firefox
 - ✅ Safari
 - ✅ Edge
 
 ## Accessibility
+
 - ✅ Keyboard Navigation
 - ✅ Screen Readers
 - ✅ Contrast Ratios
 
 ## Performance
+
 - ✅ Lighthouse >= 90
 - ✅ Core Web Vitals Met
 
 ## Sign-Off
+
 Tested by: [Name]
 Date: [Date]
 Status: Ready for Deployment ✅

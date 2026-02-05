@@ -3,14 +3,14 @@
  * Provides analytics tracking in React components
  */
 
-import { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import {
   trackPageView,
   trackEvent,
   type AnalyticsEvent,
   type AnalyticsEventPayload,
-} from '@/lib/analytics';
+} from "@/lib/analytics";
 
 /**
  * Hook to automatically track page views
@@ -36,7 +36,10 @@ export function useTrackEvent() {
 /**
  * Hook for tracking clicks on specific elements
  */
-export function useTrackClick(event: AnalyticsEvent, properties?: Record<string, any>) {
+export function useTrackClick(
+  event: AnalyticsEvent,
+  properties?: Record<string, any>,
+) {
   return (e?: React.MouseEvent) => {
     trackEvent({
       event,

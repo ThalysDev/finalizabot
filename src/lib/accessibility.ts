@@ -10,24 +10,24 @@
 export const accessibleColors = {
   // Primary colors with verified contrast ratios
   primary: {
-    dark: '#0F3A7D', // Used on white/light backgrounds
-    light: '#E3F2FD', // Used on dark text
+    dark: "#0F3A7D", // Used on white/light backgrounds
+    light: "#E3F2FD", // Used on dark text
   },
   text: {
-    primary: '#1F2937', // Dark gray on light - 17.5:1 contrast
-    secondary: '#6B7280', // Medium gray on light - 7.5:1 contrast
-    light: '#F3F4F6', // Light on dark - 12:1 contrast
+    primary: "#1F2937", // Dark gray on light - 17.5:1 contrast
+    secondary: "#6B7280", // Medium gray on light - 7.5:1 contrast
+    light: "#F3F4F6", // Light on dark - 12:1 contrast
   },
   background: {
-    light: '#FFFFFF', // Main background
-    subtle: '#F9FAFB', // Subtle background
-    dark: '#111827', // Dark background
+    light: "#FFFFFF", // Main background
+    subtle: "#F9FAFB", // Subtle background
+    dark: "#111827", // Dark background
   },
   semantic: {
-    success: '#10B981', // 4.8:1 on white
-    warning: '#F59E0B', // 4.8:1 on white
-    error: '#EF4444', // 5.0:1 on white
-    info: '#0284C7', // 5.2:1 on white
+    success: "#10B981", // 4.8:1 on white
+    warning: "#F59E0B", // 4.8:1 on white
+    error: "#EF4444", // 5.0:1 on white
+    info: "#0284C7", // 5.2:1 on white
   },
 };
 
@@ -38,13 +38,13 @@ export const accessibleColors = {
 export function isKeyboardAccessible(element: HTMLElement): boolean {
   if (!element) return false;
 
-  const interactiveElements = ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT'];
-  const tabIndex = element.getAttribute('tabindex');
+  const interactiveElements = ["BUTTON", "A", "INPUT", "TEXTAREA", "SELECT"];
+  const tabIndex = element.getAttribute("tabindex");
 
   return (
     interactiveElements.includes(element.tagName) ||
     (tabIndex !== null && parseInt(tabIndex) >= 0) ||
-    element.hasAttribute('role')
+    element.hasAttribute("role")
   );
 }
 
@@ -53,7 +53,7 @@ export function isKeyboardAccessible(element: HTMLElement): boolean {
  */
 export function testTextContrast(
   foregroundColor: string,
-  backgroundColor: string
+  backgroundColor: string,
 ): number {
   // Simplified contrast calculation
   // In production, use a proper contrast checking library like wcag-contrast
@@ -82,33 +82,33 @@ export function testTextContrast(
  */
 export const semanticGuidelines = {
   headings: {
-    rule: 'Use h1-h6 in proper order, one h1 per page',
+    rule: "Use h1-h6 in proper order, one h1 per page",
     check: () => {
-      const h1s = document.querySelectorAll('h1');
+      const h1s = document.querySelectorAll("h1");
       return h1s.length === 1;
     },
   },
   landmarks: {
-    rule: 'Use semantic landmarks (main, nav, article, section)',
+    rule: "Use semantic landmarks (main, nav, article, section)",
     check: () => {
-      const main = document.querySelector('main');
-      const nav = document.querySelector('nav');
+      const main = document.querySelector("main");
+      const nav = document.querySelector("nav");
       return !!(main && nav);
     },
   },
   images: {
-    rule: 'All images must have descriptive alt text',
+    rule: "All images must have descriptive alt text",
     check: () => {
-      const images = document.querySelectorAll('img');
-      return Array.from(images).every((img) => img.hasAttribute('alt'));
+      const images = document.querySelectorAll("img");
+      return Array.from(images).every((img) => img.hasAttribute("alt"));
     },
   },
   forms: {
-    rule: 'All form inputs must have labels',
+    rule: "All form inputs must have labels",
     check: () => {
-      const inputs = document.querySelectorAll('input, textarea, select');
+      const inputs = document.querySelectorAll("input, textarea, select");
       return Array.from(inputs).every((input) => {
-        const id = input.getAttribute('id');
+        const id = input.getAttribute("id");
         if (!id) return false;
         const label = document.querySelector(`label[for="${id}"]`);
         return !!label;
@@ -118,10 +118,10 @@ export const semanticGuidelines = {
   links: {
     rule: 'Links must have descriptive text (no "click here")',
     check: () => {
-      const links = document.querySelectorAll('a');
-      const blacklist = ['click here', 'read more', 'learn more'];
+      const links = document.querySelectorAll("a");
+      const blacklist = ["click here", "read more", "learn more"];
       return Array.from(links).every((link) => {
-        const text = link.textContent?.toLowerCase().trim() || '';
+        const text = link.textContent?.toLowerCase().trim() || "";
         return !blacklist.includes(text);
       });
     },
@@ -132,12 +132,40 @@ export const semanticGuidelines = {
  * WCAG 2.1 AA Checklist
  */
 export const wcagChecklist = [
-  { criterion: '1.1.1', level: 'A', description: 'Non-text content has text alternatives' },
-  { criterion: '1.4.3', level: 'AA', description: 'Minimum 4.5:1 contrast for normal text' },
-  { criterion: '2.1.1', level: 'A', description: 'All functionality available via keyboard' },
-  { criterion: '2.4.3', level: 'A', description: 'Focus order is logical' },
-  { criterion: '3.2.1', level: 'A', description: 'Changes in context don\'t happen automatically' },
-  { criterion: '3.3.1', level: 'A', description: 'Error identification is clear' },
-  { criterion: '4.1.2', level: 'A', description: 'Name, role, value provided for components' },
-  { criterion: '4.1.3', level: 'AA', description: 'Status messages identified to screen readers' },
+  {
+    criterion: "1.1.1",
+    level: "A",
+    description: "Non-text content has text alternatives",
+  },
+  {
+    criterion: "1.4.3",
+    level: "AA",
+    description: "Minimum 4.5:1 contrast for normal text",
+  },
+  {
+    criterion: "2.1.1",
+    level: "A",
+    description: "All functionality available via keyboard",
+  },
+  { criterion: "2.4.3", level: "A", description: "Focus order is logical" },
+  {
+    criterion: "3.2.1",
+    level: "A",
+    description: "Changes in context don't happen automatically",
+  },
+  {
+    criterion: "3.3.1",
+    level: "A",
+    description: "Error identification is clear",
+  },
+  {
+    criterion: "4.1.2",
+    level: "A",
+    description: "Name, role, value provided for components",
+  },
+  {
+    criterion: "4.1.3",
+    level: "AA",
+    description: "Status messages identified to screen readers",
+  },
 ];

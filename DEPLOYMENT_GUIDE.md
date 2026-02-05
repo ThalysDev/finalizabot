@@ -3,6 +3,7 @@
 ## Pre-Deployment Checklist
 
 ### Code Quality
+
 - [ ] All TypeScript errors resolved
 - [ ] Linting passed (npm run lint)
 - [ ] No console.logs in production code
@@ -10,6 +11,7 @@
 - [ ] All dependencies up to date
 
 ### Testing
+
 - [ ] Responsive design verified (all breakpoints)
 - [ ] Cross-browser tested (Chrome, Firefox, Safari, Edge)
 - [ ] Accessibility audit passed (WCAG 2.1 AA)
@@ -17,6 +19,7 @@
 - [ ] All user flows tested
 
 ### Security
+
 - [ ] Environment variables configured
 - [ ] Clerk auth keys set
 - [ ] Database secured
@@ -25,6 +28,7 @@
 - [ ] Input validation implemented
 
 ### Performance
+
 - [ ] Image optimization completed
 - [ ] Bundle size analyzed
 - [ ] Caching headers configured
@@ -34,6 +38,7 @@
 ## Environment Configuration
 
 ### Production Environment Variables
+
 Create `.env.production`:
 
 ```bash
@@ -58,6 +63,7 @@ NEXTAUTH_URL=https://finalizabot.com
 ```
 
 ### Generate Secrets
+
 ```bash
 # Generate NEXTAUTH_SECRET
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
@@ -66,6 +72,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ## Database Migration (SQLite → PostgreSQL)
 
 ### Step 1: Export SQLite Data
+
 ```bash
 # Backup current database
 cp prisma/dev.db prisma/dev.db.backup
@@ -75,6 +82,7 @@ npx prisma migrate dev --name switch_to_postgres
 ```
 
 ### Step 2: Create PostgreSQL Database
+
 ```bash
 # Create database
 createdb finalizabot
@@ -84,6 +92,7 @@ export DATABASE_URL="postgresql://user:password@localhost:5432/finalizabot"
 ```
 
 ### Step 3: Migrate Schema
+
 ```bash
 # Push schema to PostgreSQL
 npx prisma db push
@@ -93,6 +102,7 @@ npx prisma db seed
 ```
 
 ### Step 4: Verify Data
+
 ```bash
 # Open Prisma Studio to verify
 npx prisma studio
@@ -103,6 +113,7 @@ npx prisma studio
 ### Option 1: Vercel (Recommended for Next.js)
 
 #### Setup
+
 1. Push code to GitHub
 2. Go to vercel.com and sign up
 3. Import project from GitHub
@@ -110,6 +121,7 @@ npx prisma studio
 5. Deploy
 
 #### Configure
+
 ```bash
 # Install Vercel CLI
 npm install -g vercel
@@ -119,6 +131,7 @@ vercel --prod
 ```
 
 #### Environment Variables in Vercel Dashboard
+
 - Go to Settings → Environment Variables
 - Add all production variables
 - Ensure PostgreSQL connection string included
@@ -126,12 +139,14 @@ vercel --prod
 ### Option 2: AWS EC2 + RDS
 
 #### Setup
+
 1. Create EC2 instance (Ubuntu 22.04)
 2. Create RDS PostgreSQL database
 3. Configure security groups
 4. Deploy application
 
 #### Steps
+
 ```bash
 # Connect to EC2
 ssh -i key.pem ec2-user@instance-ip
@@ -168,6 +183,7 @@ sudo nano /etc/nginx/sites-available/default
 ### Option 3: Railway.app
 
 #### Setup
+
 1. Connect GitHub repository
 2. Add PostgreSQL database
 3. Set environment variables
@@ -176,6 +192,7 @@ sudo nano /etc/nginx/sites-available/default
 ### Option 4: Docker Container
 
 #### Create Dockerfile
+
 ```dockerfile
 FROM node:18-alpine
 WORKDIR /app
@@ -192,6 +209,7 @@ CMD ["npm", "start"]
 ```
 
 #### Build and Push
+
 ```bash
 # Build image
 docker build -t finalizabot:latest .
@@ -206,6 +224,7 @@ docker push username/finalizabot:latest
 ## SSL/HTTPS Configuration
 
 ### Let's Encrypt (Free)
+
 ```bash
 # Install Certbot
 sudo apt-get install certbot python3-certbot-nginx
@@ -218,6 +237,7 @@ sudo certbot renew --dry-run
 ```
 
 ### Configure Nginx
+
 ```nginx
 server {
     listen 443 ssl http2;
@@ -250,6 +270,7 @@ server {
 ## CI/CD Pipeline
 
 ### GitHub Actions Workflow
+
 Create `.github/workflows/deploy.yml`:
 
 ```yaml
@@ -269,7 +290,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: "18"
 
       - name: Install dependencies
         run: npm ci
@@ -292,6 +313,7 @@ jobs:
 ## Monitoring & Logging
 
 ### Application Monitoring
+
 ```bash
 # Install PM2 monitoring
 pm2 install pm2-logrotate
@@ -303,6 +325,7 @@ pm2 logs
 ```
 
 ### Error Tracking
+
 ```bash
 npm install @sentry/nextjs
 
@@ -314,6 +337,7 @@ withSentryConfig(nextConfig, {
 ```
 
 ### Database Monitoring
+
 ```bash
 # PostgreSQL logs
 sudo tail -f /var/log/postgresql/postgresql-13-main.log
@@ -325,6 +349,7 @@ psql -U postgres -c "SELECT datname, count(*) FROM pg_stat_activity GROUP BY dat
 ## Performance Optimization for Production
 
 ### Caching Strategy
+
 ```typescript
 // next.config.ts
 headers: async () => [
@@ -341,12 +366,14 @@ headers: async () => [
 ```
 
 ### Image Optimization
+
 - Use Next.js Image component
 - Set width/height
 - Use priority for LCP images
 - Implement lazy loading
 
 ### Code Splitting
+
 ```typescript
 // Dynamic imports
 import dynamic from 'next/dynamic';
@@ -359,6 +386,7 @@ const HeroSection = dynamic(() => import('@/components/landing/HeroSection'), {
 ## Backup & Disaster Recovery
 
 ### Database Backups
+
 ```bash
 # Automated daily backup
 0 2 * * * /usr/bin/pg_dump finalizabot > /backups/finalizabot-$(date +\%Y\%m\%d).sql
@@ -368,6 +396,7 @@ aws s3 cp /backups/finalizabot-*.sql s3://finalizabot-backups/
 ```
 
 ### Recovery Procedure
+
 ```bash
 # Restore from backup
 pg_restore -U postgres -d finalizabot < backup-file.sql

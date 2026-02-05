@@ -3,7 +3,7 @@
  * Initializes Google Analytics 4 tracking
  */
 
-import Script from 'next/script';
+import Script from "next/script";
 
 interface GoogleAnalyticsProps {
   gaId?: string;
@@ -14,15 +14,17 @@ declare global {
     gtag?: (
       command: string,
       eventName: string,
-      eventParams?: Record<string, any>
+      eventParams?: Record<string, any>,
     ) => void;
     dataLayer?: Array<any>;
   }
 }
 
-export function GoogleAnalytics({ gaId = process.env.NEXT_PUBLIC_GA_ID }: GoogleAnalyticsProps) {
+export function GoogleAnalytics({
+  gaId = process.env.NEXT_PUBLIC_GA_ID,
+}: GoogleAnalyticsProps) {
   if (!gaId) {
-    console.warn('Google Analytics ID not configured');
+    console.warn("Google Analytics ID not configured");
     return null;
   }
 
