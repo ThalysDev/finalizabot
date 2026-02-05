@@ -1,76 +1,87 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, Container } from "@/components/primitives";
+import { cn } from "@/lib/cn";
 
-export function DemoCard() {
+function DemoCard() {
   return (
-    <section className="py-12 sm:py-16 px-4">
-      <div className="container mx-auto max-w-2xl">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 text-center">
-          Veja como funciona
-        </h2>
+    <section className="w-full bg-neutral-50 py-12 sm:py-20 lg:py-28 px-4">
+      <Container>
+        <div className="text-center mb-12 sm:mb-16">
+          <h2
+            className={cn(
+              "text-2xl sm:text-3xl lg:text-4xl",
+              "font-bold",
+              "text-neutral-900",
+            )}
+          >
+            Assim funciona a análise
+          </h2>
+        </div>
 
-        <Card className="border-2 border-blue-100 shadow-lg">
-          <CardHeader className="pb-3">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Alonso Martinez
-                </h3>
-                <p className="text-sm text-gray-600">Atacante • Costa Rica</p>
-              </div>
-              <Badge className="bg-blue-100 text-blue-700">Favorito</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* U5/U10 Metrics */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-green-50 p-4 rounded-lg">
-                <p className="text-xs text-gray-600 mb-1">U5 (Últimas 5)</p>
-                <p className="text-2xl font-bold text-green-600">4/5</p>
-                <p className="text-xs text-gray-500 mt-1">80% - Muito alto</p>
-              </div>
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-xs text-gray-600 mb-1">U10 (Últimas 10)</p>
-                <p className="text-2xl font-bold text-blue-600">7/10</p>
-                <p className="text-xs text-gray-500 mt-1">70% - Consistente</p>
-              </div>
-            </div>
-
-            {/* Consistency */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="text-xs text-gray-600 mb-2">
-                Coeficiente de Variação (CV)
-              </p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-gray-900">0.24</span>
-                <span className="text-xs text-gray-600">Variação moderada</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Jogador com padrão previsível
+        <div className="mx-auto max-w-2xl">
+          <Card variant="elevated" padding="lg">
+            <div className="mb-6 pb-6 border-b border-neutral-200">
+              <h3 className="text-xl font-bold text-neutral-900">
+                Alonso Martinez
+              </h3>
+              <p className="text-sm text-neutral-600 mt-1">
+                Atacante • Costa Rica
               </p>
             </div>
 
-            {/* Recent matches */}
-            <div>
-              <p className="text-xs text-gray-600 mb-3">Últimos 5 jogos</p>
-              <div className="flex gap-1">
-                {[1, 1, 0, 1, 1].map((shot, i) => (
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg text-center">
+                <p className="text-xs text-neutral-600 font-medium mb-2">U5</p>
+                <p className="text-3xl font-bold text-green-600">4/5</p>
+                <p className="text-xs text-green-700 mt-1 font-medium">80%</p>
+              </div>
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg text-center">
+                <p className="text-xs text-neutral-600 font-medium mb-2">U10</p>
+                <p className="text-3xl font-bold text-blue-600">7/10</p>
+                <p className="text-xs text-blue-700 mt-1 font-medium">70%</p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg text-center">
+                <p className="text-xs text-neutral-600 font-medium mb-2">CV</p>
+                <p className="text-3xl font-bold text-purple-600">0.24</p>
+                <p className="text-xs text-purple-700 mt-1 font-medium">
+                  Baixo
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-neutral-200">
+              <p className="text-xs text-neutral-600 font-medium mb-3">
+                Últimos 5 Jogos
+              </p>
+              <div className="flex gap-2">
+                {[1, 1, 0, 1, 1].map((match, i) => (
                   <div
-                    key={i}
-                    className={`w-8 h-8 rounded flex items-center justify-center text-xs font-semibold ${
-                      shot
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-200 text-gray-600"
-                    }`}
+                    key={`match-${i}`}
+                    className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center font-semibold text-sm",
+                      match
+                        ? "bg-green-100 text-green-700 border border-green-300"
+                        : "bg-neutral-200 text-neutral-600 border border-neutral-300",
+                    )}
                   >
-                    {shot}
+                    {match ? "✓" : "✗"}
                   </div>
                 ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-900">
+                <strong>Padrão:</strong> Alto e consistente. Jogador finalizou
+                em 4 dos últimos 5 jogos.
+              </p>
+            </div>
+          </Card>
+        </div>
+      </Container>
     </section>
   );
 }
+
+DemoCard.displayName = "DemoCard";
+
+export { DemoCard };

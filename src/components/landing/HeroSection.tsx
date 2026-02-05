@@ -1,45 +1,65 @@
 "use client";
 
-import { SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
-import { SignedIn } from "@clerk/nextjs";
+import { SignedOut, SignedIn } from "@clerk/nextjs";
 import Link from "next/link";
+import { Button, Container } from "@/components/primitives";
+import { cn } from "@/lib/cn";
 
-export function HeroSection() {
+function HeroSection() {
   return (
-    <section className="py-12 sm:py-24 px-4 bg-gradient-to-br from-blue-50 to-indigo-50">
-      <div className="container mx-auto max-w-3xl text-center">
-        <h1 className="text-3xl sm:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-          Analise finalizações de jogadores em tempo real
-        </h1>
+    <section className="relative w-full bg-gradient-to-br from-blue-50 to-indigo-50 py-16 sm:py-24 lg:py-32">
+      <Container>
+        <div className="flex flex-col items-center justify-center text-center">
+          <h1
+            className={cn(
+              "text-3xl sm:text-4xl lg:text-5xl xl:text-6xl",
+              "font-bold",
+              "text-neutral-900",
+              "mb-4 sm:mb-6",
+            )}
+          >
+            Analise finalizações de jogadores em tempo real
+          </h1>
+          <p
+            className={cn(
+              "text-base sm:text-lg lg:text-xl",
+              "text-neutral-600",
+              "mb-8 sm:mb-12",
+              "max-w-2xl",
+            )}
+          >
+            Veja os padrões que os mercados ainda não perceberam. Tome decisões
+            baseadas em dados, não em intuição.
+          </p>
 
-        <p className="text-lg sm:text-xl text-gray-600 mb-8 leading-relaxed">
-          Veja U5/U10, série histórica e coeficiente de variação. Tudo o que
-          você precisa para tomar decisões melhores.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <SignedOut>
-            <SignUpButton mode="modal">
-              <button className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
-                Comece Agora
-              </button>
-            </SignUpButton>
-            <SignInButton mode="modal">
-              <button className="px-6 py-3 border-2 border-blue-600 text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition">
-                Entrar
-              </button>
-            </SignInButton>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <Link href="/sign-up">
+                <Button size="lg" variant="primary">
+                  Comece Agora
+                </Button>
+              </Link>
+              <Link href="#how-it-works">
+                <Button size="lg" variant="secondary">
+                  Ver Demo
+                </Button>
+              </Link>
+            </div>
           </SignedOut>
 
           <SignedIn>
             <Link href="/dashboard">
-              <button className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+              <Button size="lg" variant="primary">
                 Ir para Dashboard
-              </button>
+              </Button>
             </Link>
           </SignedIn>
         </div>
-      </div>
+      </Container>
     </section>
   );
 }
+
+HeroSection.displayName = "HeroSection";
+
+export { HeroSection };
