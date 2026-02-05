@@ -13,14 +13,18 @@ export async function GET(
       include: {
         matchStats: {
           orderBy: {
-            matchDate: "desc",
+            createdAt: "desc",
           },
           take: 10,
           select: {
             id: true,
-            matchDate: true,
+            createdAt: true,
             shots: true,
+            shotsOnTarget: true,
+            goals: true,
+            assists: true,
             minutesPlayed: true,
+            rating: true,
           },
         },
         marketAnalyses: {

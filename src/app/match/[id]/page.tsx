@@ -27,7 +27,7 @@ type MatchResponse = {
     homeTeam: string;
     awayTeam: string;
     competition: string;
-    kickoffAt: string;
+    matchDate: string;
     marketAnalyses: MarketAnalysisItem[];
   };
 };
@@ -75,7 +75,7 @@ export default async function MatchPage({
           <div className="flex flex-col md:flex-row md:items-center md:justify-between text-gray-600">
             <p className="text-sm md:text-base">{match.competition}</p>
             <p className="text-sm md:text-base font-semibold">
-              {formatMatchDate(match.kickoffAt)}
+              {formatMatchDate(match.matchDate)}
             </p>
           </div>
         </header>
@@ -100,7 +100,7 @@ export default async function MatchPage({
                     homeTeam: match.homeTeam,
                     awayTeam: match.awayTeam,
                     competition: match.competition,
-                    kickoffAt: match.kickoffAt,
+                    matchDate: match.matchDate,
                   }}
                   player={{
                     name: analysis.player.name,

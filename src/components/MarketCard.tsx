@@ -13,7 +13,7 @@ interface MarketCardProps {
     homeTeam: string;
     awayTeam: string;
     competition: string;
-    kickoffAt: Date | string;
+    matchDate: Date | string;
   };
   player: {
     name: string;

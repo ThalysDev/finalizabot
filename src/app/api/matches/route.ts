@@ -5,14 +5,14 @@ export async function GET() {
   try {
     const matches = await prisma.match.findMany({
       orderBy: {
-        kickoffAt: "desc",
+        matchDate: "desc",
       },
       select: {
         id: true,
         homeTeam: true,
         awayTeam: true,
         competition: true,
-        kickoffAt: true,
+        matchDate: true,
       },
     });
 
