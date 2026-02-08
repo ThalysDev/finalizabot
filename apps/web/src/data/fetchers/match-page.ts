@@ -29,6 +29,8 @@ export interface MatchPageData {
     matchDate: string;
     matchTime: string;
     status: string;
+    homeBadgeUrl?: string;
+    awayBadgeUrl?: string;
   } | null;
   players: PlayerCardData[];
 }
@@ -85,6 +87,8 @@ export async function fetchMatchPageData(
       minute: "2-digit",
     }),
     status: dbMatch.status,
+    homeBadgeUrl: dbMatch.homeTeamImageUrl ?? undefined,
+    awayBadgeUrl: dbMatch.awayTeamImageUrl ?? undefined,
   };
 
   // 2. Coleta jogadores únicos (de MarketAnalysis e/ou PlayerStats)
@@ -97,6 +101,8 @@ export async function fetchMatchPageData(
       sofascoreId: string;
       odds: number;
       probability: number;
+      avatarUrl?: string;
+      teamBadgeUrl?: string;
     }
   >();
 
@@ -109,6 +115,8 @@ export async function fetchMatchPageData(
         sofascoreId: ma.player.sofascoreId,
         odds: ma.odds,
         probability: ma.probability,
+        avatarUrl: ma.player.imageUrl ?? undefined,
+        teamBadgeUrl: ma.player.teamImageUrl ?? undefined,
       });
     }
   }
@@ -123,6 +131,8 @@ export async function fetchMatchPageData(
         sofascoreId: ps.player.sofascoreId,
         odds: 0,
         probability: 0,
+        avatarUrl: ps.player.imageUrl ?? undefined,
+        teamBadgeUrl: ps.player.teamImageUrl ?? undefined,
       });
     }
   }
@@ -143,6 +153,8 @@ export async function fetchMatchPageData(
         sofascoreId: p.sofascoreId,
         odds: 0,
         probability: 0,
+        avatarUrl: p.imageUrl ?? undefined,
+        teamBadgeUrl: p.teamImageUrl ?? undefined,
       });
     }
   }
@@ -181,6 +193,8 @@ export async function fetchMatchPageData(
               name: p.name,
               team: teamName,
               position: p.position,
+              avatarUrl: p.avatarUrl,
+              teamBadgeUrl: p.teamBadgeUrl,
               line,
               odds: p.odds,
               impliedProbability: Math.round(p.probability * 100),
@@ -213,8 +227,8 @@ export async function fetchMatchPageData(
               id: p.id,
               name: p.name,
               team: "—",
-              position: p.position,
-              line,
+              position: p.position,              avatarUrl: p.avatarUrl,
+              teamBadgeUrl: p.teamBadgeUrl,              line,
               odds: p.odds,
               impliedProbability: Math.round(p.probability * 100),
               avgShots: Number(avg.toFixed(1)),
@@ -230,8 +244,8 @@ export async function fetchMatchPageData(
             id: p.id,
             name: p.name,
             team: "—",
-            position: p.position,
-            line,
+            position: p.position,            avatarUrl: p.avatarUrl,
+            teamBadgeUrl: p.teamBadgeUrl,            line,
             odds: p.odds,
             impliedProbability: Math.round(p.probability * 100),
             avgShots: 0,
@@ -249,8 +263,8 @@ export async function fetchMatchPageData(
             id: p.id,
             name: p.name,
             team: "—",
-            position: p.position,
-            line,
+            position: p.position,            avatarUrl: p.avatarUrl,
+            teamBadgeUrl: p.teamBadgeUrl,            line,
             odds: p.odds,
             impliedProbability: Math.round(p.probability * 100),
             avgShots: 0,

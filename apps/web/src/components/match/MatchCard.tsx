@@ -15,6 +15,8 @@ export function MatchCard({
   competition,
   matchTime,
   playerCount,
+  homeBadgeUrl,
+  awayBadgeUrl,
 }: MatchCardData) {
   return (
     <Link
@@ -33,8 +35,16 @@ export function MatchCard({
         <div className="flex items-center justify-between gap-3">
           {/* Home team */}
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center flex-shrink-0 border border-fb-border/40">
-              <Shield className="size-5 text-fb-text-muted" />
+            <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center flex-shrink-0 border border-fb-border/40 overflow-hidden">
+              {homeBadgeUrl ? (
+                <img
+                  src={homeBadgeUrl}
+                  alt={homeTeam}
+                  className="size-7 object-contain"
+                />
+              ) : (
+                <Shield className="size-5 text-fb-text-muted" />
+              )}
             </div>
             <span className="text-fb-text font-semibold text-sm truncate">
               {homeTeam}
@@ -54,8 +64,16 @@ export function MatchCard({
             <span className="text-fb-text font-semibold text-sm truncate text-right">
               {awayTeam}
             </span>
-            <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center flex-shrink-0 border border-fb-border/40">
-              <Shield className="size-5 text-fb-text-muted" />
+            <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center flex-shrink-0 border border-fb-border/40 overflow-hidden">
+              {awayBadgeUrl ? (
+                <img
+                  src={awayBadgeUrl}
+                  alt={awayTeam}
+                  className="size-7 object-contain"
+                />
+              ) : (
+                <Shield className="size-5 text-fb-text-muted" />
+              )}
             </div>
           </div>
         </div>

@@ -73,11 +73,82 @@ export async function fetchPlayerPageData(
     ? detectPlayerTeamId(shotsRes.data.items)
     : undefined;
 
-  // Se ETL falhar, retorna o que temos do Prisma
+  // Se ETL falhar, tenta fallback para PlayerMatchStats do Prisma
   if (lastMatchesRes.error || !lastMatchesRes.data) {
     console.warn(
       `[ETL] Falha last-matches p/ ${dbPlayer.sofascoreId}: ${lastMatchesRes.error}`,
     );
+
+    // Fallback: usar PlayerMatchStats locais
+    const localStats = await prisma.playerMatchStats.findMany({
+      where: { playerId: dbPlayer.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+
+    if (localStats.length > 0) {
+      const shots = localStats.map((s) => s.shots);
+      const total = shots.reduce((a, b) => a + b, 0);
+      const avg = total / shots.length;
+      const onTarget = localStats.reduce((a, s) => a + s.shotsOnTarget, 0) / localStats.length;
+      const minutes = localStats.reduce((a, s) => a + s.minutesPlayed, 0) / localStats.length;
+      const cvVal = shots.length >= 2 ? (() => {
+        const variance = shots.reduce((a, s) => a + Math.pow(s - avg, 2), 0) / shots.length;
+        return avg > 0 ? Math.sqrt(variance) / avg : null;
+      })() : null;
+
+      const buildWindowFromLocal = (window: number) => {
+        const sliced = shots.slice(0, window);
+        const slicedOnTarget = localStats.slice(0, window).map((s) => s.shotsOnTarget);
+        const slicedMinutes = localStats.slice(0, window).map((s) => s.minutesPlayed);
+        const wAvg = sliced.reduce((a, b) => a + b, 0) / sliced.length;
+        const wVariance = sliced.reduce((a, s) => a + Math.pow(s - wAvg, 2), 0) / sliced.length;
+        const wCv = wAvg > 0 ? Math.sqrt(wVariance) / wAvg : null;
+        const hitCount = (l: number) => sliced.filter((s) => s >= l).length;
+        const buildLHI = (l: number) => {
+          const h = hitCount(l);
+          const p = sliced.length > 0 ? Math.round((h / sliced.length) * 100) : 0;
+          return { hits: h, total: sliced.length, label: `${h}/${sliced.length}`, percent: p };
+        };
+        return {
+          avgShots: Number(wAvg.toFixed(1)),
+          avgShotsOnTarget: Number((slicedOnTarget.reduce((a, b) => a + b, 0) / slicedOnTarget.length).toFixed(1)),
+          avgMinutes: Math.round(slicedMinutes.reduce((a, b) => a + b, 0) / slicedMinutes.length),
+          cv: wCv,
+          over05: buildLHI(0.5),
+          over15: buildLHI(1.5),
+          over25: buildLHI(2.5),
+          sparkline: [...sliced].reverse().slice(-8),
+          last5Over: sliced.slice(0, 5).map((s) => s >= 1.5),
+        };
+      };
+
+      const last5Over = shots.slice(0, 5).map((s) => s > line);
+      const u5Hits = shots.slice(0, 5).filter((s) => s > line).length;
+      const u10Hits = shots.slice(0, 10).filter((s) => s > line).length;
+
+      const localPlayerStats: PlayerStatsFromEtl = {
+        avgShots: Number(avg.toFixed(1)),
+        avgShotsOnTarget: Number(onTarget.toFixed(1)),
+        avgMinutes: Math.round(minutes),
+        last5Over,
+        u5Hits,
+        u10Hits,
+        cv: cvVal,
+        sparkline: shots.slice(0, 8),
+        last5: buildWindowFromLocal(5),
+        last10: buildWindowFromLocal(10),
+      };
+
+      return {
+        player: buildPlayerDetail(dbPlayer, localPlayerStats),
+        shotHistory: [],
+        matchHistory: [],
+        stats: localPlayerStats,
+        externalLinks: buildExternalLinks(dbPlayer.sofascoreId),
+      };
+    }
+
     return {
       player: buildPlayerDetail(dbPlayer, null),
       shotHistory: [],
@@ -196,6 +267,9 @@ interface DbPlayer {
   position: string;
   sofascoreId: string;
   sofascoreUrl: string;
+  imageUrl: string | null;
+  teamName: string | null;
+  teamImageUrl: string | null;
 }
 
 function buildPlayerDetail(
@@ -211,13 +285,15 @@ function buildPlayerDetail(
     competition: string;
   },
 ): PlayerDetail {
-  const team = teamName ?? "—";
+  const team = teamName ?? p.teamName ?? "\u2014";
   return {
     id: p.id,
     name: p.name,
     team,
     teamShort: team.slice(0, 3).toUpperCase(),
     position: p.position,
+    avatarUrl: p.imageUrl ?? undefined,
+    teamBadgeUrl: p.teamImageUrl ?? undefined,
     number: 0,
     age: 0,
     nationality: "—",

@@ -242,12 +242,28 @@ export function PlayerDetailView({
           <div className="flex gap-5 items-center">
             <div className="relative shrink-0">
               <div className="size-28 md:size-32 rounded-full overflow-hidden border-4 border-fb-surface-darker bg-fb-surface">
-                <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-fb-text-muted">
-                  {player.name.charAt(0)}
-                </div>
+                {player.avatarUrl ? (
+                  <img
+                    src={player.avatarUrl}
+                    alt={player.name}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-fb-text-muted">
+                    {player.name.charAt(0)}
+                  </div>
+                )}
               </div>
-              <div className="absolute -bottom-1 -right-1 bg-fb-card rounded-full p-1.5 border border-fb-border shadow-sm">
-                <Shield className="size-5 text-fb-primary" />
+              <div className="absolute -bottom-1 -right-1 bg-fb-card rounded-full p-1.5 border border-fb-border shadow-sm overflow-hidden">
+                {player.teamBadgeUrl ? (
+                  <img
+                    src={player.teamBadgeUrl}
+                    alt={player.team}
+                    className="size-5 object-contain"
+                  />
+                ) : (
+                  <Shield className="size-5 text-fb-primary" />
+                )}
               </div>
             </div>
 
@@ -267,7 +283,16 @@ export function PlayerDetailView({
                 {player.team && player.team !== "—" && (
                   <>
                     <span className="w-1 h-1 bg-fb-text-muted rounded-full" />
-                    <span>{player.team}</span>
+                    <div className="flex items-center gap-1.5">
+                      {player.teamBadgeUrl && (
+                        <img
+                          src={player.teamBadgeUrl}
+                          alt={player.team}
+                          className="size-4 object-contain"
+                        />
+                      )}
+                      <span>{player.team}</span>
+                    </div>
                   </>
                 )}
               </div>

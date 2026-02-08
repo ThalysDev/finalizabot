@@ -14,6 +14,8 @@
     "build:web": "npm -w @finalizabot/web run build",
     "build:etl": "npm -w @finalizabot/etl run build",
     "sync": "npm -w @finalizabot/etl run sync",
+    "sync:bridge": "npm -w @finalizabot/etl run bridge",
+    "sync:full": "npm -w @finalizabot/etl run sync:full",
     "lint": "npm -w @finalizabot/web run lint",
     "db:generate": "npm -w @finalizabot/shared run generate",
     "db:push": "npm -w @finalizabot/shared run db:push",

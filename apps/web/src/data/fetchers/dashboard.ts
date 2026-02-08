@@ -90,6 +90,8 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
     }),
     status: m.status,
     playerCount: m._count.marketAnalyses,
+    homeBadgeUrl: m.homeTeamImageUrl ?? undefined,
+    awayBadgeUrl: m.awayTeamImageUrl ?? undefined,
   }));
 
   return { matches, todayCount: matches.length };

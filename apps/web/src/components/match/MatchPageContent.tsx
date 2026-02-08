@@ -25,6 +25,8 @@ interface MatchPageContentProps {
     matchDate: string;
     matchTime: string;
     status: string;
+    homeBadgeUrl?: string;
+    awayBadgeUrl?: string;
   };
   players: PlayerCardData[];
 }
@@ -99,8 +101,16 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
           <div className="flex items-center justify-between">
             {/* Home */}
             <div className="flex items-center gap-3 flex-1">
-              <div className="size-14 rounded-full bg-fb-surface-lighter flex items-center justify-center border border-fb-border/50">
-                <Shield className="size-7 text-fb-text-muted" />
+              <div className="size-14 rounded-full bg-fb-surface-lighter flex items-center justify-center border border-fb-border/50 overflow-hidden">
+                {match.homeBadgeUrl ? (
+                  <img
+                    src={match.homeBadgeUrl}
+                    alt={match.homeTeam}
+                    className="size-10 object-contain"
+                  />
+                ) : (
+                  <Shield className="size-7 text-fb-text-muted" />
+                )}
               </div>
               <div>
                 <h2 className="text-fb-text font-bold text-lg">
@@ -132,8 +142,16 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
                 </h2>
                 <p className="text-fb-text-muted text-xs">Fora</p>
               </div>
-              <div className="size-14 rounded-full bg-fb-surface-lighter flex items-center justify-center border border-fb-border/50">
-                <Shield className="size-7 text-fb-text-muted" />
+              <div className="size-14 rounded-full bg-fb-surface-lighter flex items-center justify-center border border-fb-border/50 overflow-hidden">
+                {match.awayBadgeUrl ? (
+                  <img
+                    src={match.awayBadgeUrl}
+                    alt={match.awayTeam}
+                    className="size-10 object-contain"
+                  />
+                ) : (
+                  <Shield className="size-7 text-fb-text-muted" />
+                )}
               </div>
             </div>
           </div>

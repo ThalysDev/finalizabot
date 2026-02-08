@@ -3,6 +3,7 @@ import { CheerioCrawler } from 'crawlee';
 import { logger } from './lib/logger.js';
 import { runDiscoverEndpoints } from './crawlers/discoverEndpoints.js';
 import { runSofaScoreIngest } from './crawlers/sofascoreIngest.js';
+import { runBridge } from './bridge/etl-to-public.js';
 import { disconnectDb } from './services/db.js';
 
 async function runCrawler(): Promise<void> {
@@ -34,8 +35,29 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (mode === 'bridge') {
+    try {
+      await runBridge();
+    } finally {
+      await disconnectDb();
+    }
+    return;
+  }
+
+  if (mode === 'full') {
+    try {
+      logger.info('[Full] Executando ingest + bridge...');
+      await runSofaScoreIngest();
+      await runBridge();
+      logger.info('[Full] Pipeline completo!');
+    } finally {
+      await disconnectDb();
+    }
+    return;
+  }
+
   if (!mode || mode === '') {
-    logger.info('No MODE set. Use MODE=discover (with MATCH_URL) or MODE=ingest (npm run sync)');
+    logger.info('No MODE set. Use MODE=discover | MODE=ingest | MODE=bridge | MODE=full');
   }
   logger.info('SofaScore ETL starting');
   await runCrawler();

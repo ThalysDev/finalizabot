@@ -7,6 +7,8 @@
     "dev": "tsx watch src/index.ts",
     "api:dev": "tsx watch src/api/server.ts",
     "sync": "cross-env MODE=ingest tsx src/index.ts",
+    "bridge": "cross-env MODE=bridge tsx src/index.ts",
+    "sync:full": "cross-env MODE=full tsx src/index.ts",
     "discover": "cross-env MODE=discover tsx src/index.ts",
     "build": "tsc",
     "prisma:generate": "npm -w @finalizabot/shared run generate"

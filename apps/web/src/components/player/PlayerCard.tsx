@@ -84,6 +84,7 @@ export function PlayerCard({
   team,
   position,
   avatarUrl,
+  teamBadgeUrl,
   line,
   odds,
   impliedProbability,
@@ -122,9 +123,18 @@ export function PlayerCard({
           <h3 className="text-fb-text font-semibold text-sm truncate">
             {name}
           </h3>
-          <p className="text-fb-text-muted text-xs">
-            {position} • {team}
-          </p>
+          <div className="flex items-center gap-1 text-fb-text-muted text-xs">
+            <span>{position}</span>
+            <span>•</span>
+            {teamBadgeUrl && (
+              <img
+                src={teamBadgeUrl}
+                alt={team}
+                className="size-3.5 object-contain"
+              />
+            )}
+            <span className="truncate">{team}</span>
+          </div>
         </div>
         <div
           className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${cfg.bg} ${cfg.text}`}
