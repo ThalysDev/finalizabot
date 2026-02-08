@@ -1,34 +1,32 @@
-import { isAllowedTournament } from '../config/leagues.js';
-import { getSyncTournamentIds } from '../config/europeanTournaments.js';
-import { logger } from '../lib/logger.js';
-import { ProxyAgent } from 'undici';
+import { isAllowedTournament } from "../config/leagues.js";
+import { getSyncTournamentIds } from "../config/europeanTournaments.js";
+import { logger } from "../lib/logger.js";
+import { curlFetchJsonWithRetry } from "./curlFetch.js";
+import {
+  fetchScheduleIdsFromHtml,
+  fetchScheduledEventsViaBrowser,
+} from "./sofascoreBrowser.js";
 
-const DELAY_MS = 800;
-function delay(ms: number): Promise<void> {
+/** Randomised delay to avoid fixed-interval bot detection. */
+function delay(): Promise<void> {
+  const ms = 600 + Math.floor(Math.random() * 1400); // 600-2000 ms
   return new Promise((r) => setTimeout(r, ms));
 }
 
-const BASE = 'https://api.sofascore.com/api/v1';
+const BASE = "https://api.sofascore.com/api/v1";
 const SPORT_BASE = `${BASE}/sport/football`;
 const STATUS_FINISHED = 100;
 /** Status codes we exclude (e.g. canceled). Events with these are not included. */
 const STATUS_CANCELED = 70;
 
-const HEADERS: HeadersInit = {
-  Accept: 'application/json',
-  'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
-  'Cache-Control': 'no-cache',
-  Referer: 'https://www.sofascore.com/',
-  Origin: 'https://www.sofascore.com',
-  'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-};
-
 function getTournamentSeasonsUrl(tournamentId: number): string {
   return `${BASE}/unique-tournament/${tournamentId}/seasons`;
 }
 
-function getTournamentEventsUrl(tournamentId: number, seasonId: number): string {
+function getTournamentEventsUrl(
+  tournamentId: number,
+  seasonId: number,
+): string {
   return `${BASE}/unique-tournament/${tournamentId}/season/${seasonId}/events`;
 }
 
@@ -36,45 +34,12 @@ function getScheduledEventsUrl(date: string): string {
   return `${SPORT_BASE}/scheduled-events/${date}`;
 }
 
+/**
+ * Fetch JSON from the SofaScore API using system curl (bypasses Node TLS fingerprint).
+ * Includes automatic proxy rotation and retry.
+ */
 async function fetchJson<T = unknown>(url: string): Promise<T | null> {
-  try {
-    const dispatcher = getProxyDispatcher();
-    const res = await fetch(url, {
-      headers: HEADERS,
-      signal: AbortSignal.timeout(15_000),
-      dispatcher,
-    });
-    if (!res.ok) {
-      logger.warn('Fetch non-OK', { url, status: res.status, statusText: res.statusText });
-      return null;
-    }
-    return (await res.json()) as T;
-  } catch (err) {
-    logger.warn('Fetch error', { url, error: err instanceof Error ? err.message : String(err) });
-    return null;
-  }
-}
-
-let cachedProxyDispatcher: ProxyAgent | null | undefined;
-function getProxyDispatcher(): ProxyAgent | undefined {
-  if (cachedProxyDispatcher !== undefined) return cachedProxyDispatcher ?? undefined;
-  const proxyUrl =
-    process.env.SOFASCORE_PROXY_URL?.trim() ||
-    process.env.HTTPS_PROXY?.trim() ||
-    process.env.HTTP_PROXY?.trim();
-  if (!proxyUrl) {
-    cachedProxyDispatcher = null;
-    return undefined;
-  }
-  try {
-    cachedProxyDispatcher = new ProxyAgent(proxyUrl);
-    logger.info('Using proxy for discovery fetches', { proxyUrl });
-    return cachedProxyDispatcher;
-  } catch (err) {
-    logger.warn('Failed to initialize proxy agent', { error: err instanceof Error ? err.message : String(err) });
-    cachedProxyDispatcher = null;
-    return undefined;
-  }
+  return curlFetchJsonWithRetry<T>(url);
 }
 
 interface SeasonsResponse {
@@ -100,15 +65,15 @@ interface ScheduledEventsResponse {
 
 function getSyncTz(): string {
   const tz = process.env.SYNC_TZ?.trim();
-  return tz !== undefined && tz !== '' ? tz : 'UTC';
+  return tz !== undefined && tz !== "" ? tz : "UTC";
 }
 
 /** SYNC_DAYS: comma-separated day offsets from today (0=today, 1=tomorrow). Default "0,1". */
 function getSyncDayOffsets(): number[] {
   const raw = process.env.SYNC_DAYS?.trim();
-  if (raw === undefined || raw === '') return [0, 1];
+  if (raw === undefined || raw === "") return [0, 1];
   return raw
-    .split(',')
+    .split(",")
     .map((s) => parseInt(s.trim(), 10))
     .filter((n) => !Number.isNaN(n) && n >= 0);
 }
@@ -121,7 +86,7 @@ function getTargetDateStrings(): Set<string> {
   const dates = new Set<string>();
   for (const offset of offsets) {
     const d = new Date(now + offset * 24 * 60 * 60 * 1000);
-    dates.add(d.toLocaleDateString('en-CA', { timeZone: tz }));
+    dates.add(d.toLocaleDateString("en-CA", { timeZone: tz }));
   }
   return dates;
 }
@@ -129,24 +94,29 @@ function getTargetDateStrings(): Set<string> {
 /**
  * Obtém o ID da temporada atual (primeira da lista) para um torneio.
  */
-async function getCurrentSeasonId(tournamentId: number): Promise<number | null> {
-  const data = await fetchJson<SeasonsResponse>(getTournamentSeasonsUrl(tournamentId));
+async function getCurrentSeasonId(
+  tournamentId: number,
+): Promise<number | null> {
+  const data = await fetchJson<SeasonsResponse>(
+    getTournamentSeasonsUrl(tournamentId),
+  );
   const seasons = data?.seasons;
   if (!Array.isArray(seasons) || seasons.length === 0) return null;
   const first = seasons[0];
   const id = first?.id ?? (first as unknown as { seasonId?: number }).seasonId;
-  return typeof id === 'number' ? id : null;
+  return typeof id === "number" ? id : null;
 }
 
 function eventDateString(ev: EventItem, tz: string): string | null {
   const ts = ev.startTimestamp;
-  if (typeof ts === 'number' && ts > 0) {
-    return new Date(ts * 1000).toLocaleDateString('en-CA', { timeZone: tz });
+  if (typeof ts === "number" && ts > 0) {
+    return new Date(ts * 1000).toLocaleDateString("en-CA", { timeZone: tz });
   }
   const startTime = ev.startTime;
-  if (typeof startTime === 'string') {
+  if (typeof startTime === "string") {
     const d = new Date(startTime);
-    if (!Number.isNaN(d.getTime())) return d.toLocaleDateString('en-CA', { timeZone: tz });
+    if (!Number.isNaN(d.getTime()))
+      return d.toLocaleDateString("en-CA", { timeZone: tz });
   }
   return null;
 }
@@ -160,10 +130,10 @@ async function getMatchIdsForTodayTomorrow(
   tournamentId: number,
   seasonId: number,
   targetDates: Set<string>,
-  tz: string
+  tz: string,
 ): Promise<string[]> {
   const data = await fetchJson<EventsResponse>(
-    getTournamentEventsUrl(tournamentId, seasonId)
+    getTournamentEventsUrl(tournamentId, seasonId),
   );
   const events = data?.events;
   if (!Array.isArray(events)) return [];
@@ -196,14 +166,20 @@ async function getMatchIdsFromScheduledDates(
   const fallbackIds: string[] = [];
   const idSet = new Set(tournamentIds);
   for (const date of targetDates) {
-    const data = await fetchJson<ScheduledEventsResponse>(getScheduledEventsUrl(date));
+    const data = await fetchJson<ScheduledEventsResponse>(
+      getScheduledEventsUrl(date),
+    );
     const events = data?.events;
     if (!Array.isArray(events)) continue;
     for (const ev of events) {
       const code = ev?.status?.code;
       if (code === STATUS_CANCELED) continue;
       const uniqueId = ev?.tournament?.uniqueTournament?.id;
-      if (typeof uniqueId === 'number' && idSet.size > 0 && !idSet.has(uniqueId)) {
+      if (
+        typeof uniqueId === "number" &&
+        idSet.size > 0 &&
+        !idSet.has(uniqueId)
+      ) {
         continue;
       }
       const name = ev?.tournament?.name;
@@ -219,7 +195,60 @@ async function getMatchIdsFromScheduledDates(
     }
   }
   if (ids.length === 0 && fallbackIds.length > 0) {
-    logger.warn('No matches after tournament-name filter; including scheduled-events fallback');
+    logger.warn(
+      "No matches after tournament-name filter; including scheduled-events fallback",
+    );
+    return fallbackIds;
+  }
+  return ids;
+}
+
+async function getMatchIdsFromScheduledDatesBrowser(
+  targetDates: Set<string>,
+  tz: string,
+  tournamentIds: number[],
+): Promise<string[]> {
+  const ids: string[] = [];
+  const fallbackIds: string[] = [];
+  const idSet = new Set(tournamentIds);
+  for (const date of targetDates) {
+    const data = await fetchScheduledEventsViaBrowser(date);
+    const events =
+      data && typeof data === "object"
+        ? (data as ScheduledEventsResponse).events
+        : undefined;
+    if (!Array.isArray(events)) {
+      const htmlIds = await fetchScheduleIdsFromHtml(date);
+      htmlIds.forEach((id) => ids.push(id));
+      continue;
+    }
+    for (const ev of events) {
+      const code = ev?.status?.code;
+      if (code === STATUS_CANCELED) continue;
+      const uniqueId = ev?.tournament?.uniqueTournament?.id;
+      if (
+        typeof uniqueId === "number" &&
+        idSet.size > 0 &&
+        !idSet.has(uniqueId)
+      ) {
+        continue;
+      }
+      const name = ev?.tournament?.name;
+      if (name != null && !isAllowedTournament(name)) {
+        const id = ev?.id;
+        if (id != null) fallbackIds.push(String(id));
+        continue;
+      }
+      const eventDate = eventDateString(ev, tz);
+      if (eventDate != null && !targetDates.has(eventDate)) continue;
+      const id = ev?.id;
+      if (id != null) ids.push(String(id));
+    }
+  }
+  if (ids.length === 0 && fallbackIds.length > 0) {
+    logger.warn(
+      "No matches after tournament-name filter; including scheduled-events fallback (browser)",
+    );
     return fallbackIds;
   }
   return ids;
@@ -232,10 +261,10 @@ async function getMatchIdsFromScheduledDates(
 async function getFinishedMatchIdsLastNDays(
   tournamentId: number,
   seasonId: number,
-  sinceTimestampSeconds: number
+  sinceTimestampSeconds: number,
 ): Promise<string[]> {
   const data = await fetchJson<EventsResponse>(
-    getTournamentEventsUrl(tournamentId, seasonId)
+    getTournamentEventsUrl(tournamentId, seasonId),
   );
   const events = data?.events;
   if (!Array.isArray(events)) return [];
@@ -247,7 +276,7 @@ async function getFinishedMatchIdsLastNDays(
     const name = ev?.tournament?.name;
     if (name != null && !isAllowedTournament(name)) continue;
     const ts = ev.startTimestamp;
-    if (typeof ts !== 'number' || ts < sinceTimestampSeconds) continue;
+    if (typeof ts !== "number" || ts < sinceTimestampSeconds) continue;
     const id = ev?.id;
     if (id != null) ids.push(String(id));
   }
@@ -258,22 +287,50 @@ async function getFinishedMatchIdsLastNDays(
  * Descobre IDs de partidas finalizadas nos últimos N dias (para histórico dos jogadores).
  * SYNC_LAST_DAYS no .env (padrão 60).
  */
-export async function discoverFinishedMatchIdsLastNDays(days?: number): Promise<string[]> {
-  const n = days ?? (parseInt(process.env.SYNC_LAST_DAYS ?? '60', 10) || 60);
-  const since = Math.floor((Date.now() - n * 24 * 60 * 60 * 1000) / 1000);
+export async function discoverFinishedMatchIdsLastNDays(
+  days?: number,
+): Promise<string[]> {
+  const n = days ?? (parseInt(process.env.SYNC_LAST_DAYS ?? "60", 10) || 60);
+  const sinceMs = Date.now() - n * 24 * 60 * 60 * 1000;
   const tournamentIds = getSyncTournamentIds();
   if (tournamentIds.length === 0) return [];
 
+  /* Build date strings for the last N days and use scheduled-events. */
+  const tz = getSyncTz();
+  const idSet = new Set(tournamentIds);
   const allIds = new Set<string>();
-  for (const tournamentId of tournamentIds) {
-    await delay(DELAY_MS);
-    const seasonId = await getCurrentSeasonId(tournamentId);
-    if (seasonId == null) continue;
-    await delay(DELAY_MS);
-    const ids = await getFinishedMatchIdsLastNDays(tournamentId, seasonId, since);
-    ids.forEach((id) => allIds.add(id));
+
+  /* Only check the last 3 days (scheduled-events is per-day, N days would be too many calls) */
+  const lookbackDays = Math.min(n, 3);
+  for (let offset = 0; offset < lookbackDays; offset++) {
+    const d = new Date(Date.now() - offset * 24 * 60 * 60 * 1000);
+    const dateStr = d.toLocaleDateString("en-CA", { timeZone: tz });
+    const data = await fetchJson<ScheduledEventsResponse>(
+      getScheduledEventsUrl(dateStr),
+    );
+    const events = data?.events;
+    if (!Array.isArray(events)) continue;
+    for (const ev of events) {
+      const code = ev?.status?.code;
+      if (code !== STATUS_FINISHED) continue;
+      const uniqueId = ev?.tournament?.uniqueTournament?.id;
+      if (typeof uniqueId === "number" && idSet.size > 0 && !idSet.has(uniqueId))
+        continue;
+      const name = ev?.tournament?.name;
+      if (name != null && !isAllowedTournament(name)) continue;
+      const ts = ev.startTimestamp;
+      if (typeof ts === "number" && ts * 1000 < sinceMs) continue;
+      const id = ev?.id;
+      if (id != null) allIds.add(String(id));
+    }
+    await delay();
   }
-  logger.info('Discovered finished matches in last N days', { days: n, count: allIds.size });
+
+  logger.info("Discovered finished matches in last N days", {
+    days: n,
+    lookback: lookbackDays,
+    count: allIds.size,
+  });
   return [...allIds];
 }
 
@@ -285,43 +342,51 @@ export async function discoverFinishedMatchIdsLastNDays(days?: number): Promise<
 export async function discoverEuropeanMatchIds(): Promise<string[]> {
   const tournamentIds = getSyncTournamentIds();
   if (tournamentIds.length === 0) {
-    logger.warn('No tournament IDs (SYNC_TOURNAMENT_IDS or default European list)');
+    logger.warn(
+      "No tournament IDs (SYNC_TOURNAMENT_IDS or default European list)",
+    );
     return [];
   }
 
   const tz = getSyncTz();
   const targetDates = getTargetDateStrings();
-  logger.info('Discovery target dates (SYNC_TZ)', { tz, dates: [...targetDates] });
+  logger.info("Discovery target dates (SYNC_TZ)", {
+    tz,
+    dates: [...targetDates],
+  });
 
   const allIds = new Set<string>();
 
-  for (const tournamentId of tournamentIds) {
-    await delay(DELAY_MS);
-    const seasonId = await getCurrentSeasonId(tournamentId);
-    if (seasonId == null) {
-      logger.debug('No season for tournament', { tournamentId });
-      continue;
-    }
-    await delay(DELAY_MS);
-    const ids = await getMatchIdsForTodayTomorrow(tournamentId, seasonId, targetDates, tz);
-    ids.forEach((id) => allIds.add(id));
-    if (ids.length > 0) {
-      logger.info('Discovered matches for tournament (today/tomorrow)', {
-        tournamentId,
-        seasonId,
-        count: ids.length,
-      });
-    }
-  }
-
-  const scheduledIds = await getMatchIdsFromScheduledDates(targetDates, tz, tournamentIds);
+  /* ------------------------------------------------------------------
+   * Primary: scheduled-events endpoint (reliable, fast)
+   * The per-tournament /season/{id}/events endpoint returns 404 on the
+   * current SofaScore API, so we go straight to scheduled-events.
+   * ------------------------------------------------------------------ */
+  const scheduledIds = await getMatchIdsFromScheduledDates(
+    targetDates,
+    tz,
+    tournamentIds,
+  );
   if (scheduledIds.length > 0) {
     scheduledIds.forEach((id) => allIds.add(id));
-    logger.info('Discovered matches from scheduled-events', {
+    logger.info("Discovered matches from scheduled-events", {
       count: scheduledIds.length,
     });
-  } else if (allIds.size === 0) {
-    logger.warn('No matches from seasons or scheduled-events');
+  } else {
+    /* Fallback: Playwright browser scraping */
+    const browserScheduled = await getMatchIdsFromScheduledDatesBrowser(
+      targetDates,
+      tz,
+      tournamentIds,
+    );
+    if (browserScheduled.length > 0) {
+      browserScheduled.forEach((id) => allIds.add(id));
+      logger.info("Discovered matches from scheduled-events (browser)", {
+        count: browserScheduled.length,
+      });
+    } else {
+      logger.warn("No matches from scheduled-events");
+    }
   }
 
   return [...allIds];

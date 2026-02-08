@@ -10,6 +10,7 @@
     "bridge": "cross-env MODE=bridge tsx src/index.ts",
     "sync:full": "cross-env MODE=full tsx src/index.ts",
     "discover": "cross-env MODE=discover tsx src/index.ts",
+    "proxy:check": "tsx src/tools/proxyHealthCheck.ts",
     "build": "tsc",
     "prisma:generate": "npm -w @finalizabot/shared run generate"
   },

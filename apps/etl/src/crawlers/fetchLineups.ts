@@ -9,6 +9,8 @@ import {
   attachMatchPlayer,
 } from '../services/db.js';
 import { logger } from '../lib/logger.js';
+import { fetchLineupsViaBrowser } from './sofascoreBrowser.js';
+import { curlFetchJsonWithRetry } from './curlFetch.js';
 
 const LINEUPS_URL_TEMPLATE = 'https://api.sofascore.com/api/v1/event/{matchId}/lineups';
 
@@ -109,14 +111,12 @@ export async function fetchAndPersistLineups(
 ): Promise<void> {
   const url = getLineupsUrl(matchId);
   try {
-    const res = await fetch(url, {
-      headers: { Accept: 'application/json', 'User-Agent': 'SofaScoreETL/1.0' },
-    });
-    if (!res.ok) {
-      logger.debug('Lineups not available', { matchId, status: res.status });
-      return;
+    let json: unknown = await curlFetchJsonWithRetry(url, 3);
+    if (json == null) {
+      logger.debug('Lineups not available via curl, trying browser', { matchId });
+      json = await fetchLineupsViaBrowser(matchId);
+      if (json == null) return;
     }
-    const json = (await res.json()) as unknown;
     const players = parseLineupsResponse(matchId, homeTeamId, awayTeamId, json);
     if (players.length === 0) return;
     for (const p of players) {
