@@ -5,13 +5,19 @@ import { DemoCard } from "@/components/landing/DemoCard";
 import { BenefitsSection } from "@/components/landing/BenefitsSection";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { CTASection } from "@/components/landing/CTASection";
+import prisma from "@/lib/db/prisma";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const [playerCount, matchCount] = await Promise.all([
+    prisma.player.count(),
+    prisma.match.count(),
+  ]);
+
   return (
     <>
       <Header />
       <main>
-        <HeroSection />
+        <HeroSection playerCount={playerCount} matchCount={matchCount} />
         <DemoCard />
         <BenefitsSection />
         <HowItWorks />

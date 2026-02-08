@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Shield, Clock, Users, ChevronRight } from "lucide-react";
 import type { MatchCardData } from "@/data/types";
 
@@ -42,10 +43,13 @@ export function MatchCard({
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center flex-shrink-0 border border-fb-border/40 overflow-hidden">
               {homeBadgeUrl ? (
-                <img
+                <Image
                   src={homeBadgeUrl}
                   alt={homeTeam}
+                  width={28}
+                  height={28}
                   className="size-7 object-contain"
+                  unoptimized
                 />
               ) : (
                 <Shield className="size-5 text-fb-text-muted" />
@@ -87,10 +91,13 @@ export function MatchCard({
             </span>
             <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center flex-shrink-0 border border-fb-border/40 overflow-hidden">
               {awayBadgeUrl ? (
-                <img
+                <Image
                   src={awayBadgeUrl}
                   alt={awayTeam}
+                  width={28}
+                  height={28}
                   className="size-7 object-contain"
+                  unoptimized
                 />
               ) : (
                 <Shield className="size-5 text-fb-text-muted" />

@@ -13,7 +13,8 @@ import {
   resolvePlayerTeam,
 } from "@/lib/etl/transformers";
 import { DEFAULT_LINE } from "@/lib/etl/config";
-import type { PlayerCardData, ValueStatus } from "@/data/types";
+import type { PlayerCardData } from "@/data/types";
+import { statusFromCV, buildTeamBadgeUrl } from "@/lib/helpers";
 import prisma from "@/lib/db/prisma";
 
 /* ============================================================================
@@ -37,18 +38,6 @@ export interface MatchPageData {
     awayBadgeUrl?: string;
   } | null;
   players: PlayerCardData[];
-}
-
-/* ============================================================================
-   Helpers
-   ============================================================================ */
-
-function statusFromCV(cv: number | null): ValueStatus {
-  if (cv === null) return "neutral";
-  if (cv <= 0.25) return "high";
-  if (cv <= 0.35) return "good";
-  if (cv <= 0.5) return "neutral";
-  return "low";
 }
 
 /* ============================================================================
@@ -171,12 +160,6 @@ export async function fetchMatchPageData(
 
   if (playerMap.size === 0) {
     return { match, players: [] };
-  }
-
-  function buildTeamBadgeUrl(teamId?: string | null): string | undefined {
-    return teamId && /^\d+$/.test(teamId)
-      ? `https://api.sofascore.com/api/v1/team/${teamId}/image`
-      : undefined;
   }
 
   // 3. Enriquecer cada jogador com ETL (com fallback para dados do Prisma)

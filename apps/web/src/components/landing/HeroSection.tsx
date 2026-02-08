@@ -9,7 +9,20 @@ const HERO_TAGS = [
   { label: "Chutes + minutos", icon: Activity },
 ] as const;
 
-function HeroSection() {
+interface HeroSectionProps {
+  playerCount?: number;
+  matchCount?: number;
+}
+
+function HeroSection({ playerCount, matchCount }: HeroSectionProps = {}) {
+  const displayPlayers =
+    playerCount && playerCount > 0
+      ? playerCount >= 1000
+        ? `${(playerCount / 1000).toFixed(1).replace(/\.0$/, "")}k+`
+        : `${playerCount}+`
+      : "—";
+  const displayMatches =
+    matchCount && matchCount > 0 ? `${matchCount}+` : "—";
   return (
     <section className="relative w-full overflow-hidden bg-fb-bg py-16 sm:py-24 lg:py-32">
       {/* Background effects */}
@@ -88,8 +101,8 @@ function HeroSection() {
           {/* Stats strip */}
           <div className="animate-fade-up delay-600 mt-10 flex items-center gap-6 sm:gap-10">
             {[
-              { value: "2.500+", label: "Jogadores" },
-              { value: "98%", label: "Precisão" },
+              { value: displayPlayers, label: "Jogadores" },
+              { value: displayMatches, label: "Partidas" },
               { value: "24/7", label: "Atualização" },
             ].map(({ value, label }) => (
               <div key={label} className="text-center">

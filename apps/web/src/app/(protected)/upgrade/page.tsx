@@ -207,7 +207,10 @@ export default function UpgradePage() {
                   R${total}
                 </span>
               </div>
-              <button className="w-full bg-fb-primary hover:brightness-110 text-fb-primary-content font-bold text-base py-4 px-6 rounded-lg transition-all shadow-lg shadow-fb-primary/20 flex items-center justify-center gap-2 mt-4">
+              <button
+                onClick={() => alert("Integração com Stripe em breve! Você será notificado quando o pagamento estiver disponível.")}
+                className="w-full bg-fb-primary hover:brightness-110 text-fb-primary-content font-bold text-base py-4 px-6 rounded-lg transition-all shadow-lg shadow-fb-primary/20 flex items-center justify-center gap-2 mt-4"
+              >
                 <Lock className="size-5" />
                 Upgrade para PRO
               </button>

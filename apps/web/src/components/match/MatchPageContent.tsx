@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
   SlidersHorizontal,
@@ -11,6 +12,7 @@ import {
   Clock,
 } from "lucide-react";
 import { PlayerCard } from "@/components/player/PlayerCard";
+import { formatLine } from "@/lib/helpers";
 import type { PlayerCardData } from "@/data/types";
 
 /* ============================================================================
@@ -77,7 +79,7 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
     });
 
     return result;
-  }, [players, posFilter, sortBy]);
+  }, [players, posFilter, sortBy, metric]);
 
   const positionCounts = useMemo(() => {
     const counts = { all: players.length, forward: 0, midfielder: 0, defender: 0 };
@@ -115,10 +117,13 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
             <div className="flex items-center gap-3 flex-1">
               <div className="size-14 rounded-full bg-fb-surface-lighter flex items-center justify-center border border-fb-border/50 overflow-hidden">
                 {match.homeBadgeUrl ? (
-                  <img
+                  <Image
                     src={match.homeBadgeUrl}
                     alt={match.homeTeam}
+                    width={40}
+                    height={40}
                     className="size-10 object-contain"
+                    unoptimized
                   />
                 ) : (
                   <Shield className="size-7 text-fb-text-muted" />
@@ -172,10 +177,13 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
               </div>
               <div className="size-14 rounded-full bg-fb-surface-lighter flex items-center justify-center border border-fb-border/50 overflow-hidden">
                 {match.awayBadgeUrl ? (
-                  <img
+                  <Image
                     src={match.awayBadgeUrl}
                     alt={match.awayTeam}
+                    width={40}
+                    height={40}
                     className="size-10 object-contain"
+                    unoptimized
                   />
                 ) : (
                   <Shield className="size-7 text-fb-text-muted" />
@@ -329,10 +337,6 @@ function resolveBadgeFromMatch(
   if (teamKey.includes(homeKey)) return homeBadgeUrl;
   if (teamKey.includes(awayKey)) return awayBadgeUrl;
   return undefined;
-}
-
-function formatLine(value: number): string {
-  return Number.isInteger(value) ? value.toFixed(1) : value.toFixed(1);
 }
 
 /* ============================================================================

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { TrendingUp, TrendingDown, Minus, Snowflake } from "lucide-react";
 import type { ValueStatus } from "@/data/types";
 
@@ -110,10 +111,13 @@ export function PlayerCard({
       <div className="flex items-start gap-3 mb-3">
         <div className="size-12 rounded-full bg-gradient-to-br from-fb-primary/20 to-fb-accent-green/10 flex items-center justify-center overflow-hidden shrink-0 border border-fb-primary/15 transition-transform duration-300 group-hover:scale-105">
           {avatarUrl ? (
-            <img
+            <Image
               src={avatarUrl}
               alt={name}
+              width={48}
+              height={48}
               className="size-full object-cover"
+              unoptimized
             />
           ) : (
             <span className="text-fb-primary text-lg font-bold">
@@ -129,10 +133,13 @@ export function PlayerCard({
             <span>{position}</span>
             <span>•</span>
             {teamBadgeUrl && (
-              <img
+              <Image
                 src={teamBadgeUrl}
                 alt={team}
+                width={14}
+                height={14}
                 className="size-3.5 object-contain"
+                unoptimized
               />
             )}
             <span className="truncate">{team}</span>

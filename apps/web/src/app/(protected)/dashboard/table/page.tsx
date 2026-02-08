@@ -6,7 +6,7 @@ import {
   StatusCell,
 } from "@/components/table/DataTable";
 import type { Column } from "@/components/table/DataTable";
-import type { AdvancedPlayerRow, ValueStatus } from "@/data/types";
+import type { AdvancedPlayerRow } from "@/data/types";
 import { etlPlayerLastMatches, etlPlayerShots } from "@/lib/etl/client";
 import {
   computePlayerStats,
@@ -14,20 +14,13 @@ import {
   resolvePlayerTeam,
 } from "@/lib/etl/transformers";
 import { DEFAULT_LINE } from "@/lib/etl/config";
+import { statusFromCV } from "@/lib/helpers";
 import prisma from "@/lib/db/prisma";
 
 export const metadata: Metadata = {
   title: "Tabela Avançada - FinalizaBOT",
   description: "Análise avançada de jogadores por finalizações",
 };
-
-function statusFromCV(cv: number | null): ValueStatus {
-  if (cv === null) return "neutral";
-  if (cv <= 0.25) return "high";
-  if (cv <= 0.35) return "good";
-  if (cv <= 0.5) return "neutral";
-  return "low";
-}
 
 async function fetchTableData() {
   const line = DEFAULT_LINE;

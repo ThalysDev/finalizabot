@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Shield } from "lucide-react";
 
 export interface MatchBannerProps {
@@ -32,10 +33,13 @@ export function MatchBanner({
         <div className="flex items-center gap-3 flex-1">
           <div className="size-10 md:size-12 rounded-full bg-gradient-to-br from-fb-surface-lighter to-fb-surface flex items-center justify-center overflow-hidden border border-fb-border/50">
             {homeBadgeUrl ? (
-              <img
+              <Image
                 src={homeBadgeUrl}
                 alt={homeTeam}
+                width={32}
+                height={32}
                 className="size-8 object-contain"
+                unoptimized
               />
             ) : (
               <Shield className="size-5 text-fb-text-muted" />
@@ -92,10 +96,13 @@ export function MatchBanner({
           </div>
           <div className="size-10 md:size-12 rounded-full bg-fb-surface-lighter flex items-center justify-center overflow-hidden">
             {awayBadgeUrl ? (
-              <img
+              <Image
                 src={awayBadgeUrl}
                 alt={awayTeam}
+                width={32}
+                height={32}
                 className="size-8 object-contain"
+                unoptimized
               />
             ) : (
               <Shield className="size-5 text-fb-text-muted" />

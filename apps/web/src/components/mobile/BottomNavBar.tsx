@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Trophy, Bell, Activity, Zap } from "lucide-react";
+import { LayoutDashboard, Trophy, Bell, Activity, Crown } from "lucide-react";
 
 const tabs = [
-  { href: "/dashboard", label: "Início", icon: LayoutDashboard },
-  { href: "/dashboard/table", label: "Tabela", icon: Trophy },
-  { href: "/live", label: "Ao Vivo", icon: Activity },
-  { href: "/alerts", label: "Alertas", icon: Bell },
-  { href: "/pricing", label: "Planos", icon: Zap },
+  { href: "/dashboard", label: "Início", icon: LayoutDashboard, soon: false },
+  { href: "/dashboard/table", label: "Tabela", icon: Trophy, soon: false },
+  { href: "/live", label: "Ao Vivo", icon: Activity, soon: true },
+  { href: "/alerts", label: "Alertas", icon: Bell, soon: false },
+  { href: "/pricing", label: "PRO", icon: Crown, soon: false },
 ];
 
 export function BottomNavBar() {
@@ -33,9 +33,16 @@ export function BottomNavBar() {
                 isActive ? "text-fb-primary" : "text-fb-text-muted"
               }`}
             >
-              <Icon
-                className={`size-5 transition-transform duration-200 ${isActive ? "scale-110" : ""}`}
-              />
+              <div className="relative">
+                <Icon
+                  className={`size-5 transition-transform duration-200 ${isActive ? "scale-110" : ""}`}
+                />
+                {tab.soon && (
+                  <span className="absolute -top-1.5 -right-2.5 px-1 py-px bg-fb-accent-gold text-[7px] font-bold text-black rounded-full leading-none">
+                    EM BREVE
+                  </span>
+                )}
+              </div>
               <span className="text-[10px] font-medium">{tab.label}</span>
               {isActive && (
                 <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-fb-primary" />
