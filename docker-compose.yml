@@ -1,9 +1,11 @@
 version: "3.8"
 
 services:
-  app:
-    build: .
-    container_name: finalizabot-app
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: finalizabot-web
     restart: unless-stopped
     env_file:
       - .env.local
@@ -11,5 +13,19 @@ services:
       NODE_ENV: production
     ports:
       - "3000:3000"
-    command: >
-      sh -c "npx prisma generate && npx prisma db push && npm run start"
+
+  etl-api:
+    build:
+      context: .
+      dockerfile: apps/etl/Dockerfile
+    container_name: finalizabot-etl-api
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+      CORS: "true"
+      PORT: "4000"
+    ports:
+      - "4000:4000"
+    command: ["node", "dist/api/server.js"]

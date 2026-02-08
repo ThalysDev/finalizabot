@@ -1,13 +1,13 @@
-name: Sync daily
+name: CI
 
 on:
-  schedule:
-    # Todo dia às 6h UTC (3h BRT)
-    - cron: '0 6 * * *'
-  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  sync:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,8 +28,17 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
 
-      - name: Run sync
-        run: npm run sync
+      - name: Build shared
+        run: npm run build:shared
+
+      - name: Build web
+        run: npm run build:web
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+
+      - name: Build ETL
+        run: npm run build:etl
+
+      - name: Lint
+        run: npm run lint

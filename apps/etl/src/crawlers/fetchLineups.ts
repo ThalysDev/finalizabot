@@ -1,0 +1,143 @@
+/**
+ * Fetch and parse SofaScore event lineups for a match.
+ * Endpoint: GET https://api.sofascore.com/api/v1/event/{matchId}/lineups
+ * Populates Player (name, position) and MatchPlayer (minutesPlayed) for all players in the match.
+ */
+
+import {
+  upsertPlayer,
+  attachMatchPlayer,
+} from '../services/db.js';
+import { logger } from '../lib/logger.js';
+
+const LINEUPS_URL_TEMPLATE = 'https://api.sofascore.com/api/v1/event/{matchId}/lineups';
+
+function getLineupsUrl(matchId: string): string {
+  return LINEUPS_URL_TEMPLATE.replace('{matchId}', matchId);
+}
+
+function safeStr(v: unknown): string {
+  if (v == null) return '';
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number') return String(v);
+  return '';
+}
+
+function safeInt(v: unknown): number | null {
+  if (typeof v === 'number' && !Number.isNaN(v)) return v;
+  if (typeof v === 'string') {
+    const n = parseInt(v, 10);
+    if (!Number.isNaN(n)) return n;
+  }
+  return null;
+}
+
+interface LineupPlayer {
+  playerId: string;
+  teamId: string;
+  name: string;
+  position: string | null;
+  imageUrl: string | null;
+  minutesPlayed: number | null;
+}
+
+function extractPlayersFromTeam(
+  teamObj: Record<string, unknown> | null,
+  teamId: string
+): LineupPlayer[] {
+  if (!teamObj || typeof teamObj !== 'object') return [];
+  const out: LineupPlayer[] = [];
+  // Common shapes: players[], lineup[], teamPlayers[]
+  const playersList =
+    (teamObj.players as unknown[] | undefined) ??
+    (teamObj.lineup as unknown[] | undefined) ??
+    (teamObj.teamPlayers as unknown[] | undefined) ??
+    [];
+  if (!Array.isArray(playersList)) return [];
+
+  for (const p of playersList) {
+    if (p == null || typeof p !== 'object') continue;
+    const o = p as Record<string, unknown>;
+    const playerObj = (o.player ?? o) as Record<string, unknown> | undefined;
+    const id = playerObj?.id ?? o.id;
+    const playerId = safeStr(id);
+    if (!playerId) continue;
+    const name = safeStr(playerObj?.name ?? o.name ?? playerId);
+    const pos = playerObj?.position ?? o.position;
+    const position = typeof pos === 'string' ? pos : safeStr(pos) || null;
+    const img =
+      playerObj?.imageUrl ?? playerObj?.photo ?? (playerObj?.image as Record<string, unknown>)?.url ?? o.imageUrl ?? o.photo;
+    const imageUrl = typeof img === 'string' && img.length > 0 ? img : null;
+    const minutes =
+      safeInt(o.minutesPlayed ?? o.playedMinutes ?? o.timePlayed) ??
+      safeInt(playerObj?.minutesPlayed ?? playerObj?.playedMinutes);
+    out.push({ playerId, teamId, name, position, imageUrl, minutesPlayed: minutes });
+  }
+  return out;
+}
+
+function parseLineupsResponse(
+  matchId: string,
+  homeTeamId: string,
+  awayTeamId: string,
+  json: unknown
+): LineupPlayer[] {
+  const out: LineupPlayer[] = [];
+  if (json == null || typeof json !== 'object') return out;
+  const data = json as Record<string, unknown>;
+  const home = data.home ?? data.homeTeam;
+  const away = data.away ?? data.awayTeam;
+  const teamLists = data.teamLists as unknown[] | undefined;
+  if (Array.isArray(teamLists)) {
+    for (const t of teamLists) {
+      if (t == null || typeof t !== 'object') continue;
+      const team = t as Record<string, unknown>;
+      const teamId = safeStr(team.teamId ?? (team.team as Record<string, unknown>)?.id ?? team.id) || homeTeamId;
+      out.push(...extractPlayersFromTeam(team, teamId));
+    }
+  } else {
+    out.push(...extractPlayersFromTeam(home as Record<string, unknown>, homeTeamId));
+    out.push(...extractPlayersFromTeam(away as Record<string, unknown>, awayTeamId));
+  }
+  return out;
+}
+
+export async function fetchAndPersistLineups(
+  matchId: string,
+  homeTeamId: string,
+  awayTeamId: string
+): Promise<void> {
+  const url = getLineupsUrl(matchId);
+  try {
+    const res = await fetch(url, {
+      headers: { Accept: 'application/json', 'User-Agent': 'SofaScoreETL/1.0' },
+    });
+    if (!res.ok) {
+      logger.debug('Lineups not available', { matchId, status: res.status });
+      return;
+    }
+    const json = (await res.json()) as unknown;
+    const players = parseLineupsResponse(matchId, homeTeamId, awayTeamId, json);
+    if (players.length === 0) return;
+    for (const p of players) {
+      await upsertPlayer({
+        id: p.playerId,
+        name: p.name,
+        position: p.position,
+        imageUrl: p.imageUrl,
+      });
+      await attachMatchPlayer(
+        matchId,
+        p.playerId,
+        p.teamId,
+        p.minutesPlayed ?? undefined
+      );
+    }
+    logger.info('Lineups ingested', { matchId, playersCount: players.length });
+  } catch (err) {
+    logger.warn('Lineups fetch error', {
+      matchId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}

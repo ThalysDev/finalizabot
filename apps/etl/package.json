@@ -1,0 +1,28 @@
+{
+  "name": "@finalizabot/etl",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "api:dev": "tsx watch src/api/server.ts",
+    "sync": "cross-env MODE=ingest tsx src/index.ts",
+    "discover": "cross-env MODE=discover tsx src/index.ts",
+    "build": "tsc",
+    "prisma:generate": "npm -w @finalizabot/shared run generate"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.1",
+    "@finalizabot/shared": "*",
+    "crawlee": "^3.16.0",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.1.0",
+    "playwright": "^1.58.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "tsx": "^4.19.4",
+    "typescript": "^5"
+  }
+}
