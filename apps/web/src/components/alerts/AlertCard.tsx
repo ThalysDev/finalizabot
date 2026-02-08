@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { TrendingUp, Target, Percent, ArrowRight } from "lucide-react";
 
 export interface AlertCardProps {
@@ -44,10 +45,13 @@ export function AlertCard({
       <div className="flex items-center gap-3 mb-4">
         <div className="size-12 rounded-full bg-fb-surface flex items-center justify-center overflow-hidden shrink-0">
           {avatarUrl ? (
-            <img
+            <Image
               src={avatarUrl}
               alt={playerName}
+              width={48}
+              height={48}
               className="size-full object-cover"
+              unoptimized
             />
           ) : (
             <span className="text-fb-text-muted text-lg font-bold">

@@ -8,6 +8,7 @@
  */
 
 import type { MatchCardData } from "@/data/types";
+import { buildTeamBadgeUrl } from "@/lib/helpers";
 import prisma from "@/lib/db/prisma";
 
 /* ============================================================================
@@ -113,12 +114,6 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
   const todayCount = matches.filter((m) => m.dayKey === "today").length;
   const tomorrowCount = matches.filter((m) => m.dayKey === "tomorrow").length;
   return { matches, todayCount, tomorrowCount };
-}
-
-function buildTeamBadgeUrl(teamId?: string | null): string | undefined {
-  return teamId && /^\d+$/.test(teamId)
-    ? `https://api.sofascore.com/api/v1/team/${teamId}/image`
-    : undefined;
 }
 
 function resolveDayKey(

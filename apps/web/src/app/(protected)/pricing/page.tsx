@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { PricingCard } from "@/components/subscription/PricingCard";
-import { Check, Lock, Shield, Star, Zap } from "lucide-react";
+import { Lock, Shield, Star, Zap } from "lucide-react";
 import type { PricingFeature, ComparisonRow } from "@/data/types";
 
 const FREE_FEATURES: PricingFeature[] = [

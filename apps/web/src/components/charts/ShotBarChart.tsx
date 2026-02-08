@@ -3,6 +3,8 @@
    Matches Stitch mockup: full-height bg bar, hover tooltips, smooth grow
    ============================================================================ */
 
+import { useId } from "react";
+
 export interface ShotBarChartProps {
   data: { label: string; shots: number; sot?: number; line: number }[];
   maxHeight?: number;
@@ -96,25 +98,13 @@ export function LineEvolutionChart({
     y: padding + (1 - (d.value - minVal) / range) * (chartHeight - padding * 2),
   }));
 
-  // Build smooth path using quadratic curves (matching Stitch style)
-  let pathD = `M${points[0].x},${points[0].y}`;
-  for (let i = 1; i < points.length; i++) {
-    const cx = (points[i - 1].x + points[i].x) / 2;
-    pathD += ` Q${cx},${points[i - 1].y} ${(cx + points[i].x) / 2},${(points[i - 1].y + points[i].y) / 2}`;
-    if (i === points.length - 1) {
-      pathD += ` T${points[i].x},${points[i].y}`;
-    }
-  }
-
-  // Simpler version: just use line segments like the Stitch version approximation
   const lineD = points
     .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
     .join(" ");
 
   const areaD = `${lineD} L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z`;
 
-  const gradientId = "line-evolution-grad";
-  const bgColor = "var(--fb-text-muted)";
+  const gradientId = useId();
 
   return (
     <div className="relative w-full" style={{ height }}>

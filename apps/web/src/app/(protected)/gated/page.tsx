@@ -10,25 +10,14 @@ import {
   resolvePlayerTeam,
 } from "@/lib/etl/transformers";
 import { DEFAULT_LINE } from "@/lib/etl/config";
+import type { GatedPlayerRow } from "@/data/types";
 
 export const metadata: Metadata = {
   title: "Análise Avançada - FinalizaBOT",
   description: "Análise avançada de jogadores por finalizações",
 };
 
-interface GatedRow {
-  name: string;
-  team: string;
-  pos: string;
-  matches: number;
-  goals: number;
-  assists: number;
-  xg: string;
-  xa: string;
-  cv: string;
-}
-
-async function fetchGatedPlayers(): Promise<GatedRow[]> {
+async function fetchGatedPlayers(): Promise<GatedPlayerRow[]> {
   const dbPlayers = await prisma.player.findMany({
     take: 15,
     orderBy: { updatedAt: "desc" },
@@ -41,7 +30,7 @@ async function fetchGatedPlayers(): Promise<GatedRow[]> {
   });
 
   const rows = await Promise.all(
-    dbPlayers.map(async (p): Promise<GatedRow | null> => {
+    dbPlayers.map(async (p): Promise<GatedPlayerRow | null> => {
       const totalGoals = p.matchStats.reduce((s, m) => s + m.goals, 0);
       const totalAssists = p.matchStats.reduce((s, m) => s + m.assists, 0);
 
@@ -76,7 +65,7 @@ async function fetchGatedPlayers(): Promise<GatedRow[]> {
     }),
   );
 
-  return rows.filter((r): r is GatedRow => r !== null);
+  return rows.filter((r): r is GatedPlayerRow => r !== null);
 }
 
 const headers = [

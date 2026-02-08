@@ -2,11 +2,26 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { fetchMatchPageData } from "@/data/fetchers/match-page";
 import { MatchPageContent } from "@/components/match/MatchPageContent";
+import prisma from "@/lib/db/prisma";
 
-export const metadata: Metadata = {
-  title: "Partida - FinalizaBOT",
-  description: "Análise de jogadores para esta partida",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const match = await prisma.match.findUnique({
+    where: { id },
+    select: { homeTeam: true, awayTeam: true },
+  });
+  const title = match
+    ? `${match.homeTeam} vs ${match.awayTeam}`
+    : "Partida";
+  return {
+    title: `${title} — FinalizaBOT`,
+    description: `Análise de finalizações: ${title}`,
+  };
+}
 
 /* ============================================================================
    PAGE

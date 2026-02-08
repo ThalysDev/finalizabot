@@ -24,7 +24,6 @@ export function GoogleAnalytics({
   gaId = process.env.NEXT_PUBLIC_GA_ID,
 }: GoogleAnalyticsProps) {
   if (!gaId) {
-    console.warn("Google Analytics ID not configured");
     return null;
   }
 
