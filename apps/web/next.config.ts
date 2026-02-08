@@ -4,6 +4,17 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
 
+  // Prisma + monorepo: prevent bundling of shared package (contains #generated/prisma
+  // subpath import and native query engine binary that bundlers can't handle)
+  serverExternalPackages: ["@finalizabot/shared"],
+
+  // Ensure Vercel includes the generated Prisma client files (runtime, query engine
+  // binary, schema) in serverless functions — needed because output is a custom path,
+  // not the default node_modules/.prisma/client that Vercel auto-traces
+  outputFileTracingIncludes: {
+    "/**": ["../../packages/shared/generated/prisma/**/*"],
+  },
+
   // Image Optimization
   images: {
     formats: ["image/avif", "image/webp"],
