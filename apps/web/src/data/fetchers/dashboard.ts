@@ -8,7 +8,7 @@
  */
 
 import type { MatchCardData } from "@/data/types";
-import { buildTeamBadgeUrl } from "@/lib/helpers";
+import { buildTeamBadgeUrl, proxySofascoreUrl } from "@/lib/helpers";
 import prisma from "@/lib/db/prisma";
 
 /* ============================================================================
@@ -106,9 +106,9 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
     isLive: m.status === "live",
     playerCount: Math.max(m._count.marketAnalyses, m._count.playerStats),
     homeBadgeUrl:
-      m.homeTeamImageUrl ?? buildTeamBadgeUrl(m.homeTeamSofascoreId),
+      proxySofascoreUrl(m.homeTeamImageUrl) ?? buildTeamBadgeUrl(m.homeTeamSofascoreId),
     awayBadgeUrl:
-      m.awayTeamImageUrl ?? buildTeamBadgeUrl(m.awayTeamSofascoreId),
+      proxySofascoreUrl(m.awayTeamImageUrl) ?? buildTeamBadgeUrl(m.awayTeamSofascoreId),
   }));
 
   const todayCount = matches.filter((m) => m.dayKey === "today").length;

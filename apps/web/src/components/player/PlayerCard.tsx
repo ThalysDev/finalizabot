@@ -117,6 +117,7 @@ export function PlayerCard({
               width={48}
               height={48}
               className="size-full object-cover"
+              unoptimized
             />
           ) : (
             <span className="text-fb-primary text-lg font-bold">
@@ -138,6 +139,7 @@ export function PlayerCard({
                 width={14}
                 height={14}
                 className="size-3.5 object-contain"
+                unoptimized
               />
             )}
             <span className="truncate">{team}</span>

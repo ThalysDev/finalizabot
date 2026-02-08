@@ -25,6 +25,7 @@ import type {
 } from "@/data/types";
 import type { PlayerStatsFromEtl } from "@/lib/etl/transformers";
 import prisma from "@/lib/db/prisma";
+import { proxySofascoreUrl } from "@/lib/helpers";
 
 /* ============================================================================
    fetchPlayerDetail
@@ -88,14 +89,14 @@ export async function fetchPlayerPageData(
         { data: null, error: "ETL not configured" } as const,
       ];
 
-  const etlPlayerImage = lastMatchesRes.data?.player?.imageUrl ?? undefined;
+  const etlPlayerImage = proxySofascoreUrl(lastMatchesRes.data?.player?.imageUrl) ?? undefined;
 
   // Detecta o teamId do jogador via shots
   const playerTeamId = shotsRes.data
     ? detectPlayerTeamId(shotsRes.data.items)
     : undefined;
   const etlTeamBadge = playerTeamId
-    ? `https://api.sofascore.com/api/v1/team/${playerTeamId}/image`
+    ? proxySofascoreUrl(`https://api.sofascore.com/api/v1/team/${playerTeamId}/image`)
     : undefined;
 
   // Se ETL falhar, tenta fallback para PlayerMatchStats do Prisma
@@ -377,8 +378,8 @@ function buildPlayerDetail(
     team,
     teamShort: team.slice(0, 3).toUpperCase(),
     position: p.position,
-    avatarUrl: p.imageUrl ?? overrideAvatarUrl ?? undefined,
-    teamBadgeUrl: p.teamImageUrl ?? overrideTeamBadgeUrl ?? undefined,
+    avatarUrl: proxySofascoreUrl(p.imageUrl) ?? overrideAvatarUrl ?? undefined,
+    teamBadgeUrl: proxySofascoreUrl(p.teamImageUrl) ?? overrideTeamBadgeUrl ?? undefined,
     number: 0,
     age: 0,
     nationality: "—",

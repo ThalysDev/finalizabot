@@ -51,7 +51,7 @@ export function AlertCard({
               width={48}
               height={48}
               className="size-full object-cover"
-
+              unoptimized
             />
           ) : (
             <span className="text-fb-text-muted text-lg font-bold">

@@ -28,15 +28,41 @@ export function formatLine(value: number): string {
 }
 
 /* ============================================================================
+   proxySofascoreUrl — wraps SofaScore API image URLs through our proxy
+   ============================================================================ */
+
+const SOFASCORE_HOST = "api.sofascore.com";
+
+/**
+ * If the URL points to SofaScore, route it through /api/image-proxy to
+ * avoid CORS and IP-blocking issues. Non-SofaScore URLs pass through.
+ */
+export function proxySofascoreUrl(
+  url?: string | null,
+): string | undefined {
+  if (!url) return undefined;
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === SOFASCORE_HOST) {
+      return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+    }
+  } catch {
+    // not a valid URL — return undefined
+    return undefined;
+  }
+  return url;
+}
+
+/* ============================================================================
    buildTeamBadgeUrl — generates SofaScore team image URL from team ID
    ============================================================================ */
 
 export function buildTeamBadgeUrl(
   teamId?: string | null,
 ): string | undefined {
-  return teamId && /^\d+$/.test(teamId)
-    ? `https://api.sofascore.com/api/v1/team/${teamId}/image`
-    : undefined;
+  if (!teamId || !/^\d+$/.test(teamId)) return undefined;
+  const raw = `https://api.sofascore.com/api/v1/team/${teamId}/image`;
+  return proxySofascoreUrl(raw);
 }
 
 /* ============================================================================

@@ -14,7 +14,7 @@ import {
 } from "@/lib/etl/transformers";
 import { DEFAULT_LINE, getEtlBaseUrl } from "@/lib/etl/config";
 import type { PlayerCardData } from "@/data/types";
-import { statusFromCV, buildTeamBadgeUrl } from "@/lib/helpers";
+import { statusFromCV, buildTeamBadgeUrl, proxySofascoreUrl } from "@/lib/helpers";
 import prisma from "@/lib/db/prisma";
 
 /* ============================================================================
@@ -85,9 +85,9 @@ export async function fetchMatchPageData(
     minute: dbMatch.minute ?? null,
     isLive: dbMatch.status === "live",
     homeBadgeUrl:
-      dbMatch.homeTeamImageUrl ?? buildTeamBadgeUrl(dbMatch.homeTeamSofascoreId),
+      proxySofascoreUrl(dbMatch.homeTeamImageUrl) ?? buildTeamBadgeUrl(dbMatch.homeTeamSofascoreId),
     awayBadgeUrl:
-      dbMatch.awayTeamImageUrl ?? buildTeamBadgeUrl(dbMatch.awayTeamSofascoreId),
+      proxySofascoreUrl(dbMatch.awayTeamImageUrl) ?? buildTeamBadgeUrl(dbMatch.awayTeamSofascoreId),
   };
 
   // 2. Coleta jogadores únicos (de MarketAnalysis e/ou PlayerStats)
@@ -114,8 +114,8 @@ export async function fetchMatchPageData(
         sofascoreId: ma.player.sofascoreId,
         odds: ma.odds,
         probability: ma.probability,
-        avatarUrl: ma.player.imageUrl ?? undefined,
-        teamBadgeUrl: ma.player.teamImageUrl ?? undefined,
+        avatarUrl: proxySofascoreUrl(ma.player.imageUrl) ?? undefined,
+        teamBadgeUrl: proxySofascoreUrl(ma.player.teamImageUrl) ?? undefined,
       });
     }
   }
@@ -130,8 +130,8 @@ export async function fetchMatchPageData(
         sofascoreId: ps.player.sofascoreId,
         odds: 0,
         probability: 0,
-        avatarUrl: ps.player.imageUrl ?? undefined,
-        teamBadgeUrl: ps.player.teamImageUrl ?? undefined,
+        avatarUrl: proxySofascoreUrl(ps.player.imageUrl) ?? undefined,
+        teamBadgeUrl: proxySofascoreUrl(ps.player.teamImageUrl) ?? undefined,
       });
     }
   }
@@ -152,8 +152,8 @@ export async function fetchMatchPageData(
         sofascoreId: p.sofascoreId,
         odds: 0,
         probability: 0,
-        avatarUrl: p.imageUrl ?? undefined,
-        teamBadgeUrl: p.teamImageUrl ?? undefined,
+        avatarUrl: proxySofascoreUrl(p.imageUrl) ?? undefined,
+        teamBadgeUrl: proxySofascoreUrl(p.teamImageUrl) ?? undefined,
       });
     }
   }
@@ -184,7 +184,7 @@ export async function fetchMatchPageData(
             lastMatchesRes.data.items.length > 0
           ) {
             const etlPlayerImage =
-              lastMatchesRes.data.player?.imageUrl ?? undefined;
+              proxySofascoreUrl(lastMatchesRes.data.player?.imageUrl) ?? undefined;
             const stats = computePlayerStats(lastMatchesRes.data.items, line);
             const playerTeamId = shotsRes.data
               ? detectPlayerTeamId(shotsRes.data.items)

@@ -59,6 +59,7 @@ export function PlayerHeroCard({ player }: PlayerHeroCardProps) {
                   width={128}
                   height={128}
                   className="size-full object-cover"
+                  unoptimized
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-fb-text-muted">
@@ -74,6 +75,7 @@ export function PlayerHeroCard({ player }: PlayerHeroCardProps) {
                   width={20}
                   height={20}
                   className="size-5 object-contain"
+                  unoptimized
                 />
               ) : (
                 <Shield className="size-5 text-fb-primary" />
@@ -105,6 +107,7 @@ export function PlayerHeroCard({ player }: PlayerHeroCardProps) {
                         width={16}
                         height={16}
                         className="size-4 object-contain"
+                        unoptimized
                       />
                     )}
                     <span>{player.team}</span>
