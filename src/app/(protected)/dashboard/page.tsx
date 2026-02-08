@@ -11,7 +11,7 @@ export const metadata: Metadata = {
    PAGE
    ============================================================================ */
 export default async function DashboardPage() {
-  const { players, nextMatch } = await fetchDashboardData();
+  const { matches, todayCount } = await fetchDashboardData();
 
-  return <DashboardContent players={players} nextMatch={nextMatch} />;
+  return <DashboardContent matches={matches} todayCount={todayCount} />;
 }

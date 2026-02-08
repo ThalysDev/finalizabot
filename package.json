@@ -14,7 +14,9 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
-    "prisma:studio": "prisma studio"
+    "prisma:generate": "prisma generate",
+    "prisma:studio": "prisma studio",
+    "sync": "tsx scripts/sync.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.37.3",

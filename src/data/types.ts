@@ -81,6 +81,21 @@ export interface MatchInfo {
   awayBadgeUrl?: string;
 }
 
+/** Card de partida no dashboard (match-first) */
+export interface MatchCardData {
+  id: string;
+  sofascoreId: string;
+  homeTeam: string;
+  awayTeam: string;
+  competition: string;
+  matchDate: string; // ISO string
+  matchTime: string; // ex: "20:00"
+  status: string;
+  playerCount: number;
+  homeBadgeUrl?: string;
+  awayBadgeUrl?: string;
+}
+
 export interface MatchHistoryRow {
   date: string;
   opponent: string;

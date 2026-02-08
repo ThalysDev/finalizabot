@@ -1,169 +1,183 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
-import { SlidersHorizontal } from "lucide-react";
-import {
-  FilterSidebar,
-  MobileFilterSheet,
-} from "@/components/filters/FilterSidebar";
-import type { FilterState } from "@/components/filters/FilterSidebar";
-import { MatchBanner } from "@/components/match/MatchBanner";
-import { PlayerCard } from "@/components/player/PlayerCard";
-import type { PlayerCardData } from "@/data/types";
+import { useState, useMemo } from "react";
+import { Calendar, Search, Trophy, ArrowRight } from "lucide-react";
+import { MatchCard } from "@/components/match/MatchCard";
+import type { MatchCardData } from "@/data/types";
 
 /* ============================================================================
    PROPS
    ============================================================================ */
 interface DashboardContentProps {
-  players: PlayerCardData[];
-  nextMatch: {
-    homeTeam: string;
-    awayTeam: string;
-    competition: string;
-    matchDate: string;
-  } | null;
-}
-
-/* ============================================================================
-   FILTER LOGIC
-   ============================================================================ */
-function applyFilters(
-  players: PlayerCardData[],
-  filters: FilterState,
-): PlayerCardData[] {
-  return players.filter((p) => {
-    // Position filter
-    if (filters.position !== "all") {
-      const posMap: Record<string, string[]> = {
-        forward: ["Atacante", "Forward", "F", "FW", "Ponta", "Centroavante"],
-        midfielder: ["Meia", "Midfielder", "M", "MF", "Meio-campo"],
-        defender: ["Zagueiro", "Defender", "D", "DF", "Lateral"],
-      };
-      const accepted = posMap[filters.position] ?? [];
-      if (!accepted.some((a) => p.position.toLowerCase().includes(a.toLowerCase()))) {
-        return false;
-      }
-    }
-
-    // Odds range filter
-    if (p.odds > 0 && (p.odds < filters.oddsMin || p.odds > filters.oddsMax)) {
-      return false;
-    }
-
-    // CV threshold filter
-    if (p.cv !== null && p.cv > filters.cvThreshold) {
-      return false;
-    }
-
-    // Show only value filter (high or good status)
-    if (filters.showOnlyValue && p.status !== "high" && p.status !== "good") {
-      return false;
-    }
-
-    return true;
-  });
+  matches: MatchCardData[];
+  todayCount: number;
 }
 
 /* ============================================================================
    COMPONENT
    ============================================================================ */
 export function DashboardContent({
-  players,
-  nextMatch,
+  matches,
+  todayCount,
 }: DashboardContentProps) {
-  const [filters, setFilters] = useState<FilterState | null>(null);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [compFilter, setCompFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const handleFilterChange = useCallback((f: FilterState) => {
-    setFilters(f);
-  }, []);
+  // Unique competitions for filter tabs
+  const competitions = useMemo(() => {
+    const comps = new Set(matches.map((m) => m.competition));
+    return ["all", ...Array.from(comps)];
+  }, [matches]);
 
-  const filteredPlayers = useMemo(() => {
-    if (!filters) return players;
-    return applyFilters(players, filters);
-  }, [players, filters]);
+  const filteredMatches = useMemo(() => {
+    let result = matches;
+
+    if (compFilter !== "all") {
+      result = result.filter((m) => m.competition === compFilter);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (m) =>
+          m.homeTeam.toLowerCase().includes(q) ||
+          m.awayTeam.toLowerCase().includes(q) ||
+          m.competition.toLowerCase().includes(q),
+      );
+    }
+
+    return result;
+  }, [matches, compFilter, searchQuery]);
+
+  // Group matches by competition
+  const groupedMatches = useMemo(() => {
+    const groups = new Map<string, MatchCardData[]>();
+    for (const m of filteredMatches) {
+      const key = m.competition;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(m);
+    }
+    return groups;
+  }, [filteredMatches]);
 
   return (
-    <div className="flex h-[calc(100vh-57px)]">
-      {/* Sidebar — desktop only */}
-      <div className="hidden md:block">
-        <FilterSidebar onFilterChange={handleFilterChange} />
-      </div>
-
-      {/* Mobile filter sheet */}
-      <MobileFilterSheet
-        open={mobileFiltersOpen}
-        onClose={() => setMobileFiltersOpen(false)}
-        onFilterChange={handleFilterChange}
-      />
-
-      {/* Main content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
-        {/* Match banner */}
-        {nextMatch && (
-          <MatchBanner
-            homeTeam={nextMatch.homeTeam}
-            awayTeam={nextMatch.awayTeam}
-            competition={nextMatch.competition}
-            matchDate={nextMatch.matchDate}
-          />
-        )}
-
-        {/* Section header */}
-        <div className="flex items-center justify-between mt-6 mb-4">
+    <div className="min-h-[calc(100vh-57px)]">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+        {/* ── Header ──────────────────────────────────────────────── */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-fb-text text-lg font-bold">
-              Mercado de Finalizações
-            </h2>
-            <p className="text-fb-text-muted text-xs mt-0.5">
-              {filteredPlayers.length} de {players.length} jogadores
-              {filters &&
-                filteredPlayers.length !== players.length &&
-                " (filtrado)"}
+            <h1 className="text-fb-text text-xl font-bold flex items-center gap-2">
+              <Calendar className="size-5 text-fb-primary" />
+              Partidas do Dia
+            </h1>
+            <p className="text-fb-text-muted text-sm mt-1">
+              {todayCount > 0
+                ? `${filteredMatches.length} partida${filteredMatches.length !== 1 ? "s" : ""} encontrada${filteredMatches.length !== 1 ? "s" : ""}`
+                : "Mostrando próximas partidas agendadas"}
             </p>
           </div>
-          {/* Mobile filter trigger */}
-          <button
-            onClick={() => setMobileFiltersOpen(true)}
-            className="md:hidden flex items-center gap-2 px-3 py-2 bg-fb-surface rounded-lg text-fb-text-secondary text-xs font-medium hover:bg-fb-surface-highlight transition-colors"
-          >
-            <SlidersHorizontal className="size-4" />
-            Filtros
-          </button>
+
+          {/* Search */}
+          <div className="relative w-full md:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-fb-text-muted" />
+            <input
+              type="text"
+              placeholder="Buscar time ou competição..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 bg-fb-surface border border-fb-border/60 rounded-lg text-sm text-fb-text placeholder:text-fb-text-muted focus:outline-none focus:ring-1 focus:ring-fb-primary/50"
+            />
+          </div>
         </div>
 
-        {/* Player cards grid */}
-        {filteredPlayers.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredPlayers.map((player) => (
-              <PlayerCard key={player.id} {...player} playerId={player.id} />
+        {/* ── Competition filter tabs ─────────────────────────────── */}
+        {competitions.length > 2 && (
+          <div className="flex items-center gap-1.5 mb-6 overflow-x-auto pb-1 scrollbar-none">
+            {competitions.map((comp) => (
+              <button
+                key={comp}
+                onClick={() => setCompFilter(comp)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  compFilter === comp
+                    ? "bg-fb-primary text-white"
+                    : "bg-fb-surface text-fb-text-secondary hover:text-fb-text border border-fb-border/40"
+                }`}
+              >
+                {comp === "all" ? "Todas" : comp}
+              </button>
             ))}
           </div>
-        ) : players.length > 0 ? (
+        )}
+
+        {/* ── Match cards ─────────────────────────────────────────── */}
+        {filteredMatches.length > 0 ? (
+          <div className="space-y-8">
+            {Array.from(groupedMatches.entries()).map(([comp, compMatches]) => (
+              <div key={comp}>
+                {/* Competition header */}
+                <div className="flex items-center gap-2 mb-3">
+                  <Trophy className="size-4 text-fb-primary" />
+                  <h2 className="text-fb-text font-semibold text-sm">
+                    {comp}
+                  </h2>
+                  <span className="text-fb-text-muted text-xs">
+                    ({compMatches.length} partida
+                    {compMatches.length !== 1 ? "s" : ""})
+                  </span>
+                </div>
+
+                {/* Cards grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {compMatches.map((match) => (
+                    <MatchCard key={match.id} {...match} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : matches.length > 0 ? (
+          /* Filtered to zero */
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="size-16 rounded-full bg-fb-surface flex items-center justify-center mb-4">
-              <SlidersHorizontal className="size-8 text-fb-text-muted" />
+              <Search className="size-8 text-fb-text-muted" />
             </div>
             <h3 className="text-fb-text font-semibold text-lg mb-2">
               Nenhum resultado
             </h3>
             <p className="text-fb-text-muted text-sm max-w-md">
-              Nenhum jogador corresponde aos filtros atuais. Tente ajustar os
-              critérios de busca.
+              Nenhuma partida corresponde à busca. Tente outro termo.
             </p>
           </div>
         ) : (
+          /* No matches at all */
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="size-16 rounded-full bg-fb-surface flex items-center justify-center mb-4">
-              <SlidersHorizontal className="size-8 text-fb-text-muted" />
+            <div className="size-20 rounded-full bg-gradient-to-br from-fb-primary/10 to-fb-surface flex items-center justify-center mb-6">
+              <Calendar className="size-10 text-fb-primary" />
             </div>
-            <h3 className="text-fb-text font-semibold text-lg mb-2">
-              Nenhum jogador rastreado
+            <h3 className="text-fb-text font-bold text-xl mb-3">
+              Nenhuma partida agendada
             </h3>
-            <p className="text-fb-text-muted text-sm max-w-md">
-              Adicione jogadores ao sistema para começar a visualizar análises
-              de finalizações em tempo real.
+            <p className="text-fb-text-muted text-sm max-w-lg mb-6">
+              O sync diário descobre automaticamente as partidas do dia e popula
+              o banco de dados. Execute o sync manualmente ou aguarde a execução
+              programada (3h BRT).
             </p>
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex items-center gap-2 text-fb-text-muted text-xs">
+                <ArrowRight className="size-3.5" />
+                <code className="bg-fb-surface px-2 py-1 rounded text-fb-primary">
+                  npm run sync
+                </code>
+                <span>— Sincroniza partidas de hoje</span>
+              </div>
+              <div className="flex items-center gap-2 text-fb-text-muted text-xs">
+                <ArrowRight className="size-3.5" />
+                <code className="bg-fb-surface px-2 py-1 rounded text-fb-primary">
+                  npm run db:seed
+                </code>
+                <span>— Cria dados de exemplo</span>
+              </div>
+            </div>
           </div>
         )}
       </div>

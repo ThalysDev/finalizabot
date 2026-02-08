@@ -1,145 +1,96 @@
 /**
- * Server-side data fetchers — Dashboard
+ * Server-side data fetchers — Dashboard (match-first)
  *
- * Busca jogadores rastreados do Prisma e enriquece com last-matches da ETL.
+ * Busca partidas agendadas do dia e contagem de jogadores por partida.
+ * O dashboard agora mostra partidas → clicar → ver jogadores.
  *
  * ⚠️  Só importar em Server Components / Route Handlers.
  */
 
-import { etlPlayerLastMatches, etlPlayerShots } from "@/lib/etl/client";
-import {
-  computePlayerStats,
-  detectPlayerTeamId,
-  resolvePlayerTeam,
-} from "@/lib/etl/transformers";
-import { DEFAULT_LINE } from "@/lib/etl/config";
-import type { PlayerCardData, ValueStatus } from "@/data/types";
+import type { MatchCardData } from "@/data/types";
 import prisma from "@/lib/db/prisma";
 
 /* ============================================================================
-   Helpers
-   ============================================================================ */
-
-function statusFromCV(cv: number | null): ValueStatus {
-  if (cv === null) return "neutral";
-  if (cv <= 0.25) return "high";
-  if (cv <= 0.35) return "good";
-  if (cv <= 0.5) return "neutral";
-  return "low";
-}
-
-/* ============================================================================
-   Dashboard data
+   Dashboard data — match-first
    ============================================================================ */
 
 export interface DashboardPageData {
-  players: PlayerCardData[];
-  nextMatch: {
-    id: string;
-    homeTeam: string;
-    awayTeam: string;
-    competition: string;
-    matchDate: string;
-  } | null;
+  matches: MatchCardData[];
+  todayCount: number;
 }
 
-export async function fetchDashboardData(
-  line = DEFAULT_LINE,
-): Promise<DashboardPageData> {
-  // Busca jogadores rastreados no Prisma
-  const dbPlayers = await prisma.player.findMany({
-    take: 20,
-    orderBy: { updatedAt: "desc" },
-  });
+export async function fetchDashboardData(): Promise<DashboardPageData> {
+  // Calcula o range "hoje" usando o timezone do Brasil (BRT = UTC-3)
+  const now = new Date();
+  const brt = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+  const todayStr = brt.toISOString().slice(0, 10);
+  const dayStart = new Date(`${todayStr}T00:00:00-03:00`);
+  const dayEnd = new Date(`${todayStr}T23:59:59-03:00`);
 
-  // Busca próxima partida agendada
-  const upcomingMatch = await prisma.match.findFirst({
-    where: { status: "scheduled", matchDate: { gte: new Date() } },
+  // 1. Busca partidas do dia
+  let dbMatches = await prisma.match.findMany({
+    where: {
+      matchDate: {
+        gte: dayStart,
+        lte: dayEnd,
+      },
+    },
     orderBy: { matchDate: "asc" },
-    select: {
-      id: true,
-      homeTeam: true,
-      awayTeam: true,
-      competition: true,
-      matchDate: true,
+    include: {
+      _count: {
+        select: { marketAnalyses: true },
+      },
     },
   });
 
-  const nextMatch = upcomingMatch
-    ? {
-        id: upcomingMatch.id,
-        homeTeam: upcomingMatch.homeTeam,
-        awayTeam: upcomingMatch.awayTeam,
-        competition: upcomingMatch.competition,
-        matchDate: upcomingMatch.matchDate.toLocaleDateString("pt-BR", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      }
-    : null;
-
-  if (dbPlayers.length === 0) {
-    return { players: [], nextMatch };
+  // 2. Se não há partidas hoje, buscar as próximas partidas agendadas
+  if (dbMatches.length === 0) {
+    dbMatches = await prisma.match.findMany({
+      where: {
+        status: "scheduled",
+        matchDate: { gte: now },
+      },
+      orderBy: { matchDate: "asc" },
+      take: 10,
+      include: {
+        _count: {
+          select: { marketAnalyses: true },
+        },
+      },
+    });
   }
 
-  // Enriquece com ETL em paralelo
-  const enriched = await Promise.all(
-    dbPlayers.map(async (p): Promise<PlayerCardData | null> => {
-      const [lastMatchesRes, shotsRes] = await Promise.all([
-        etlPlayerLastMatches(p.sofascoreId, 10),
-        etlPlayerShots(p.sofascoreId, { limit: 5 }),
-      ]);
+  // 3. Se ainda não há, buscar as partidas mais recentes (para não ficar vazio)
+  if (dbMatches.length === 0) {
+    dbMatches = await prisma.match.findMany({
+      orderBy: { matchDate: "desc" },
+      take: 10,
+      include: {
+        _count: {
+          select: { marketAnalyses: true },
+        },
+      },
+    });
+  }
 
-      if (
-        lastMatchesRes.error ||
-        !lastMatchesRes.data ||
-        lastMatchesRes.data.items.length === 0
-      )
-        return null;
-
-      const stats = computePlayerStats(lastMatchesRes.data.items, line);
-
-      // Detecta o time do jogador via shots (mais confiável)
-      const playerTeamId = shotsRes.data
-        ? detectPlayerTeamId(shotsRes.data.items)
-        : undefined;
-
-      // Resolve o nome do time corretamente
-      const latestItem = lastMatchesRes.data.items[0];
-      const teamName = latestItem
-        ? resolvePlayerTeam(latestItem, playerTeamId)
-        : "—";
-
-      // Busca odds da última MarketAnalysis
-      const latestAnalysis = await prisma.marketAnalysis.findFirst({
-        where: { playerId: p.id },
-        orderBy: { createdAt: "desc" },
-        select: { odds: true, probability: true },
-      });
-
-      return {
-        id: p.id,
-        name: p.name,
-        team: teamName,
-        position: p.position,
-        line,
-        odds: latestAnalysis?.odds ?? 0,
-        impliedProbability: latestAnalysis
-          ? Math.round(latestAnalysis.probability * 100)
-          : 0,
-        avgShots: stats.avgShots,
-        last5: stats.last5Over,
-        cv: stats.cv != null ? Number(stats.cv.toFixed(2)) : null,
-        status: statusFromCV(stats.cv),
-        sparkline: stats.sparkline,
-      };
+  const matches: MatchCardData[] = dbMatches.map((m) => ({
+    id: m.id,
+    sofascoreId: m.sofascoreId,
+    homeTeam: m.homeTeam,
+    awayTeam: m.awayTeam,
+    competition: m.competition,
+    matchDate: m.matchDate.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     }),
-  );
+    matchTime: m.matchDate.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+    status: m.status,
+    playerCount: m._count.marketAnalyses,
+  }));
 
-  const players = enriched.filter((p): p is PlayerCardData => p !== null);
-
-  return { players, nextMatch };
+  return { matches, todayCount: matches.length };
 }

@@ -10,3 +10,6 @@ export type { DashboardPageData } from "./dashboard";
 
 export { fetchMatchShots } from "./match";
 export type { MatchShotsData } from "./match";
+
+export { fetchMatchPageData } from "./match-page";
+export type { MatchPageData } from "./match-page";
