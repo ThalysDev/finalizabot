@@ -14,7 +14,7 @@ import {
 } from "@/lib/etl/transformers";
 import { DEFAULT_LINE, getEtlBaseUrl } from "@/lib/etl/config";
 import type { PlayerCardData } from "@/data/types";
-import { statusFromCV, buildTeamBadgeUrl, proxySofascoreUrl } from "@/lib/helpers";
+import { statusFromCV, buildTeamBadgeUrl, proxySofascoreUrl, cachedImageUrl } from "@/lib/helpers";
 import prisma from "@/lib/db/prisma";
 
 /* ============================================================================
@@ -85,8 +85,10 @@ export async function fetchMatchPageData(
     minute: dbMatch.minute ?? null,
     isLive: dbMatch.status === "live",
     homeBadgeUrl:
+      cachedImageUrl(dbMatch.homeTeamImageId) ??
       proxySofascoreUrl(dbMatch.homeTeamImageUrl) ?? buildTeamBadgeUrl(dbMatch.homeTeamSofascoreId),
     awayBadgeUrl:
+      cachedImageUrl(dbMatch.awayTeamImageId) ??
       proxySofascoreUrl(dbMatch.awayTeamImageUrl) ?? buildTeamBadgeUrl(dbMatch.awayTeamSofascoreId),
   };
 
@@ -114,8 +116,8 @@ export async function fetchMatchPageData(
         sofascoreId: ma.player.sofascoreId,
         odds: ma.odds,
         probability: ma.probability,
-        avatarUrl: proxySofascoreUrl(ma.player.imageUrl) ?? undefined,
-        teamBadgeUrl: proxySofascoreUrl(ma.player.teamImageUrl) ?? undefined,
+        avatarUrl: cachedImageUrl(ma.player.imageId) ?? proxySofascoreUrl(ma.player.imageUrl) ?? undefined,
+        teamBadgeUrl: cachedImageUrl(ma.player.teamImageId) ?? proxySofascoreUrl(ma.player.teamImageUrl) ?? undefined,
       });
     }
   }
@@ -130,8 +132,8 @@ export async function fetchMatchPageData(
         sofascoreId: ps.player.sofascoreId,
         odds: 0,
         probability: 0,
-        avatarUrl: proxySofascoreUrl(ps.player.imageUrl) ?? undefined,
-        teamBadgeUrl: proxySofascoreUrl(ps.player.teamImageUrl) ?? undefined,
+        avatarUrl: cachedImageUrl(ps.player.imageId) ?? proxySofascoreUrl(ps.player.imageUrl) ?? undefined,
+        teamBadgeUrl: cachedImageUrl(ps.player.teamImageId) ?? proxySofascoreUrl(ps.player.teamImageUrl) ?? undefined,
       });
     }
   }
@@ -152,8 +154,8 @@ export async function fetchMatchPageData(
         sofascoreId: p.sofascoreId,
         odds: 0,
         probability: 0,
-        avatarUrl: proxySofascoreUrl(p.imageUrl) ?? undefined,
-        teamBadgeUrl: proxySofascoreUrl(p.teamImageUrl) ?? undefined,
+        avatarUrl: cachedImageUrl(p.imageId) ?? proxySofascoreUrl(p.imageUrl) ?? undefined,
+        teamBadgeUrl: cachedImageUrl(p.teamImageId) ?? proxySofascoreUrl(p.teamImageUrl) ?? undefined,
       });
     }
   }

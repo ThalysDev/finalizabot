@@ -36,6 +36,7 @@ const SOFASCORE_HOST = "api.sofascore.com";
 /**
  * If the URL points to SofaScore, route it through /api/image-proxy to
  * avoid CORS and IP-blocking issues. Non-SofaScore URLs pass through.
+ * @deprecated Use `cachedImageUrl(imageId)` instead — images are now stored in DB.
  */
 export function proxySofascoreUrl(
   url?: string | null,
@@ -51,6 +52,21 @@ export function proxySofascoreUrl(
     return undefined;
   }
   return url;
+}
+
+/* ============================================================================
+   cachedImageUrl — returns the URL for a DB-cached image
+   ============================================================================ */
+
+/**
+ * Returns the URL to serve a cached image from the DB via `/api/images/:id`.
+ * Falls back to undefined if no imageId is available.
+ */
+export function cachedImageUrl(
+  imageId?: string | null,
+): string | undefined {
+  if (!imageId) return undefined;
+  return `/api/images/${imageId}`;
 }
 
 /* ============================================================================

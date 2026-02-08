@@ -17,6 +17,18 @@ datasource db {
 // PUBLIC SCHEMA — FinalizaBOT Web (frontend models)
 // ============================================================================
 
+model ImageCache {
+  id          String   @id @default(cuid())
+  sourceUrl   String   @unique
+  contentType String   @default("image/png")
+  data        Bytes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sourceUrl])
+  @@schema("public")
+}
+
 model Player {
   id            String              @id @default(cuid())
   sofascoreId   String              @unique
@@ -26,6 +38,8 @@ model Player {
   imageUrl      String?
   teamName      String?
   teamImageUrl  String?
+  imageId       String?
+  teamImageId   String?
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
 
@@ -51,6 +65,8 @@ model Match {
   awayTeamImageUrl   String?
   homeTeamSofascoreId String?
   awayTeamSofascoreId String?
+  homeTeamImageId    String?
+  awayTeamImageId    String?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 

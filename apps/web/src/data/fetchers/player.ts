@@ -25,7 +25,7 @@ import type {
 } from "@/data/types";
 import type { PlayerStatsFromEtl } from "@/lib/etl/transformers";
 import prisma from "@/lib/db/prisma";
-import { proxySofascoreUrl } from "@/lib/helpers";
+import { proxySofascoreUrl, cachedImageUrl } from "@/lib/helpers";
 
 /* ============================================================================
    fetchPlayerDetail
@@ -98,6 +98,10 @@ export async function fetchPlayerPageData(
   const etlTeamBadge = playerTeamId
     ? proxySofascoreUrl(`https://api.sofascore.com/api/v1/team/${playerTeamId}/image`)
     : undefined;
+
+  // Resolve cached image URLs from DB
+  const dbPlayerAvatar = cachedImageUrl(dbPlayer.imageId) ?? undefined;
+  const dbPlayerTeamBadge = cachedImageUrl(dbPlayer.teamImageId) ?? undefined;
 
   // Se ETL falhar, tenta fallback para PlayerMatchStats do Prisma
   if (lastMatchesRes.error || !lastMatchesRes.data) {
@@ -354,6 +358,8 @@ interface DbPlayer {
   imageUrl: string | null;
   teamName: string | null;
   teamImageUrl: string | null;
+  imageId: string | null;
+  teamImageId: string | null;
 }
 
 function buildPlayerDetail(
@@ -378,8 +384,8 @@ function buildPlayerDetail(
     team,
     teamShort: team.slice(0, 3).toUpperCase(),
     position: p.position,
-    avatarUrl: proxySofascoreUrl(p.imageUrl) ?? overrideAvatarUrl ?? undefined,
-    teamBadgeUrl: proxySofascoreUrl(p.teamImageUrl) ?? overrideTeamBadgeUrl ?? undefined,
+    avatarUrl: cachedImageUrl(p.imageId) ?? proxySofascoreUrl(p.imageUrl) ?? overrideAvatarUrl ?? undefined,
+    teamBadgeUrl: cachedImageUrl(p.teamImageId) ?? proxySofascoreUrl(p.teamImageUrl) ?? overrideTeamBadgeUrl ?? undefined,
     number: 0,
     age: 0,
     nationality: "—",

@@ -3,6 +3,7 @@ import { logger } from './lib/logger.js';
 import { runDiscoverEndpoints } from './crawlers/discoverEndpoints.js';
 import { runSofaScoreIngest } from './crawlers/sofascoreIngest.js';
 import { runBridge } from './bridge/etl-to-public.js';
+import { syncAllImages } from './services/imageDownloader.js';
 import { disconnectDb } from './services/db.js';
 
 async function main(): Promise<void> {
@@ -35,6 +36,17 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (mode === 'images') {
+    try {
+      logger.info('[Images] Sincronizando imagens...');
+      await syncAllImages();
+      logger.info('[Images] Sync de imagens concluído!');
+    } finally {
+      await disconnectDb();
+    }
+    return;
+  }
+
   if (mode === 'full') {
     try {
       logger.info('[Full] Executando ingest + bridge...');
@@ -48,7 +60,7 @@ async function main(): Promise<void> {
   }
 
   if (!mode || mode === '') {
-    logger.info('No MODE set. Use MODE=discover | MODE=ingest | MODE=bridge | MODE=full');
+    logger.info('No MODE set. Use MODE=discover | MODE=ingest | MODE=bridge | MODE=images | MODE=full');
   }
 }
 

@@ -10,6 +10,7 @@
 import { prisma } from '@finalizabot/shared';
 import { calcHits, mean, stdev, calcCV } from '@finalizabot/shared';
 import { logger } from '../lib/logger.js';
+import { syncAllImages } from '../services/imageDownloader.js';
 
 /* ============================================================================
    SofaScore image URL helpers
@@ -45,6 +46,13 @@ export async function runBridge(): Promise<void> {
   // 4. Generate market analysis from stats
   const analysisCount = await generateMarketAnalysis();
   logger.info(`[Bridge] ${analysisCount} análises de mercado geradas`);
+
+  // 5. Download and cache images
+  try {
+    await syncAllImages();
+  } catch (err) {
+    logger.warn(`[Bridge] Image sync failed (non-fatal): ${err instanceof Error ? err.message : err}`);
+  }
 
   logger.info('[Bridge] Sincronização concluída!');
 }
