@@ -1,10 +1,7 @@
-"use client";
-
-import { SignedOut, SignedIn } from "@clerk/nextjs";
-import Link from "next/link";
-import { Button } from "@/components/primitives";
 import { Container } from "@/components/primitives";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
+import { AuthCTA } from "./AuthCTA";
+import { CheckCircle2 } from "lucide-react";
 
 /**
  * CTA Section
@@ -13,71 +10,66 @@ import { cn } from "@/lib/cn";
 
 export function CTASection() {
   return (
-    <section className="relative py-12 sm:py-20 lg:py-28 px-4 overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600">
-      {/* Decorative elements */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 -right-32 h-64 w-64 rounded-full bg-white blur-3xl" />
-        <div className="absolute bottom-0 -left-32 h-64 w-64 rounded-full bg-white blur-3xl" />
-      </div>
+    <section className="relative py-16 sm:py-24 lg:py-32 px-4 overflow-hidden bg-fb-bg">
+      {/* Background effects */}
+      <div className="absolute inset-0 dot-grid opacity-20" />
+      <div className="absolute top-0 right-0 h-[400px] w-[400px] rounded-full bg-fb-primary/6 blur-[120px]" />
+      <div className="absolute bottom-0 left-0 h-[300px] w-[300px] rounded-full bg-fb-accent-green/5 blur-[100px]" />
 
       <Container className="relative z-10">
         <div className="mx-auto max-w-2xl text-center">
-          {/* Heading */}
-          <h2
-            className={cn(
-              "text-2xl sm:text-3xl lg:text-4xl",
-              "font-bold",
-              "text-white",
-              "mb-4",
-            )}
-          >
-            Pronto para começar?
-          </h2>
+          <div className="glass-card-value rounded-3xl p-8 sm:p-12 shadow-2xl shadow-fb-primary/5">
+            {/* Heading */}
+            <h2
+              className={cn(
+                "animate-fade-up",
+                "text-3xl sm:text-4xl lg:text-5xl",
+                "font-extrabold",
+                "text-fb-text",
+                "mb-5",
+                "tracking-tight leading-[1.1]",
+              )}
+            >
+              Pare de adivinhar.
+              <br />
+              <span className="bg-gradient-to-r from-fb-primary to-fb-accent-green bg-clip-text text-transparent">
+                Decida com dados reais.
+              </span>
+            </h2>
 
-          {/* Subheading */}
-          <p
-            className={cn(
-              "text-base sm:text-lg",
-              "text-blue-100",
-              "leading-relaxed",
-              "mb-8",
-            )}
-          >
-            Acesso gratuito. Nenhum cartão de crédito necessário. Comece a
-            analisar jogadores agora.
-          </p>
+            {/* Subheading */}
+            <p
+              className={cn(
+                "animate-fade-up delay-100",
+                "text-base sm:text-lg",
+                "text-fb-text-secondary",
+                "leading-relaxed",
+                "mb-8",
+                "max-w-xl mx-auto",
+              )}
+            >
+              U5, U10 e CV em um único card. Clareza para comparar jogadores em
+              segundos.
+            </p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-            <SignedOut>
-              <Link href="/sign-up">
-                <Button
-                  size="lg"
-                  variant="primary"
-                  className="w-full sm:w-auto bg-white text-blue-600 hover:bg-blue-50"
+            {/* CTA Buttons */}
+            <div className="animate-fade-up delay-200">
+              <AuthCTA variant="section" />
+            </div>
+
+            {/* Trust indicators */}
+            <div className="animate-fade-up delay-300 flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-8">
+              {["Sem hype", "Sem ruído", "Dados objetivos"].map((text) => (
+                <span
+                  key={text}
+                  className="flex items-center gap-1.5 text-sm text-fb-text-secondary"
                 >
-                  Criar Conta Grátis
-                </Button>
-              </Link>
-            </SignedOut>
-
-            <SignedIn>
-              <Link href="/dashboard">
-                <Button
-                  size="lg"
-                  variant="primary"
-                  className="w-full sm:w-auto bg-white text-blue-600 hover:bg-blue-50"
-                >
-                  Ir para Dashboard
-                </Button>
-              </Link>
-            </SignedIn>
+                  <CheckCircle2 className="size-4 text-fb-primary" />
+                  {text}
+                </span>
+              ))}
+            </div>
           </div>
-
-          {/* Secondary text */}
-          <p className="text-sm text-blue-50 mt-8">
-            ✓ Sem spam • ✓ Sem anúncios • ✓ Dados em tempo real
-          </p>
         </div>
       </Container>
     </section>

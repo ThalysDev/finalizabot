@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Upgrade to PRO - Soccer Analytics</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102216",
+                        "surface-dark": "#1c2e21", // Slightly lighter than bg-dark for cards
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom radio button styling to match the theme */
+        input[type="radio"]:checked + div {
+            border-color: #13ec5b;
+            background-color: rgba(19, 236, 91, 0.05);
+        }
+        input[type="radio"]:checked + div .radio-circle {
+            background-color: #13ec5b;
+            border-color: #13ec5b;
+        }
+        input[type="radio"]:checked + div .radio-circle::after {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #102216;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-x-hidden">
+<!-- Main Container acting as a page wrapper -->
+<div class="relative flex min-h-screen w-full flex-col items-center justify-center p-4">
+<!-- Background Decor (Blurred Shapes) -->
+<div class="absolute inset-0 overflow-hidden pointer-events-none">
+<div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px]"></div>
+</div>
+<!-- Close Button (Simulated for Modal Context) -->
+<button class="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 transition-colors text-white/60 hover:text-white z-20">
+<span class="material-symbols-outlined">close</span>
+</button>
+<!-- Modal Content -->
+<div class="relative w-full max-w-[960px] bg-[#111813] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
+<!-- Left Side: Value Proposition -->
+<div class="flex-1 p-8 md:p-10 flex flex-col justify-center border-b md:border-b-0 md:border-r border-white/10 bg-gradient-to-br from-[#111813] to-[#0d130e]">
+<div class="mb-8">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold tracking-wide uppercase mb-4">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+                        Locked Feature
+                    </div>
+<h1 class="text-3xl md:text-4xl font-extrabold text-white leading-tight mb-4">
+                        Unlock Professional Insights
+                    </h1>
+<p class="text-gray-400 text-lg leading-relaxed">
+                        You bumped into a PRO feature. Upgrade now to access real-time data, exclusive stats, and gain the winning edge.
+                    </p>
+</div>
+<div class="grid gap-6">
+<!-- Benefit 1 -->
+<div class="flex gap-4 items-start">
+<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-surface-dark border border-white/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">bolt</span>
+</div>
+<div>
+<h3 class="text-white font-bold text-base mb-1">Real-time Live Alerts</h3>
+<p class="text-gray-400 text-sm leading-relaxed">Never miss a goal or momentum shift with instant notifications pushed directly to your device.</p>
+</div>
+</div>
+<!-- Benefit 2 -->
+<div class="flex gap-4 items-start">
+<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-surface-dark border border-white/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+<div>
+<h3 class="text-white font-bold text-base mb-1">Exclusive Consistency Data</h3>
+<p class="text-gray-400 text-sm leading-relaxed">Spot reliable teams instantly with our proprietary consistency index and historical performance charts.</p>
+</div>
+</div>
+<!-- Benefit 3 -->
+<div class="flex gap-4 items-start">
+<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-surface-dark border border-white/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">support_agent</span>
+</div>
+<div>
+<h3 class="text-white font-bold text-base mb-1">Priority Support</h3>
+<p class="text-gray-400 text-sm leading-relaxed">Get your questions answered first with our dedicated support line for PRO members.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Side: Pricing & Action -->
+<div class="w-full md:w-[400px] bg-surface-dark/50 p-8 md:p-10 flex flex-col">
+<h3 class="text-white text-xl font-bold mb-6">Choose your plan</h3>
+<div class="flex flex-col gap-4 flex-1">
+<!-- Monthly Option -->
+<label class="cursor-pointer group relative">
+<input class="peer sr-only" name="billing" type="radio"/>
+<div class="p-4 rounded-xl border border-white/10 bg-[#162019] hover:border-white/20 transition-all flex items-center gap-4 group-hover:bg-[#1a261e]">
+<div class="radio-circle w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center transition-colors"></div>
+<div class="flex-1">
+<div class="flex justify-between items-center">
+<span class="font-bold text-white">Monthly</span>
+<span class="font-bold text-white">$29<span class="text-gray-500 font-normal text-sm">/mo</span></span>
+</div>
+<p class="text-gray-400 text-sm mt-1">Flexible, cancel anytime.</p>
+</div>
+</div>
+</label>
+<!-- Yearly Option -->
+<label class="cursor-pointer group relative">
+<input checked="" class="peer sr-only" name="billing" type="radio"/>
+<div class="relative p-4 rounded-xl border border-primary bg-[#162019] flex items-center gap-4 shadow-[0_0_15px_-3px_rgba(19,236,91,0.1)]">
+<!-- Discount Badge -->
+<div class="absolute -top-3 right-4 bg-primary text-[#102216] text-xs font-bold px-2 py-1 rounded-md shadow-sm">
+                                2 MONTHS FREE
+                            </div>
+<div class="radio-circle w-5 h-5 rounded-full border-2 border-primary bg-primary flex items-center justify-center relative">
+<span class="absolute w-2 h-2 rounded-full bg-[#102216]"></span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center">
+<span class="font-bold text-white">Yearly</span>
+<span class="font-bold text-white">$290<span class="text-gray-500 font-normal text-sm">/yr</span></span>
+</div>
+<p class="text-gray-400 text-sm mt-1">Save $58 per year.</p>
+</div>
+</div>
+</label>
+<div class="mt-8 pt-6 border-t border-white/10">
+<div class="flex justify-between items-end mb-2">
+<span class="text-gray-400 text-sm">Total due today</span>
+<span class="text-3xl font-bold text-white">$290</span>
+</div>
+<button class="w-full bg-primary hover:bg-[#0fd650] text-[#111813] font-bold text-lg py-4 px-6 rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20 flex items-center justify-center gap-2 mt-4">
+<span class="material-symbols-outlined">lock_open</span>
+                            Upgrade to PRO
+                        </button>
+<div class="flex items-center justify-center gap-2 mt-4 text-xs text-gray-500">
+<span class="material-symbols-outlined text-[14px]">verified_user</span>
+                            Secure payment via Stripe. Cancel anytime.
+                        </div>
+</div>
+</div>
+<div class="mt-auto pt-6 text-center">
+<a class="text-sm text-gray-500 hover:text-white transition-colors underline decoration-gray-700 underline-offset-4" href="#">
+                        No thanks, I'll stay on the free plan
+                    </a>
+</div>
+</div>
+</div>
+</div>
+</body></html>

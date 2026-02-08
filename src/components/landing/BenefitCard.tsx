@@ -1,22 +1,31 @@
-import { Card } from "@/components/primitives";
+import type { LucideIcon } from "lucide-react";
 
 interface BenefitCardProps {
-  readonly icon: string;
+  readonly icon: LucideIcon;
   readonly title: string;
   readonly description: string;
+  readonly color?: string;
 }
 
-export function BenefitCard({ icon, title, description }: BenefitCardProps) {
+export function BenefitCard({
+  icon: Icon,
+  title,
+  description,
+  color = "fb-primary",
+}: BenefitCardProps) {
   return (
-    <Card
-      variant="elevated"
-      padding="md"
-      className="hover:shadow-lg transition-shadow duration-200"
-    >
-      <div className="text-4xl mb-4">{icon}</div>
-      <h3 className="text-lg font-semibold text-neutral-900 mb-2">{title}</h3>
-      <p className="text-sm text-neutral-600 leading-relaxed">{description}</p>
-    </Card>
+    <div className="group relative h-full flex flex-col gap-4 rounded-2xl border border-fb-border/60 bg-fb-card/80 backdrop-blur-sm p-6 transition-all duration-300 hover:border-fb-primary/30 hover:shadow-lg hover:shadow-fb-primary/5 hover:-translate-y-0.5">
+      {/* Icon */}
+      <div
+        className={`size-12 rounded-xl bg-${color}/10 border border-${color}/15 flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}
+      >
+        <Icon className={`size-5 text-${color}`} />
+      </div>
+      <h3 className="text-base sm:text-lg font-bold text-fb-text">{title}</h3>
+      <p className="text-sm text-fb-text-secondary leading-relaxed">
+        {description}
+      </p>
+    </div>
   );
 }
 

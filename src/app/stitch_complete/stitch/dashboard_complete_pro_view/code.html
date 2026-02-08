@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Soccer Analytics PRO - Dashboard</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1754cf",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111318",
+                        "surface-dark": "#1a1d24",
+                        "surface-darker": "#16181d",
+                        "border-dark": "#292e38",
+                        "accent-gold": "#FFD700",
+                        "accent-green": "#0bda5e",
+                        "accent-red": "#ff4d4d",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for table */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #111318;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #292e38;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #3c4453;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-body text-white antialiased overflow-x-hidden">
+<div class="relative flex h-screen w-full flex-col overflow-hidden">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-dark bg-surface-dark px-6 py-3 shrink-0 z-20">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 text-white">
+<div class="size-8 text-primary">
+<span class="material-symbols-outlined !text-3xl">sports_soccer</span>
+</div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Soccer Analytics <span class="text-accent-gold text-xs align-top ml-0.5">PRO</span></h2>
+</div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-primary text-sm font-medium leading-normal" href="#">Scouting</a>
+<a class="text-[#9da6b8] text-sm font-medium leading-normal hover:text-white transition-colors" href="#">Teams</a>
+<a class="text-[#9da6b8] text-sm font-medium leading-normal hover:text-white transition-colors" href="#">Leagues</a>
+</nav>
+</div>
+<div class="flex flex-1 justify-end gap-6 items-center">
+<div class="hidden lg:flex w-full max-w-xs items-stretch rounded-lg h-10">
+<div class="text-[#9da6b8] flex border-none bg-surface-darker items-center justify-center pl-3 rounded-l-lg">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-0 border-none bg-surface-darker h-full placeholder:text-[#58627a] px-3 rounded-l-none text-sm font-normal leading-normal" placeholder="Search players, clubs..."/>
+</div>
+<div class="flex items-center gap-3">
+<button class="relative p-2 text-[#9da6b8] hover:text-white transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1.5 right-1.5 size-2 bg-accent-red rounded-full border border-surface-dark"></span>
+</button>
+<div class="h-8 w-[1px] bg-border-dark mx-1"></div>
+<div class="flex items-center gap-3 cursor-pointer group">
+<div class="flex flex-col items-end hidden sm:flex">
+<span class="text-sm font-semibold leading-none group-hover:text-primary transition-colors">Alex Morgan</span>
+<span class="text-[10px] font-bold text-surface-dark bg-accent-gold px-1.5 py-0.5 rounded-sm mt-1 uppercase tracking-wider">PRO Member</span>
+</div>
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-10 border-2 border-border-dark group-hover:border-primary transition-colors" data-alt="User profile picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDVVrqnwymzuWhXK_xcZ42BM4oLtjp-2GvSlR9CNR9aRBsPz8POC8rjBFV0-DTJMIhAUcipNuAYTNNSB126UW6u8BYvEDmYANSbw6c9f1fkqjNQ8kyomWiM3CRySE51RFKEiigEa0oSbA9gMy1o4_sIcfGhPOsoX0knkI4K1Tx-kHOV172sXL9qxbjaV3yR1RQlCdRDa6SMLGA14So3qv-TyoP4aG-b2cPDHt5ucFtPm5Kagiy8t9Fyv9reJunnTuoRj6WyFdi-OFzp");'></div>
+</div>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Sidebar -->
+<aside class="w-64 bg-surface-dark border-r border-border-dark flex flex-col shrink-0 overflow-y-auto hidden lg:flex">
+<div class="p-4 flex flex-col gap-6">
+<div class="flex flex-col gap-1">
+<h3 class="px-3 text-xs font-semibold text-[#58627a] uppercase tracking-wider mb-2">Analysis Tools</h3>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary" href="#">
+<span class="material-symbols-outlined text-[20px]">table_chart</span>
+<span class="text-sm font-medium">Advanced Table</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#9da6b8] hover:bg-surface-darker hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px] filled">pie_chart</span>
+<span class="text-sm font-medium">Visual Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#9da6b8] hover:bg-surface-darker hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">compare_arrows</span>
+<span class="text-sm font-medium">Comparison Tool</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#9da6b8] hover:bg-surface-darker hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">show_chart</span>
+<span class="text-sm font-medium">Trend Spotter</span>
+</a>
+</div>
+<div class="h-[1px] bg-border-dark w-full"></div>
+<div class="flex flex-col gap-1">
+<h3 class="px-3 text-xs font-semibold text-[#58627a] uppercase tracking-wider mb-2">My Lists</h3>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#9da6b8] hover:bg-surface-darker hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">star</span>
+<span class="text-sm font-medium">Shortlist A</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#9da6b8] hover:bg-surface-darker hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+<span class="text-sm font-medium">Scouting Watch</span>
+</a>
+</div>
+<div class="h-[1px] bg-border-dark w-full"></div>
+<div class="p-4 rounded-xl bg-gradient-to-br from-surface-darker to-[#1a1d24] border border-border-dark">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-accent-gold text-lg">workspace_premium</span>
+<span class="text-white font-bold text-sm">Market Insight</span>
+</div>
+<p class="text-xs text-[#9da6b8] leading-relaxed mb-3">Transfer window closing in 4 days. Market volatility is high.</p>
+<button class="w-full py-1.5 px-3 bg-surface-dark hover:bg-[#252932] border border-border-dark rounded text-xs font-medium text-white transition-colors">View Report</button>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 bg-background-dark overflow-hidden">
+<!-- Content Header -->
+<div class="flex flex-col gap-4 p-6 pb-2 shrink-0">
+<!-- Breadcrumbs -->
+<div class="flex items-center gap-2 text-sm">
+<a class="text-[#9da6b8] hover:text-white" href="#">Dashboard</a>
+<span class="text-[#58627a]">/</span>
+<a class="text-[#9da6b8] hover:text-white" href="#">Premier League</a>
+<span class="text-[#58627a]">/</span>
+<span class="text-white font-medium">Player Analysis</span>
+</div>
+<div class="flex flex-wrap items-end justify-between gap-4">
+<div>
+<h1 class="text-3xl font-bold text-white tracking-tight mb-1">Advanced Analytical Player Table</h1>
+<p class="text-[#9da6b8] text-sm max-w-2xl">Real-time performance metrics and market valuation for PRO members. Data updated 2 mins ago.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-dark border border-border-dark text-white text-sm font-medium hover:bg-surface-darker transition-colors">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span>Customize View</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Export CSV</span>
+</button>
+</div>
+</div>
+<!-- Metrics Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+<div class="p-4 rounded-xl bg-surface-dark border border-border-dark flex flex-col gap-1">
+<span class="text-[#9da6b8] text-xs font-medium uppercase tracking-wide">Total Players</span>
+<div class="flex items-end justify-between">
+<span class="text-2xl font-bold text-white">2,450</span>
+<span class="text-accent-green text-xs font-bold bg-accent-green/10 px-2 py-1 rounded">+12%</span>
+</div>
+</div>
+<div class="p-4 rounded-xl bg-surface-dark border border-border-dark flex flex-col gap-1 relative overflow-hidden group">
+<!-- subtle gold gradient background for premium card -->
+<div class="absolute inset-0 bg-gradient-to-r from-accent-gold/5 to-transparent opacity-50"></div>
+<div class="relative z-10">
+<span class="text-accent-gold text-xs font-bold uppercase tracking-wide flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                                    Market Momentum
+                                </span>
+<div class="flex items-end justify-between mt-1">
+<span class="text-2xl font-bold text-white">Bullish</span>
+<span class="text-accent-green text-xs font-bold">+5.2% Vol</span>
+</div>
+</div>
+</div>
+<div class="p-4 rounded-xl bg-surface-dark border border-border-dark flex flex-col gap-1">
+<span class="text-[#9da6b8] text-xs font-medium uppercase tracking-wide">Top EV Player</span>
+<div class="flex items-end justify-between">
+<span class="text-2xl font-bold text-white truncate">E. Haaland</span>
+<span class="text-white text-sm font-medium bg-primary/20 px-2 py-0.5 rounded border border-primary/30">98.2 EV</span>
+</div>
+</div>
+<div class="p-4 rounded-xl bg-surface-dark border border-border-dark flex flex-col gap-1">
+<span class="text-[#9da6b8] text-xs font-medium uppercase tracking-wide">Scouting Coverage</span>
+<div class="flex items-end justify-between">
+<span class="text-2xl font-bold text-white">94%</span>
+<span class="text-[#9da6b8] text-xs">14 Leagues Active</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Filters Toolbar -->
+<div class="px-6 py-3 border-y border-border-dark bg-surface-dark/50 flex flex-wrap gap-3 items-center shrink-0">
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#9da6b8] text-[18px]">filter_alt</span>
+<select class="pl-9 pr-8 py-1.5 bg-surface-dark border border-border-dark rounded-lg text-sm text-white focus:ring-primary focus:border-primary appearance-none min-w-[140px]">
+<option>Position: All</option>
+<option>Forward</option>
+<option>Midfielder</option>
+<option>Defender</option>
+<option>Goalkeeper</option>
+</select>
+<span class="absolute right-2 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#9da6b8] text-[18px] pointer-events-none">arrow_drop_down</span>
+</div>
+<div class="relative">
+<select class="pl-3 pr-8 py-1.5 bg-surface-dark border border-border-dark rounded-lg text-sm text-white focus:ring-primary focus:border-primary appearance-none min-w-[140px]">
+<option>League: Premier League</option>
+<option>La Liga</option>
+<option>Bundesliga</option>
+<option>Serie A</option>
+</select>
+<span class="absolute right-2 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#9da6b8] text-[18px] pointer-events-none">arrow_drop_down</span>
+</div>
+<div class="relative">
+<select class="pl-3 pr-8 py-1.5 bg-surface-dark border border-border-dark rounded-lg text-sm text-white focus:ring-primary focus:border-primary appearance-none min-w-[120px]">
+<option>Age: All</option>
+<option>U21</option>
+<option>21-25</option>
+<option>26-30</option>
+<option>30+</option>
+</select>
+<span class="absolute right-2 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#9da6b8] text-[18px] pointer-events-none">arrow_drop_down</span>
+</div>
+<div class="h-6 w-[1px] bg-border-dark mx-1"></div>
+<!-- EV Sort Toggle -->
+<label class="flex items-center gap-2 cursor-pointer group">
+<div class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-9 h-5 bg-border-dark peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent-gold"></div>
+</div>
+<span class="text-sm font-medium text-[#9da6b8] group-hover:text-white transition-colors">Sort by EV (Pro)</span>
+</label>
+<div class="ml-auto flex items-center gap-2 text-sm text-[#9da6b8]">
+<span>Showing 1-50 of 2,450</span>
+</div>
+</div>
+<!-- Data Table Container -->
+<div class="flex-1 overflow-auto custom-scrollbar relative w-full">
+<table class="w-full border-collapse text-left text-sm whitespace-nowrap">
+<thead class="bg-surface-dark sticky top-0 z-10 text-xs font-semibold text-[#9da6b8] uppercase tracking-wider shadow-sm">
+<tr>
+<th class="p-4 border-b border-border-dark w-12 text-center sticky left-0 z-20 bg-surface-dark">#</th>
+<th class="p-4 border-b border-border-dark sticky left-12 z-20 bg-surface-dark min-w-[200px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">Player Identity</th>
+<th class="p-4 border-b border-border-dark text-right">Age</th>
+<th class="p-4 border-b border-border-dark text-right">Matches</th>
+<th class="p-4 border-b border-border-dark text-right">Mins</th>
+<th class="p-4 border-b border-border-dark text-right">Goals</th>
+<th class="p-4 border-b border-border-dark text-right">Assists</th>
+<th class="p-4 border-b border-border-dark text-right bg-primary/5">xG</th>
+<th class="p-4 border-b border-border-dark text-right bg-primary/5">xA</th>
+<th class="p-4 border-b border-border-dark text-right">Key Passes</th>
+<th class="p-4 border-b border-border-dark text-right">Shots/90</th>
+<th class="p-4 border-b border-border-dark text-right">Pressures</th>
+<th class="p-4 border-b border-border-dark text-right border-l border-accent-gold/20 bg-accent-gold/5 text-accent-gold">EV (Pro)</th>
+<th class="p-4 border-b border-border-dark text-center border-r border-accent-gold/20 bg-accent-gold/5 text-accent-gold">Momentum</th>
+<th class="p-4 border-b border-border-dark text-right">Market Val</th>
+<th class="p-4 border-b border-border-dark">Contract</th>
+</tr>
+</thead>
+<tbody class="text-white divide-y divide-border-dark">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-dark transition-colors group">
+<td class="p-4 text-[#9da6b8] text-center sticky left-0 z-10 bg-background-dark group-hover:bg-surface-dark">1</td>
+<td class="p-4 sticky left-12 z-10 bg-background-dark group-hover:bg-surface-dark border-r border-transparent group-hover:border-border-dark shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-cover bg-center shrink-0" data-alt="Erling Haaland avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDR9PuCm1TcLQ14ytRHmsINPk_zjRQ1Gno3K-HXG-fposmyZ1Sm994a6p2LXYd0UvAE9aBdVoscQnG-Sl5trju9PvIcMSKmm4Sb3ZWs1UiQ8TFsJuCWdPc6GBt8V6Eczcu0GGuLTjN-9_ZOegSA16L3sPzThO8qF_EOlKTVKT--9EjeT1sss9qUwAt1hr7FqpVBJl1Xemz8TcS_z505gq1kKRjfx_IDZ1yF-xuwZ2s0y16HpQuVT2hfsAHlQHBExZilZ7MHHrg5q6fN");'></div>
+<div class="flex flex-col">
+<span class="font-bold text-white leading-none">E. Haaland</span>
+<div class="flex items-center gap-1.5 mt-1">
+<div class="size-3 rounded-full bg-cover bg-center" data-alt="Man City logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCFAxxJyZLU7zoHOUL6YnV7E1v5SScY27KTMBfsyQSvEjv3EAlcQWBQXOUgur6tS-sA_suS1-nezKMXELciaGQcxFKeAFOXHx-94EKmT0H2CcZE9SHLHUgg688TY9LVogjZt_P0WmBGdxLZKjzdCtORsmQ2lmyz70na046f4MxyCXTp0UoOtd5wfQm8XR5-cdPJbIECwcmnXWm1szyVljg-Jf9HGaNYhmFoAwvgsbelJTlmrjfxHzBxP87qmOAv9Kk9bJr_kB7SWHLd");'></div>
+<span class="text-[10px] text-[#9da6b8]">Man City • FW</span>
+</div>
+</div>
+</div>
+</td>
+<td class="p-4 text-right text-[#9da6b8]">23</td>
+<td class="p-4 text-right">24</td>
+<td class="p-4 text-right text-[#9da6b8]">2,010</td>
+<td class="p-4 text-right font-bold text-accent-green">28</td>
+<td class="p-4 text-right">5</td>
+<td class="p-4 text-right bg-primary/5 font-medium">24.2</td>
+<td class="p-4 text-right bg-primary/5 text-[#9da6b8]">3.1</td>
+<td class="p-4 text-right text-[#9da6b8]">18</td>
+<td class="p-4 text-right text-white">4.2</td>
+<td class="p-4 text-right text-[#9da6b8]">142</td>
+<td class="p-4 text-right font-bold text-accent-gold border-l border-accent-gold/10 bg-accent-gold/5">98.2</td>
+<td class="p-4 text-center border-r border-accent-gold/10 bg-accent-gold/5">
+<div class="flex items-center justify-center gap-1 text-accent-green text-xs font-bold">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+                                        High
+                                    </div>
+</td>
+<td class="p-4 text-right font-medium">€180M</td>
+<td class="p-4 text-[#9da6b8]">2027</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-dark transition-colors group bg-surface-darker/50">
+<td class="p-4 text-[#9da6b8] text-center sticky left-0 z-10 bg-background-dark group-hover:bg-surface-dark">2</td>
+<td class="p-4 sticky left-12 z-10 bg-background-dark group-hover:bg-surface-dark border-r border-transparent group-hover:border-border-dark shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-cover bg-center shrink-0" data-alt="Kylian Mbappe avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDUbfocGRaqoJpegX9X6yi-fVwnulC1YYopBuNCi_yDaz7bVwYk46tvjkiHXFWeACtNg89IVlK13v_yK_dkTHt7n64QD8DWM-9Wy8PrSjL_tPPo4HPSm8cpxSLHLAYtlwRbBbiRpbsKjsefJAebbtuJrILlV33zG4gR7RTo3oFnSz5JN0Bv2AWrK-KjFNrueLbRsI-p_AGyCRL17qsQRiyncEzLtJHNV6Zvm-ahjpeCafHOFre03ggouvIlySIDPkZvU51IeGBAvtWt");'></div>
+<div class="flex flex-col">
+<span class="font-bold text-white leading-none">K. Mbappé</span>
+<div class="flex items-center gap-1.5 mt-1">
+<div class="size-3 rounded-full bg-cover bg-center" data-alt="PSG logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD3NX-iS-aVPqd-kxMdqMqShqU_jUy01L9gwtmEIOy4mSnn7Ls71U51t99qWvqOhm4yFkN1b0G4a-emVrGF4RPPuHJ-IEVYBUEcrjVR5k1Wt887tGkE7Ag6iBeT1Ikr3PuI2FwLhj_9CHvWKFLG-rGxau36mtU0Rs0BNXvHdvl-kIvREA0MLOUr_UTWeTVR0-nx5LUI2lJU3GhTJgnrY5yYvW5xypGLwHbmRslOJRXCJs_dOXTwAcURuwJ1AMYZR3CJCWi7vTsBLfno");'></div>
+<span class="text-[10px] text-[#9da6b8]">PSG • FW</span>
+</div>
+</div>
+</div>
+</td>
+<td class="p-4 text-right text-[#9da6b8]">25</td>
+<td class="p-4 text-right">22</td>
+<td class="p-4 text-right text-[#9da6b8]">1,980</td>
+<td class="p-4 text-right font-bold text-white">21</td>
+<td class="p-4 text-right">7</td>
+<td class="p-4 text-right bg-primary/5 font-medium">19.5</td>
+<td class="p-4 text-right bg-primary/5 text-[#9da6b8]">4.8</td>
+<td class="p-4 text-right text-[#9da6b8]">26</td>
+<td class="p-4 text-right text-white">4.8</td>
+<td class="p-4 text-right text-[#9da6b8]">110</td>
+<td class="p-4 text-right font-bold text-accent-gold border-l border-accent-gold/10 bg-accent-gold/5">96.5</td>
+<td class="p-4 text-center border-r border-accent-gold/10 bg-accent-gold/5">
+<div class="flex items-center justify-center gap-1 text-accent-green text-xs font-bold">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+                                        Med
+                                    </div>
+</td>
+<td class="p-4 text-right font-medium">€180M</td>
+<td class="p-4 text-[#9da6b8]">2024</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-dark transition-colors group">
+<td class="p-4 text-[#9da6b8] text-center sticky left-0 z-10 bg-background-dark group-hover:bg-surface-dark">3</td>
+<td class="p-4 sticky left-12 z-10 bg-background-dark group-hover:bg-surface-dark border-r border-transparent group-hover:border-border-dark shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-cover bg-center shrink-0" data-alt="Mohamed Salah avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCm1-AmAH2eLAIcLL5lRMmyGZRBedTANWU1uGiONSdtbm1xV3gq5LRDiFtW_vRFrIy2yeXVTYEJQpLtXO4hebpKL4wfm4OA4AbysJwpfS_6Wbefmbdd2kOaaGqUfK9jnFV2W2k1yxdcxerRxgmlNuq3xHl2XJtzJjrg9XJytDv6ITqbwhM-xG0a5a_wNeMdpHKN4Ajj7ghrfmEbhoWU0ApAbQOYf20aTGDl4_umL0MwC6a3Zh-5D4yBzsX2XQDorfH6u35TN73yHkb9");'></div>
+<div class="flex flex-col">
+<span class="font-bold text-white leading-none">M. Salah</span>
+<div class="flex items-center gap-1.5 mt-1">
+<div class="size-3 rounded-full bg-cover bg-center" data-alt="Liverpool logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDHW9IVT57wGDAWSSjERlk7mSOJGx5sZz5BaFOW9SKilNFxUBcllAqHbIiCcRzAgJy_EhKz3Mmww80RtYmFfDYkUNhWyzRr8-VqUWQOt99s_Id84I8IPYQqIVAaiPd9WXpL_MOF3TlrEZZIfNb3XHc71K3ivm5LtqJ6aZ4PK_hCJ7xMysQACaexEHru9yBfN3OVXvT0z0cvIQ4e-bOp80Cvz8jwUqdGnBYFtjuSa1YmP-M7cgSSfUCY-GCRwAQAZAAPLvz3oWfylqn4");'></div>
+<span class="text-[10px] text-[#9da6b8]">Liverpool • RW</span>
+</div>
+</div>
+</div>
+</td>
+<td class="p-4 text-right text-[#9da6b8]">31</td>
+<td class="p-4 text-right">25</td>
+<td class="p-4 text-right text-[#9da6b8]">2,150</td>
+<td class="p-4 text-right font-bold text-white">18</td>
+<td class="p-4 text-right">9</td>
+<td class="p-4 text-right bg-primary/5 font-medium">16.8</td>
+<td class="p-4 text-right bg-primary/5 text-[#9da6b8]">6.2</td>
+<td class="p-4 text-right text-white">54</td>
+<td class="p-4 text-right text-white">3.4</td>
+<td class="p-4 text-right text-[#9da6b8]">215</td>
+<td class="p-4 text-right font-bold text-accent-gold border-l border-accent-gold/10 bg-accent-gold/5">94.1</td>
+<td class="p-4 text-center border-r border-accent-gold/10 bg-accent-gold/5">
+<div class="flex items-center justify-center gap-1 text-[#9da6b8] text-xs font-medium">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+                                        Stable
+                                    </div>
+</td>
+<td class="p-4 text-right font-medium">€65M</td>
+<td class="p-4 text-[#9da6b8]">2025</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-dark transition-colors group bg-surface-darker/50">
+<td class="p-4 text-[#9da6b8] text-center sticky left-0 z-10 bg-background-dark group-hover:bg-surface-dark">4</td>
+<td class="p-4 sticky left-12 z-10 bg-background-dark group-hover:bg-surface-dark border-r border-transparent group-hover:border-border-dark shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-cover bg-center shrink-0" data-alt="Bukayo Saka avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBQhR0pxhuW7HUCE5I1U0w5GaPZSEO2cjZPMVcRsxGc2FmyYllCLNT1kysW0C4DVZm7l_gr-6EMeO17UtRX-XrdUdUYVL2s3PA_BqeC7_eyT6f7MxNKMogB9SOalikXw6DXHsnW7mWd-dKErsChLFLDFNFHCfJGRlgaaIbEhne9tgfT9NLO2cQ_6xWvBw8zUXRvh7kxPKk3sTOfzG-wbX2-pwLhvOba7VwAmoHxB40nmvqT0JsJdcwfqZdqI8Q3u43tP4pf3zCkQxcm");'></div>
+<div class="flex flex-col">
+<span class="font-bold text-white leading-none">B. Saka</span>
+<div class="flex items-center gap-1.5 mt-1">
+<div class="size-3 rounded-full bg-cover bg-center" data-alt="Arsenal logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCpW_BPdaiuwYYl7cghs-tiG5TedUsH6liE2WtusrnOIlFjSBTr9gI7yxJ0_kAqItChPos2_DDLhZKEqul3FvqsFZWpirOLNZJDlVdMt7WHcGvsafWf69Cpr-HjKxGu818z53hRn8VtpYxbMYXGce1-C1ozJntzgwZZ2G0v9facr8mWOUlG_FTbGS7bcZIlNFV1-QF9xU3oHmc0XA6S_i3oruKDpi39VhsQFMso6ZdKCl7C3hbd97D5J31jKc9JFe4aA1cB_pnmKn9P");'></div>
+<span class="text-[10px] text-[#9da6b8]">Arsenal • RW</span>
+</div>
+</div>
+</div>
+</td>
+<td class="p-4 text-right text-[#9da6b8]">22</td>
+<td class="p-4 text-right">24</td>
+<td class="p-4 text-right text-[#9da6b8]">2,088</td>
+<td class="p-4 text-right font-bold text-white">13</td>
+<td class="p-4 text-right">8</td>
+<td class="p-4 text-right bg-primary/5 font-medium">11.2</td>
+<td class="p-4 text-right bg-primary/5 text-[#9da6b8]">5.9</td>
+<td class="p-4 text-right text-white">62</td>
+<td class="p-4 text-right text-white">2.9</td>
+<td class="p-4 text-right text-[#9da6b8]">298</td>
+<td class="p-4 text-right font-bold text-accent-gold border-l border-accent-gold/10 bg-accent-gold/5">93.8</td>
+<td class="p-4 text-center border-r border-accent-gold/10 bg-accent-gold/5">
+<div class="flex items-center justify-center gap-1 text-accent-green text-xs font-bold">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+                                        High
+                                    </div>
+</td>
+<td class="p-4 text-right font-medium">€120M</td>
+<td class="p-4 text-[#9da6b8]">2027</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-dark transition-colors group">
+<td class="p-4 text-[#9da6b8] text-center sticky left-0 z-10 bg-background-dark group-hover:bg-surface-dark">5</td>
+<td class="p-4 sticky left-12 z-10 bg-background-dark group-hover:bg-surface-dark border-r border-transparent group-hover:border-border-dark shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-cover bg-center shrink-0" data-alt="Son Heung-min avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD6hcHUyt5ssFn86LqoxQEFCOTZjWQqCdTLVLTi4JwHFuObN443DFBnm9-plpQXyswVP8ldGnBd8fODq2XJIJpdQMgLjTAHyaw1ra3puTq0rE_RAAaC7Lc-93A7qqBv6o8hqjVna1ogW-REGL1Fps09CcenYOkF-2XKwlMDe48GL6CqBX8vaciP0tC-HhcAj7iMozOc9dAVYZeCvMYX4TvHmf8RWwUohqYBP_4U1_6E4XeZgFZrh07gTG4Z7gP0krljZT4GXazTR325");'></div>
+<div class="flex flex-col">
+<span class="font-bold text-white leading-none">H. Son</span>
+<div class="flex items-center gap-1.5 mt-1">
+<div class="size-3 rounded-full bg-cover bg-center" data-alt="Spurs logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBmGKg1d1XbsE0yjtjScLmZ_fEkoluo75Lo-X91jKtKLZysSF6fN058wSvtJgSO2ZzQMYZfd_umsXxXhw0F-bQTfTju-p8oWTaqnoUsuGRaV5eyr44OLFufSsaaCjxBP2h2_fv3DacMlYxR6NfipXVCiIKbZGHJz1gBjOS2_5wFNuSMx0kfpsst8rQtzDZHAMCSx5qMBkAOKfrNQij6DlSMT3O8kVzqu20M4EIr3uYllBz9rxagZNEwI0va55DuGiHghDg9SQdwu8bj");'></div>
+<span class="text-[10px] text-[#9da6b8]">Spurs • LW</span>
+</div>
+</div>
+</div>
+</td>
+<td class="p-4 text-right text-[#9da6b8]">31</td>
+<td class="p-4 text-right">23</td>
+<td class="p-4 text-right text-[#9da6b8]">1,950</td>
+<td class="p-4 text-right font-bold text-white">12</td>
+<td class="p-4 text-right">6</td>
+<td class="p-4 text-right bg-primary/5 font-medium">9.8</td>
+<td class="p-4 text-right bg-primary/5 text-[#9da6b8]">4.1</td>
+<td class="p-4 text-right text-[#9da6b8]">42</td>
+<td class="p-4 text-right text-white">2.5</td>
+<td class="p-4 text-right text-[#9da6b8]">210</td>
+<td class="p-4 text-right font-bold text-accent-gold border-l border-accent-gold/10 bg-accent-gold/5">91.2</td>
+<td class="p-4 text-center border-r border-accent-gold/10 bg-accent-gold/5">
+<div class="flex items-center justify-center gap-1 text-accent-red text-xs font-medium">
+<span class="material-symbols-outlined text-[16px]">trending_down</span>
+                                        Low
+                                    </div>
+</td>
+<td class="p-4 text-right font-medium">€50M</td>
+<td class="p-4 text-[#9da6b8]">2025</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-dark transition-colors group bg-surface-darker/50">
+<td class="p-4 text-[#9da6b8] text-center sticky left-0 z-10 bg-background-dark group-hover:bg-surface-dark">6</td>
+<td class="p-4 sticky left-12 z-10 bg-background-dark group-hover:bg-surface-dark border-r border-transparent group-hover:border-border-dark shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-cover bg-center shrink-0" data-alt="Julian Alvarez avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAGTR5ffyQlqwQ8kCOA-o49ie24h1S8OBDThbtSmKb-CUBynqSTKLfB5uzwS7DphxnZjUK8CrXHBhNnk1llE2M9QseqeBBVpypqDyAbDAngjO6E8RWMwlf2OMBix3gDyLaKnxUw5umcTujWRjZWR54qpy68SBDPD7FIE0lkj8IkkwfFgl70cTIuf2CddrbVyet7Jfr5xEyPVmxR-XetZeTjSOYDX_MW_iDQ9lr7tL7gkYZpQ00y9exk6V2MbH7W98ED3Bi_8-j2Cjtc");'></div>
+<div class="flex flex-col">
+<span class="font-bold text-white leading-none">J. Álvarez</span>
+<div class="flex items-center gap-1.5 mt-1">
+<div class="size-3 rounded-full bg-cover bg-center" data-alt="Man City logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDJCOmV-uOsNlaf5uk_xHBw9cWXUscL07Y6Avgn1n5eV2HUOm-0ocvXnzv3WU2Y_QGr_lNB9B8PncHko-_aHNmsdGyPANRNJbmzuofIXsFcCoEBgD5j1hntgsXkImkPvqgiQy60mxHFW3_wVXZmktAyNDB60xWqhSr112YxCpVSFmRxIO6yDS3IM9rFdF62mhmGDCpVRJef-0rbV1pqeqR49uNjCa_kOjvw0DykUX-5hJ7xrmxdnc93dQ4tJjqLJhN4aKc0SM4GZhgq");'></div>
+<span class="text-[10px] text-[#9da6b8]">Man City • FW</span>
+</div>
+</div>
+</div>
+</td>
+<td class="p-4 text-right text-[#9da6b8]">24</td>
+<td class="p-4 text-right">24</td>
+<td class="p-4 text-right text-[#9da6b8]">1,650</td>
+<td class="p-4 text-right font-bold text-white">10</td>
+<td class="p-4 text-right">6</td>
+<td class="p-4 text-right bg-primary/5 font-medium">8.4</td>
+<td class="p-4 text-right bg-primary/5 text-[#9da6b8]">3.2</td>
+<td class="p-4 text-right text-[#9da6b8]">28</td>
+<td class="p-4 text-right text-white">2.8</td>
+<td class="p-4 text-right text-white">245</td>
+<td class="p-4 text-right font-bold text-accent-gold border-l border-accent-gold/10 bg-accent-gold/5">90.5</td>
+<td class="p-4 text-center border-r border-accent-gold/10 bg-accent-gold/5">
+<div class="flex items-center justify-center gap-1 text-accent-green text-xs font-bold">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+                                        High
+                                    </div>
+</td>
+<td class="p-4 text-right font-medium">€90M</td>
+<td class="p-4 text-[#9da6b8]">2028</td>
+</tr>
+<!-- Row 7 -->
+<tr class="hover:bg-surface-dark transition-colors group">
+<td class="p-4 text-[#9da6b8] text-center sticky left-0 z-10 bg-background-dark group-hover:bg-surface-dark">7</td>
+<td class="p-4 sticky left-12 z-10 bg-background-dark group-hover:bg-surface-dark border-r border-transparent group-hover:border-border-dark shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-cover bg-center shrink-0" data-alt="Ollie Watkins avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDbbcp3AKGgiDaDhZZa7H6t4UYrT0hbq4Bst5DfQF5AxNmDgAXpt5yYPoROtgWonnm9nEnnzFDP2BX4f5G_gqJJ9w7hzzQtEm0E6k7Ta5f_vQ2GjGAbHaT_GL_zIwplZp1uWCfdcnTW2y1z5gVdO2XhakXQXg2Hy18LYSD3iPMcZX2ES4HevuSJbJ6EHKPTw6JI1AzPLhBwCRuH6nJ1vnnGyYUYgPkGZwdOWQvwzmfNtOO2Bt5G4W_G_F-aL5B8mwoNf1fZMhAr5jsl");'></div>
+<div class="flex flex-col">
+<span class="font-bold text-white leading-none">O. Watkins</span>
+<div class="flex items-center gap-1.5 mt-1">
+<div class="size-3 rounded-full bg-cover bg-center" data-alt="Aston Villa logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDfIV5bNKe3wSbZLSZA7HcapQ2XE2d6we9nk-k-EDRAp65_Xx1qkVyE6jVBhSXMoe8VIiYJqLnmyZ2w1ecuN7GRrz8B_hH62nIEX3sYK7KTP1fHoeUmOeieJsI9v4kBuWb3z7C8eu0Sjurt6RCa5DRCoDZqsMDT0oaVYgyu4cYBnLLR2uFV5NVIyH4y4R3-_syqXo9o5W20nMoR6RiAkGZRBPf5yEM1_ITkM1LoTvMQD9DM99xNqxzh7XrOp6voKgVkIb7i9QPjmwb8");'></div>
+<span class="text-[10px] text-[#9da6b8]">Aston Villa • FW</span>
+</div>
+</div>
+</div>
+</td>
+<td class="p-4 text-right text-[#9da6b8]">28</td>
+<td class="p-4 text-right">25</td>
+<td class="p-4 text-right text-[#9da6b8]">2,200</td>
+<td class="p-4 text-right font-bold text-white">14</td>
+<td class="p-4 text-right">10</td>
+<td class="p-4 text-right bg-primary/5 font-medium">12.5</td>
+<td class="p-4 text-right bg-primary/5 text-[#9da6b8]">4.5</td>
+<td class="p-4 text-right text-[#9da6b8]">32</td>
+<td class="p-4 text-right text-white">3.1</td>
+<td class="p-4 text-right text-[#9da6b8]">180</td>
+<td class="p-4 text-right font-bold text-accent-gold border-l border-accent-gold/10 bg-accent-gold/5">89.9</td>
+<td class="p-4 text-center border-r border-accent-gold/10 bg-accent-gold/5">
+<div class="flex items-center justify-center gap-1 text-[#9da6b8] text-xs font-medium">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+                                        Stable
+                                    </div>
+</td>
+<td class="p-4 text-right font-medium">€60M</td>
+<td class="p-4 text-[#9da6b8]">2026</td>
+</tr>
+<!-- Row 8 -->
+<tr class="hover:bg-surface-dark transition-colors group bg-surface-darker/50">
+<td class="p-4 text-[#9da6b8] text-center sticky left-0 z-10 bg-background-dark group-hover:bg-surface-dark">8</td>
+<td class="p-4 sticky left-12 z-10 bg-background-dark group-hover:bg-surface-dark border-r border-transparent group-hover:border-border-dark shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-cover bg-center shrink-0" data-alt="Darwin Nunez avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuATM-05fe5zZCbHZwh_4Pr_-KvIVwSpIRxMLkxspgDskJTsxZOleZOSS5JDBlIuK8SitU3USZZMTz5Rsj-DNJ_3IYl-8pYQfIRuUzJ93i_FSgLuMx30YaibhkiYBKa-u18tXV5GGPRE5sYok6K-jWd273k1KU7IiKVCoRNFWl-FsNir4FVEmdGTRtybtY7M5TBYjZdBHjzA7fr7s76MTM4PQIaa7yYaCRCOkA__nEArkTmAyO7SSy9ICnDKrWTAoDTWR8-xXoPMtvc3");'></div>
+<div class="flex flex-col">
+<span class="font-bold text-white leading-none">D. Núñez</span>
+<div class="flex items-center gap-1.5 mt-1">
+<div class="size-3 rounded-full bg-cover bg-center" data-alt="Liverpool logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAlmi9BqflOA25zURHKkjCaRsGeD-g8rLPp5bAb01gPkQTZqFYffmd7cCp9pw5VbHqtJggY1Fl-qETxVI1bEjgxN73eWnCQC-txtd_uXQxufBTpCT4uZ6N5l-mtdqkmgXBX2e-Wh9k-OEnjXlRIGWQt2iu-Eak8V-urm797QUPKUncqfKDd_adlH1yXCAj7PizLAAxZyJiCtS3rTU-ZTUqvCaSWHt74zXXVwetZDxbhEGeg-S895aE8csACh6Ce_eLmnVkIJyZ5HuOf");'></div>
+<span class="text-[10px] text-[#9da6b8]">Liverpool • FW</span>
+</div>
+</div>
+</div>
+</td>
+<td class="p-4 text-right text-[#9da6b8]">24</td>
+<td class="p-4 text-right">24</td>
+<td class="p-4 text-right text-[#9da6b8]">1,580</td>
+<td class="p-4 text-right font-bold text-white">9</td>
+<td class="p-4 text-right">7</td>
+<td class="p-4 text-right bg-primary/5 font-medium">14.1</td>
+<td class="p-4 text-right bg-primary/5 text-[#9da6b8]">3.8</td>
+<td class="p-4 text-right text-[#9da6b8]">22</td>
+<td class="p-4 text-right text-white">4.5</td>
+<td class="p-4 text-right text-[#9da6b8]">205</td>
+<td class="p-4 text-right font-bold text-accent-gold border-l border-accent-gold/10 bg-accent-gold/5">88.7</td>
+<td class="p-4 text-center border-r border-accent-gold/10 bg-accent-gold/5">
+<div class="flex items-center justify-center gap-1 text-accent-green text-xs font-bold">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+                                        Med
+                                    </div>
+</td>
+<td class="p-4 text-right font-medium">€75M</td>
+<td class="p-4 text-[#9da6b8]">2028</td>
+</tr>
+<!-- Row 9 -->
+<tr class="hover:bg-surface-dark transition-colors group">
+<td class="p-4 text-[#9da6b8] text-center sticky left-0 z-10 bg-background-dark group-hover:bg-surface-dark">9</td>
+<td class="p-4 sticky left-12 z-10 bg-background-dark group-hover:bg-surface-dark border-r border-transparent group-hover:border-border-dark shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-cover bg-center shrink-0" data-alt="Phil Foden avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCqin3wOPrxns5cwCFjgqJI1gWLPYe4jTorHz3xsUW97GcdFMo5SdQozH8leaVbpoaM1n0mhWc52zHe_juY9GpBsChI0UokJfEvIksE2gDtoTp0lEGaicdld23CypSdH4zVbwilCLLmQ2cxJflwoNoetMUyr6H9c271YY5btzNHlv6yZExtk4p7Wl9KboiLEF72t_A-M_w0539xy_M17YNagDlJh0rISoFwHYLctFx1HwkoCDdTV1LkJ8LzMZJvsYsznAkZfpwSmrAk");'></div>
+<div class="flex flex-col">
+<span class="font-bold text-white leading-none">P. Foden</span>
+<div class="flex items-center gap-1.5 mt-1">
+<div class="size-3 rounded-full bg-cover bg-center" data-alt="Man City logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDXOQ4JTg2Ce5m4CLYr2ddWU-xBEeQjBjIHrNtvnn_m9b6NJyLf1m5g6L0RRs6dyX73Wzs0cFopQ_ftgoqvxEmdfSRUuPeCFdxm1fPVqSa91BJe9aupLJzKv88CY93cOwoihOToQmd4N2gxmmENO5S51ogOEgVMwE5fWnBA0AhFJYdpV5vXOJNzRNmDL6jGvQub61t0T5_nXY5ySQsQ1NMt2DZvRSvTylhXbkoToSSoqo_b8f2LkVWII1TnnBvQUaikMxkHUzuucfLD");'></div>
+<span class="text-[10px] text-[#9da6b8]">Man City • MF</span>
+</div>
+</div>
+</div>
+</td>
+<td class="p-4 text-right text-[#9da6b8]">23</td>
+<td class="p-4 text-right">25</td>
+<td class="p-4 text-right text-[#9da6b8]">2,110</td>
+<td class="p-4 text-right font-bold text-white">11</td>
+<td class="p-4 text-right">7</td>
+<td class="p-4 text-right bg-primary/5 font-medium">8.9</td>
+<td class="p-4 text-right bg-primary/5 text-[#9da6b8]">6.1</td>
+<td class="p-4 text-right text-white">48</td>
+<td class="p-4 text-right text-white">2.9</td>
+<td class="p-4 text-right text-[#9da6b8]">185</td>
+<td class="p-4 text-right font-bold text-accent-gold border-l border-accent-gold/10 bg-accent-gold/5">88.4</td>
+<td class="p-4 text-center border-r border-accent-gold/10 bg-accent-gold/5">
+<div class="flex items-center justify-center gap-1 text-[#9da6b8] text-xs font-medium">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+                                        Stable
+                                    </div>
+</td>
+<td class="p-4 text-right font-medium">€110M</td>
+<td class="p-4 text-[#9da6b8]">2027</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Footer Pagination -->
+<div class="bg-surface-dark border-t border-border-dark px-6 py-4 flex items-center justify-between shrink-0">
+<div class="text-sm text-[#9da6b8]">
+                        Showing <span class="font-medium text-white">1</span> to <span class="font-medium text-white">50</span> of <span class="font-medium text-white">2,450</span> players
+                    </div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1 rounded bg-surface-darker border border-border-dark text-[#9da6b8] disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="px-3 py-1 rounded bg-primary text-white text-sm font-medium">1</button>
+<button class="px-3 py-1 rounded bg-surface-darker border border-border-dark text-white text-sm font-medium hover:bg-surface-dark transition-colors">2</button>
+<button class="px-3 py-1 rounded bg-surface-darker border border-border-dark text-white text-sm font-medium hover:bg-surface-dark transition-colors">3</button>
+<span class="text-[#9da6b8] px-1">...</span>
+<button class="px-3 py-1 rounded bg-surface-darker border border-border-dark text-white text-sm font-medium hover:bg-surface-dark transition-colors">49</button>
+<button class="px-3 py-1 rounded bg-surface-darker border border-border-dark text-[#9da6b8] hover:text-white transition-colors">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</main>
+</div>
+</div>
+</body></html>

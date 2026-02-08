@@ -60,3 +60,6 @@ Thumbs.db
 # Project specific
 prisma/dev.db
 .vercel
+
+# AI context files
+.aicontext/

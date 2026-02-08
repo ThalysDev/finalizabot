@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mobile Match Overview - Player Cards</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102216",
+                        "surface-dark": "#1c2b21",
+                        "surface-highlight": "#28392e",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "sans": ["Inter", "sans-serif"],
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #102216;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #28392e;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3e5245;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display min-h-screen flex overflow-hidden">
+<!-- Side Navigation (Desktop only visible) -->
+<aside class="hidden lg:flex flex-col w-64 border-r border-[#28392e] bg-[#111813] h-screen shrink-0 sticky top-0">
+<div class="p-6 flex items-center gap-3">
+<div class="size-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<h1 class="text-white text-lg font-bold">BetEdge Pro</h1>
+</div>
+<nav class="flex-1 px-4 flex flex-col gap-2">
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-primary/10 text-primary rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">sports_soccer</span>
+<span class="font-medium">Matches</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">query_stats</span>
+<span class="font-medium">Analysis</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">star</span>
+<span class="font-medium">Favorites</span>
+</a>
+</nav>
+<div class="p-4 border-t border-[#28392e]">
+<div class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white cursor-pointer">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-medium">Settings</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+<!-- Mobile Header (Visible on Mobile Viewport Simulation) -->
+<div class="flex-1 overflow-y-auto bg-black/40 flex justify-center">
+<!-- Central Mobile Column Container -->
+<div class="w-full max-w-[480px] bg-[#111813] min-h-full border-x border-[#28392e] flex flex-col relative pb-20">
+<!-- Match Header Sticky -->
+<header class="sticky top-0 z-20 bg-[#111813]/95 backdrop-blur-md border-b border-[#28392e]">
+<div class="px-4 py-3 flex items-center justify-between">
+<button class="text-gray-400 hover:text-white">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div class="flex flex-col items-center">
+<span class="text-xs font-bold text-primary tracking-wider uppercase">Live • 75'</span>
+<h2 class="text-white text-sm font-bold">World Cup Qualifiers</h2>
+</div>
+<button class="text-gray-400 hover:text-white">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Score Board -->
+<div class="px-6 pb-4 pt-1 flex items-center justify-between">
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full bg-white/5 p-1 border border-[#28392e]">
+<img alt="USA Flag" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDP3UoYaT_GlEjTkCt0Ehs98UowgbQoTurrf2ZA6yx-NvJFekUIXUMhafd1ngzjbk9jEm6Kj8jPD8-ShJmDIuL3krhfjb_PpzU6SY93eeB8Bh7lczo160R2SjUtOlpBMawkqfxdgujgO1TGKlnbMbvLJhYpd5mX0WeuqBuXjojJxLlRH-wb4z_nVq_PIEP-C0Xu_C5-7680cPKb-PuUaDSIOCEOLxLGmZS387NzUjvhI4wUPxxyxsNLmD8qAs19TPy3AqsGXoVvbJNa"/>
+</div>
+<span class="text-white font-bold text-lg">USA</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="text-3xl font-black text-white tracking-tighter">2 - 1</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full bg-white/5 p-1 border border-[#28392e]">
+<img alt="Costa Rica Flag" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCypi7INJlKmkjIwtUbXiAbrKtZT_gw5_2T6s9zjDltWA7lo0Ju0wbr3CEHv2xmg1z6As7IVzpyzfDbfklL8GfX6XRA2-780OCAyzoBWYknHIEBfvM5rDgWcKLol6oxeKeVCTG5Uh2QfdBcdIOVHjbLmIj8JPrZZqyOpehOoF-9mFqltP8xdwH8kmPJ3BF-Yr4vZi_NIW2xocGOAB340UP1ma1ivtr03wLmFvuQ1nSGKgktrOYVm1Wvg-lUBR8uN6iINsQNUmWaoZzv"/>
+</div>
+<span class="text-white font-bold text-lg">CRC</span>
+</div>
+</div>
+<!-- Horizontal Filter Scroll -->
+<div class="px-4 pb-3 flex gap-2 overflow-x-auto hide-scrollbar">
+<button class="bg-primary text-background-dark px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap">
+                            All Players
+                        </button>
+<button class="bg-[#28392e] text-gray-300 hover:text-white border border-transparent hover:border-primary/50 px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all">
+                            Starters
+                        </button>
+<button class="bg-[#28392e] text-gray-300 hover:text-white border border-transparent hover:border-primary/50 px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all">
+                            Attackers
+                        </button>
+<button class="bg-[#28392e] text-gray-300 hover:text-white border border-transparent hover:border-primary/50 px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all">
+                            High Value
+                        </button>
+<button class="bg-[#28392e] text-gray-300 hover:text-white border border-transparent hover:border-primary/50 px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all">
+                            Shots on Target
+                        </button>
+</div>
+</header>
+<!-- Player Cards Feed -->
+<div class="p-4 flex flex-col gap-4">
+<!-- Card 1: Pulisic -->
+<div class="bg-surface-dark rounded-xl p-4 border border-[#28392e] hover:border-primary/30 transition-colors group cursor-pointer relative overflow-hidden">
+<!-- Hot Tag -->
+<div class="absolute top-0 right-0 bg-primary text-background-dark text-[10px] font-bold px-2 py-1 rounded-bl-lg">
+                            HOT
+                        </div>
+<div class="flex items-start gap-4 mb-4">
+<div class="relative">
+<div class="w-14 h-14 rounded-full bg-gray-700 overflow-hidden border-2 border-[#28392e]">
+<img alt="Christian Pulisic" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhnnNOrm66OC_v96w3hnsfqkSNT0Vu9WRXpXcX48VDFyi6qTScijyfUvRV4WJ5nks3VCws0AQHpGeL_I5G8YFMkzcI1jkKpKjXRLEvceGrt2m3UQN5a1NMj7uH1ARzFm9JMkXqaEHZ-cBbSR4cdKnM7br6uHQq0oyeJIk2h8AIM6T99MDSExPMHRcSwMJEKOoXMqMUx4w4dQoEc0fkq54s_p5nMDa31F6cZYBGlJYOtQZ4VEhRgUt6dfjWIK0Ks8b9tceiZR48WHX0"/>
+</div>
+<div class="absolute -bottom-1 -right-1 bg-[#111813] text-xs font-bold text-white px-1.5 py-0.5 rounded border border-[#28392e]">#10</div>
+</div>
+<div>
+<h3 class="text-white font-bold text-lg leading-tight">Christian Pulisic</h3>
+<p class="text-gray-400 text-xs font-medium">Forward • USA</p>
+<div class="mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-primary text-[14px]">trending_up</span>
+<span class="text-primary text-xs font-bold">High Confidence</span>
+</div>
+</div>
+</div>
+<!-- Main Metrics Grid -->
+<div class="grid grid-cols-3 gap-3 mb-4">
+<div class="bg-[#111813] rounded-lg p-2 flex flex-col items-center justify-center border border-[#28392e]">
+<span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Total Shots</span>
+<span class="text-white text-xl font-bold">2.5</span>
+<span class="text-gray-500 text-[10px]">Over</span>
+</div>
+<div class="bg-[#111813] rounded-lg p-2 flex flex-col items-center justify-center border border-[#28392e] relative overflow-hidden">
+<div class="absolute inset-0 bg-primary/5"></div>
+<span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Odds</span>
+<span class="text-primary text-xl font-bold">-115</span>
+<span class="text-primary/70 text-[10px]">Implied 53%</span>
+</div>
+<div class="bg-[#111813] rounded-lg p-2 flex flex-col items-center justify-center border border-[#28392e]">
+<span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Edge</span>
+<span class="text-white text-xl font-bold">+4.2%</span>
+<span class="text-gray-500 text-[10px]">vs Model</span>
+</div>
+</div>
+<!-- Sparklines / Recent Form -->
+<div class="flex items-center gap-4 border-t border-[#28392e] pt-3">
+<div class="flex flex-col gap-1 w-1/2">
+<div class="flex justify-between items-center mb-1">
+<span class="text-gray-400 text-[10px] font-bold">LAST 5</span>
+<span class="text-white text-[10px] font-bold">3/5 Hit</span>
+</div>
+<div class="flex gap-1 h-8 items-end">
+<div class="flex-1 bg-primary rounded-sm h-[80%]"></div>
+<div class="flex-1 bg-gray-600 rounded-sm h-[40%]"></div>
+<div class="flex-1 bg-primary rounded-sm h-[100%]"></div>
+<div class="flex-1 bg-primary rounded-sm h-[90%]"></div>
+<div class="flex-1 bg-gray-600 rounded-sm h-[30%]"></div>
+</div>
+</div>
+<div class="flex flex-col gap-1 w-1/2">
+<div class="flex justify-between items-center mb-1">
+<span class="text-gray-400 text-[10px] font-bold">LAST 10</span>
+<span class="text-white text-[10px] font-bold">70% Rate</span>
+</div>
+<div class="w-full bg-[#111813] h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[70%] rounded-full"></div>
+</div>
+<div class="flex justify-between text-[9px] text-gray-500 mt-1">
+<span>0%</span>
+<span>50%</span>
+<span>100%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2: Campbell -->
+<div class="bg-surface-dark rounded-xl p-4 border border-[#28392e] hover:border-primary/30 transition-colors group cursor-pointer">
+<div class="flex items-start gap-4 mb-4">
+<div class="relative">
+<div class="w-14 h-14 rounded-full bg-gray-700 overflow-hidden border-2 border-[#28392e]">
+<img alt="Joel Campbell" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCiu9jcqGwN0I76kSukf7bSJPCSP_AIhJfFjdf3BVlPXncui_Vcz_kcRRFKfw6EptjsMt-TEPJSVftxBaC36hoYUoUyIAySUt9zO--_9-I-VP4yJC72bjgwTWYqBOhwa8RpIQbEfzQoo2pQf1v46U4-rNGdLiii6S1swozWwclUwVT7lXud7RhwlN7VrW05ElNZtz1bJ34ETUONxfRcE0fIkc0DFilRPo-3MnuetiM2Bd2h5cdgZnjmMqJ8t3P32q10SsJKzKkUf7bH"/>
+</div>
+<div class="absolute -bottom-1 -right-1 bg-[#111813] text-xs font-bold text-white px-1.5 py-0.5 rounded border border-[#28392e]">#12</div>
+</div>
+<div>
+<h3 class="text-white font-bold text-lg leading-tight">Joel Campbell</h3>
+<p class="text-gray-400 text-xs font-medium">Forward • CRC</p>
+<div class="mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-gray-500 text-[14px]">remove</span>
+<span class="text-gray-400 text-xs font-medium">Neutral Value</span>
+</div>
+</div>
+</div>
+<!-- Main Metrics Grid -->
+<div class="grid grid-cols-3 gap-3 mb-4">
+<div class="bg-[#111813] rounded-lg p-2 flex flex-col items-center justify-center border border-[#28392e]">
+<span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">SoT</span>
+<span class="text-white text-xl font-bold">1.5</span>
+<span class="text-gray-500 text-[10px]">Under</span>
+</div>
+<div class="bg-[#111813] rounded-lg p-2 flex flex-col items-center justify-center border border-[#28392e]">
+<span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Odds</span>
+<span class="text-white text-xl font-bold">+120</span>
+<span class="text-gray-500 text-[10px]">Implied 45%</span>
+</div>
+<div class="bg-[#111813] rounded-lg p-2 flex flex-col items-center justify-center border border-[#28392e]">
+<span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Edge</span>
+<span class="text-gray-400 text-xl font-bold">0%</span>
+<span class="text-gray-500 text-[10px]">Fair</span>
+</div>
+</div>
+<!-- Sparklines / Recent Form -->
+<div class="flex items-center gap-4 border-t border-[#28392e] pt-3">
+<div class="flex flex-col gap-1 w-full">
+<div class="flex justify-between items-center mb-1">
+<span class="text-gray-400 text-[10px] font-bold">LAST 5 MATCHES</span>
+<span class="text-gray-400 text-[10px] font-bold">1/5 Hit</span>
+</div>
+<div class="flex gap-1 h-8 items-end">
+<div class="flex-1 bg-gray-600 rounded-sm h-[30%]"></div>
+<div class="flex-1 bg-gray-600 rounded-sm h-[20%]"></div>
+<div class="flex-1 bg-gray-600 rounded-sm h-[40%]"></div>
+<div class="flex-1 bg-primary rounded-sm h-[60%]"></div>
+<div class="flex-1 bg-gray-600 rounded-sm h-[20%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3: McKennie -->
+<div class="bg-surface-dark rounded-xl p-4 border border-[#28392e] hover:border-primary/30 transition-colors group cursor-pointer">
+<div class="flex items-start gap-4 mb-4">
+<div class="relative">
+<div class="w-14 h-14 rounded-full bg-gray-700 overflow-hidden border-2 border-[#28392e]">
+<img alt="Weston McKennie" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAimmiHLRqWAhhVERrU8U9MflbGxjPeUt9Ldexag98VG6_vpVZ-eWkbZdwYMuaDO8sub9SE0V1QXvfF5xr8SdBWzkbGcnZ1VO4Yx1fsGoiklbFXf1WzfH_0tF2ckFzif7jbzmq8IsHmL4zgB_QdJ8MWqNiBZyMVqauqW3GbC6yD5V56lw8doEqEZ_St0CpsHTeFAziLK92p8VZoKbnnn3U-9Hs584IFimWif604vwIEFVAM7W3Lhxu2drhY6VDu2KHx_APIGbi8JENy"/>
+</div>
+<div class="absolute -bottom-1 -right-1 bg-[#111813] text-xs font-bold text-white px-1.5 py-0.5 rounded border border-[#28392e]">#8</div>
+</div>
+<div>
+<h3 class="text-white font-bold text-lg leading-tight">Weston McKennie</h3>
+<p class="text-gray-400 text-xs font-medium">Midfielder • USA</p>
+<div class="mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-primary text-[14px]">trending_up</span>
+<span class="text-primary text-xs font-bold">Moderate Value</span>
+</div>
+</div>
+</div>
+<!-- Main Metrics Grid -->
+<div class="grid grid-cols-3 gap-3 mb-4">
+<div class="bg-[#111813] rounded-lg p-2 flex flex-col items-center justify-center border border-[#28392e]">
+<span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Passes</span>
+<span class="text-white text-xl font-bold">45.5</span>
+<span class="text-gray-500 text-[10px]">Over</span>
+</div>
+<div class="bg-[#111813] rounded-lg p-2 flex flex-col items-center justify-center border border-[#28392e]">
+<span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Odds</span>
+<span class="text-primary text-xl font-bold">-105</span>
+<span class="text-primary/70 text-[10px]">Implied 51%</span>
+</div>
+<div class="bg-[#111813] rounded-lg p-2 flex flex-col items-center justify-center border border-[#28392e]">
+<span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Edge</span>
+<span class="text-white text-xl font-bold">+2.1%</span>
+<span class="text-gray-500 text-[10px]">vs Model</span>
+</div>
+</div>
+<!-- Compact History -->
+<div class="flex items-center gap-2 border-t border-[#28392e] pt-3">
+<span class="text-[10px] text-gray-500 font-bold uppercase w-12">Recent</span>
+<div class="flex gap-1 flex-1">
+<div class="h-1.5 flex-1 rounded-full bg-primary"></div>
+<div class="h-1.5 flex-1 rounded-full bg-primary"></div>
+<div class="h-1.5 flex-1 rounded-full bg-gray-600"></div>
+<div class="h-1.5 flex-1 rounded-full bg-primary"></div>
+<div class="h-1.5 flex-1 rounded-full bg-gray-600"></div>
+</div>
+<span class="text-[10px] text-white font-bold ml-2">60%</span>
+</div>
+</div>
+</div>
+<!-- Floating Action Button -->
+<button class="absolute bottom-6 right-6 z-30 bg-primary hover:bg-[#0fdc55] text-background-dark rounded-full w-14 h-14 flex items-center justify-center shadow-lg shadow-primary/20 transition-all active:scale-95">
+<span class="material-symbols-outlined text-[28px]">filter_list</span>
+</button>
+</div>
+<!-- Right Sidebar (Desktop only - Context) -->
+<div class="hidden xl:flex flex-col w-[320px] p-6 gap-6 sticky top-0 h-screen overflow-y-auto">
+<!-- Betting Slip Mini -->
+<div class="bg-surface-dark rounded-xl border border-[#28392e] p-5">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-white font-bold">Bet Slip</h3>
+<span class="bg-primary/20 text-primary text-xs px-2 py-1 rounded font-bold">2 Picks</span>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-start text-sm">
+<span class="text-gray-300">C. Pulisic o2.5 Shots</span>
+<span class="text-primary font-bold">-115</span>
+</div>
+<div class="flex justify-between items-start text-sm">
+<span class="text-gray-300">USA to Win</span>
+<span class="text-white font-bold">-150</span>
+</div>
+<div class="h-px bg-[#28392e] my-1"></div>
+<div class="flex justify-between items-center">
+<span class="text-gray-400 text-xs uppercase">Total Odds</span>
+<span class="text-white font-bold">+245</span>
+</div>
+<button class="w-full bg-primary text-background-dark font-bold py-2 rounded-lg mt-2 text-sm">Place Bet</button>
+</div>
+</div>
+<!-- Live Commentary / Feed -->
+<div class="flex flex-col gap-4">
+<h3 class="text-white font-bold text-sm uppercase tracking-wide">Live Feed</h3>
+<div class="flex gap-3">
+<span class="text-primary font-mono text-xs font-bold pt-1">74'</span>
+<p class="text-gray-400 text-sm">Pulisic attempts a shot from outside the box but it's blocked by the defender.</p>
+</div>
+<div class="flex gap-3">
+<span class="text-gray-500 font-mono text-xs font-bold pt-1">71'</span>
+<p class="text-gray-400 text-sm">Substitution USA. Weah replaces Reyna.</p>
+</div>
+<div class="flex gap-3">
+<span class="text-primary font-mono text-xs font-bold pt-1">68'</span>
+<p class="text-gray-400 text-sm">Goal! USA takes the lead with a header from McKennie.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

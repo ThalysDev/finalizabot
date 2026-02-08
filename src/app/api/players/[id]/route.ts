@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
+import { etlPlayerShots } from "@/lib/etl/client";
 
 export async function GET(
   request: Request,
@@ -7,6 +8,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const from = searchParams.get("from") ?? undefined;
+    const to = searchParams.get("to") ?? undefined;
 
     const player = await prisma.player.findUnique({
       where: { id },
@@ -43,7 +47,20 @@ export async function GET(
       return NextResponse.json({ error: "Player not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ player });
+    // Busca shots via ETL API HTTP (não mais via Prisma etl schema)
+    let etlShots: unknown[] = [];
+    if (player.sofascoreId) {
+      const res = await etlPlayerShots(player.sofascoreId, {
+        limit: 50,
+        from,
+        to,
+      });
+      if (res.data) {
+        etlShots = res.data.items;
+      }
+    }
+
+    return NextResponse.json({ player, etlShots });
   } catch (error) {
     console.error("Error fetching player:", error);
     return NextResponse.json(

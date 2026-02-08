@@ -72,22 +72,19 @@ Visit **http://localhost:3000** in your browser.
 
 ### Environment Variables
 
-Create `.env.local`:
+Copie `.env.example` → `.env.local` e preencha:
 
-```bash
-# Clerk Authentication
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
-CLERK_SECRET_KEY=sk_test_xxxxx
+| Variável | Obrigatória | Descrição |
+|---|---|---|
+| `DATABASE_URL` | ✅ | Connection string Neon (pooler). Formato: `postgresql://...@ep-xxx.neon.tech/neondb?sslmode=require` |
+| `DIRECT_URL` | ✅ | Connection string Neon (direta, sem pooler). Usada pelo Prisma para migrations. |
+| `SOFASCORE_ETL_API_URL` | ✅ | URL base da API do SofaScore ETL. Ex: `https://etl.example.com` |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | ✅ | Chave pública do Clerk |
+| `CLERK_SECRET_KEY` | ✅ | Chave secreta do Clerk |
+| `NEXT_PUBLIC_APP_URL` | ✅ | URL pública do app |
+| `NEXT_PUBLIC_GA_ID` | ❌ | Google Analytics 4 Measurement ID |
 
-# Database
-DATABASE_URL="file:./prisma/dev.db"
-
-# Google Analytics
-NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
-
-# Application
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
+> ⚠️ **Não commitar** `.env` ou `.env.local`. Apenas `.env.example` com placeholders.
 
 ---
 
@@ -97,10 +94,33 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 - **Frontend:** Next.js 16 with React 19, TypeScript, Tailwind CSS
 - **Backend:** Next.js API Routes with Prisma ORM
-- **Database:** SQLite (dev) / PostgreSQL (prod)
+- **Database:** Neon PostgreSQL (gerenciado, SSL obrigatório)
+- **Data Source:** SofaScore ETL API (HTTP) — alimenta o Neon com partidas e estatísticas
 - **Authentication:** Clerk
 - **Analytics:** Google Analytics 4
 - **Styling:** Design System with 50+ tokens
+
+### Dependência: SofaScore ETL API
+
+O FinalizaBOT **não acessa o SofaScore diretamente**. Todos os dados de partidas,
+chutes e estatísticas são consumidos via a **API HTTP do SofaScore ETL**, que por
+sua vez persiste os dados em um banco **Neon PostgreSQL**.
+
+| Componente | Descrição |
+|---|---|
+| **ETL API** | Expondo `GET /health`, `/players/:id/last-matches`, `/players/:id/shots`, `/matches/:id/shots` |
+| **Neon DB** | PostgreSQL gerenciado usado pelo ETL como storage. O BOT também pode se conectar diretamente para dados de usuário/subscrição. |
+| **FinalizaBOT** | Consome a API do ETL para dados de futebol + Neon para dados próprios (User, Subscription, Favorites) |
+
+```
+┌───────────────┐    HTTP     ┌───────────────┐    SQL      ┌───────────────┐
+│  FinalizaBOT  │ ────────▶ │  SofaScore   │ ────────▶ │     Neon      │
+│  (Next.js)    │           │  ETL API     │           │  PostgreSQL   │
+└───────────────┘           └───────────────┘           └───────────────┘
+       │                                              ▲
+       │              SQL (Prisma)                     │
+       └──────────────────────────────────────────────┘
+```
 
 ---
 
@@ -174,7 +194,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 - Next.js API Routes
 - Prisma 6.2.1
-- SQLite/PostgreSQL
+- Neon PostgreSQL (SSL, pooler + direct URL)
 
 ### DevOps
 
@@ -277,4 +297,4 @@ See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for deployment instructions.
 ---
 
 **Status:** Production Ready ✅  
-**Last Updated:** February 5, 2026
+**Last Updated:** February 7, 2026

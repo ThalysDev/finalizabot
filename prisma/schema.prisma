@@ -4,8 +4,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Player {
@@ -19,6 +20,7 @@ model Player {
 
   matchStats    PlayerMatchStats[]
   marketAnalyses MarketAnalysis[]
+  favoritedBy   UserFavorite[]
 }
 
 model Match {
@@ -69,3 +71,91 @@ model MarketAnalysis {
   player      Player   @relation(fields: [playerId], references: [id])
   match       Match    @relation(fields: [matchId], references: [id])
 }
+
+// ============================================================================
+// USER & SUBSCRIPTION — Preparado para integração com Clerk + Stripe
+// ============================================================================
+
+model User {
+  id            String         @id @default(cuid())
+  clerkId       String         @unique
+  email         String         @unique
+  name          String?
+  tier          UserTier       @default(FREE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  subscription  Subscription?
+  favorites     UserFavorite[]
+  alertSettings AlertSettings?
+}
+
+model Subscription {
+  id              String             @id @default(cuid())
+  userId          String             @unique
+  plan            SubscriptionPlan   @default(PRO_MONTHLY)
+  status          SubscriptionStatus @default(ACTIVE)
+  stripeCustomerId    String?        @unique
+  stripeSubscriptionId String?       @unique
+  stripePriceId   String?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean        @default(false)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  playerId  String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, playerId])
+}
+
+model AlertSettings {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  pushEnabled   Boolean  @default(true)
+  emailEnabled  Boolean  @default(false)
+  silentMode    Boolean  @default(false)
+  minRoi        Float    @default(10)
+  maxCv         Float    @default(0.5)
+  leagues       String[] @default(["Premier League", "La Liga", "Champions League"])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserTier {
+  FREE
+  PRO
+}
+
+enum SubscriptionPlan {
+  PRO_MONTHLY
+  PRO_ANNUAL
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+// ============================================================================
+// ETL (sofascore-etl) — dados agora consumidos via HTTP API
+// Ver: src/lib/etl/client.ts
+// ============================================================================

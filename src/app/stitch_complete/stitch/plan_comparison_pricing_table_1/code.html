@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShotAnalytics - Pricing</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#111813",
+                        "surface-dark": "#1c271f",
+                        "surface-darker": "#0f1511",
+                        "border-dark": "#28392e",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display antialiased selection:bg-primary selection:text-black">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Navigation -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-dark bg-background-dark/95 backdrop-blur sticky top-0 z-50 px-6 py-4 lg:px-10">
+<div class="flex items-center gap-3 text-white">
+<div class="flex items-center justify-center size-8 rounded-lg bg-primary/10 text-primary">
+<span class="material-symbols-outlined">sports_soccer</span>
+</div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-tight">ShotAnalytics</h2>
+</div>
+<div class="hidden md:flex flex-1 justify-end gap-8 items-center">
+<nav class="flex items-center gap-8">
+<a class="text-slate-300 hover:text-primary transition-colors text-sm font-medium leading-normal" href="#">Features</a>
+<a class="text-white text-sm font-medium leading-normal" href="#">Pricing</a>
+<a class="text-slate-300 hover:text-primary transition-colors text-sm font-medium leading-normal" href="#">Scouts</a>
+<a class="text-slate-300 hover:text-primary transition-colors text-sm font-medium leading-normal" href="#">Login</a>
+</nav>
+<button class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-6 bg-primary hover:bg-[#0fd650] transition-colors text-background-dark text-sm font-bold leading-normal tracking-wide shadow-[0_0_15px_rgba(19,236,91,0.3)]">
+<span class="truncate">Get PRO</span>
+</button>
+</div>
+<div class="md:hidden text-white cursor-pointer">
+<span class="material-symbols-outlined">menu</span>
+</div>
+</header>
+<div class="layout-container flex h-full grow flex-col">
+<div class="px-4 md:px-10 lg:px-40 flex flex-1 justify-center py-12">
+<div class="layout-content-container flex flex-col max-w-[1024px] flex-1">
+<!-- Hero Section -->
+<div class="flex flex-col items-center justify-center gap-6 p-4 text-center mb-10">
+<div class="flex flex-col gap-3 max-w-2xl">
+<span class="text-primary font-bold tracking-wider text-sm uppercase">Pricing Plans</span>
+<h1 class="text-white text-4xl md:text-5xl font-black leading-tight tracking-tight">
+                                Analyze Every Shot.<br/>Master the Game.
+                            </h1>
+<p class="text-slate-400 text-lg font-normal leading-relaxed">
+                                From casual tracking to professional insights. Choose the edge you need to dominate the pitch.
+                            </p>
+</div>
+<!-- Billing Toggle -->
+<div class="flex items-center gap-3 p-1 bg-surface-dark border border-border-dark rounded-xl mt-4">
+<label class="group relative cursor-pointer select-none">
+<input class="peer sr-only" name="billing" type="radio"/>
+<div class="px-6 py-2 rounded-lg text-sm font-medium text-slate-400 peer-checked:bg-border-dark peer-checked:text-white transition-all">
+                                    Monthly
+                                </div>
+</label>
+<label class="group relative cursor-pointer select-none">
+<input checked="" class="peer sr-only" name="billing" type="radio"/>
+<div class="flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium text-slate-400 peer-checked:bg-border-dark peer-checked:text-white transition-all">
+                                    Yearly <span class="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">SAVE 20%</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Pricing Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 px-4 py-3 mb-16 relative">
+<!-- Free Card -->
+<div class="flex flex-1 flex-col gap-6 rounded-2xl border border-solid border-border-dark bg-surface-dark p-8 relative hover:border-slate-600 transition-colors">
+<div class="flex flex-col gap-2">
+<h3 class="text-slate-300 text-lg font-bold leading-tight uppercase tracking-wider">Free</h3>
+<p class="flex items-baseline gap-1 text-white">
+<span class="text-white text-5xl font-black leading-tight tracking-tight">$0</span>
+<span class="text-slate-400 text-base font-medium leading-tight">/mo</span>
+</p>
+<p class="text-slate-400 text-sm mt-2">Perfect for casual players tracking basics.</p>
+</div>
+<div class="h-px bg-border-dark w-full my-2"></div>
+<div class="flex flex-col gap-4 flex-1">
+<div class="text-[14px] font-medium leading-normal flex gap-3 text-slate-300">
+<span class="material-symbols-outlined text-slate-500 text-[20px]">check_circle</span>
+                                    Basic League Access (Top 5)
+                                </div>
+<div class="text-[14px] font-medium leading-normal flex gap-3 text-slate-300">
+<span class="material-symbols-outlined text-slate-500 text-[20px]">check_circle</span>
+                                    Standard Shot Maps
+                                </div>
+<div class="text-[14px] font-medium leading-normal flex gap-3 text-slate-300">
+<span class="material-symbols-outlined text-slate-500 text-[20px]">check_circle</span>
+                                    7-Day History
+                                </div>
+<div class="text-[14px] font-medium leading-normal flex gap-3 text-slate-300">
+<span class="material-symbols-outlined text-slate-500 text-[20px]">check_circle</span>
+                                    Community Support
+                                </div>
+</div>
+<button class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-4 bg-border-dark hover:bg-slate-700 transition-colors text-white text-sm font-bold leading-normal tracking-wide mt-4">
+                                Start for Free
+                            </button>
+</div>
+<!-- PRO Card -->
+<div class="flex flex-1 flex-col gap-6 rounded-2xl border-2 border-primary/50 bg-surface-dark p-8 relative shadow-[0_0_40px_-10px_rgba(19,236,91,0.15)] transform md:-translate-y-4 hover:scale-[1.02] transition-transform duration-300">
+<div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-background-dark text-xs font-bold px-4 py-1.5 rounded-full shadow-lg uppercase tracking-wider">
+                                Most Popular
+                            </div>
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<h3 class="text-primary text-lg font-bold leading-tight uppercase tracking-wider">PRO</h3>
+</div>
+<p class="flex items-baseline gap-1 text-white">
+<span class="text-white text-5xl font-black leading-tight tracking-tight">$29</span>
+<span class="text-slate-400 text-base font-medium leading-tight">/mo</span>
+</p>
+<p class="text-slate-400 text-sm mt-2">For serious analysts &amp; scouts needing deep data.</p>
+</div>
+<div class="h-px bg-border-dark w-full my-2"></div>
+<div class="flex flex-col gap-4 flex-1">
+<div class="text-[14px] font-medium leading-normal flex gap-3 text-white">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+                                    All Leagues Access (50+ Global)
+                                </div>
+<div class="text-[14px] font-medium leading-normal flex gap-3 text-white group relative cursor-help">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+<span class="border-b border-dotted border-slate-500">Advanced Consistency Metrics (CV)</span>
+</div>
+<div class="text-[14px] font-medium leading-normal flex gap-3 text-white">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+                                    Live In-Play Alerts
+                                </div>
+<div class="text-[14px] font-medium leading-normal flex gap-3 text-white">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+                                    Export Data (CSV/Excel)
+                                </div>
+<div class="text-[14px] font-medium leading-normal flex gap-3 text-white">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+                                    Priority Support
+                                </div>
+</div>
+<button class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-4 bg-primary hover:bg-[#0fd650] transition-colors text-background-dark text-sm font-bold leading-normal tracking-wide shadow-lg shadow-primary/25 mt-4">
+                                Get PRO Access
+                            </button>
+</div>
+</div>
+<!-- Detailed Comparison Table -->
+<div class="px-4 py-3 mt-8">
+<h3 class="text-2xl font-bold text-white mb-6 text-center">Feature Breakdown</h3>
+<div class="w-full overflow-hidden rounded-xl border border-border-dark bg-surface-darker shadow-xl">
+<table class="w-full border-collapse">
+<thead>
+<tr class="bg-surface-dark border-b border-border-dark">
+<th class="p-4 md:p-6 text-left text-slate-400 text-sm font-semibold w-1/3">Feature</th>
+<th class="p-4 md:p-6 text-center text-white text-lg font-bold w-1/3">FREE</th>
+<th class="p-4 md:p-6 text-center text-primary text-lg font-bold w-1/3 bg-primary/5">PRO</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-dark">
+<tr class="group hover:bg-white/5 transition-colors">
+<td class="p-4 md:p-6 text-slate-300 text-sm font-medium">League Coverage</td>
+<td class="p-4 md:p-6 text-center text-slate-400 text-sm">Top 5 Leagues</td>
+<td class="p-4 md:p-6 text-center text-white text-sm font-bold bg-primary/5">Global (50+)</td>
+</tr>
+<tr class="group hover:bg-white/5 transition-colors">
+<td class="p-4 md:p-6 text-slate-300 text-sm font-medium">Shot Maps</td>
+<td class="p-4 md:p-6 text-center text-slate-400 text-sm">Standard 2D</td>
+<td class="p-4 md:p-6 text-center text-white text-sm font-bold bg-primary/5">Advanced 3D + Zones</td>
+</tr>
+<tr class="group hover:bg-white/5 transition-colors">
+<td class="p-4 md:p-6 text-slate-300 text-sm font-medium">Data History</td>
+<td class="p-4 md:p-6 text-center text-slate-400 text-sm">Last 7 Days</td>
+<td class="p-4 md:p-6 text-center text-white text-sm font-bold bg-primary/5">Unlimited Archival</td>
+</tr>
+<tr class="group hover:bg-white/5 transition-colors">
+<td class="p-4 md:p-6 text-slate-300 text-sm font-medium flex items-center gap-2">
+                                            Consistency Metrics (CV)
+                                            <span class="material-symbols-outlined text-[16px] text-slate-500 cursor-help" title="Coefficient of Variation measures shot consistency over time">info</span>
+</td>
+<td class="p-4 md:p-6 text-center">
+<span class="material-symbols-outlined text-slate-600">remove</span>
+</td>
+<td class="p-4 md:p-6 text-center bg-primary/5">
+<span class="material-symbols-outlined text-primary">check_circle</span>
+</td>
+</tr>
+<tr class="group hover:bg-white/5 transition-colors">
+<td class="p-4 md:p-6 text-slate-300 text-sm font-medium">Live In-Play Alerts</td>
+<td class="p-4 md:p-6 text-center">
+<span class="material-symbols-outlined text-slate-600">remove</span>
+</td>
+<td class="p-4 md:p-6 text-center bg-primary/5">
+<span class="material-symbols-outlined text-primary">check_circle</span>
+</td>
+</tr>
+<tr class="group hover:bg-white/5 transition-colors">
+<td class="p-4 md:p-6 text-slate-300 text-sm font-medium">Data Export (CSV/Excel)</td>
+<td class="p-4 md:p-6 text-center">
+<span class="material-symbols-outlined text-slate-600">remove</span>
+</td>
+<td class="p-4 md:p-6 text-center bg-primary/5">
+<span class="material-symbols-outlined text-primary">check_circle</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Trust Section -->
+<div class="flex flex-col items-center justify-center gap-4 mt-16 text-slate-500">
+<p class="text-sm font-medium uppercase tracking-widest opacity-60">Trusted by professional scouts worldwide</p>
+<div class="flex gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
+<!-- Placeholder for logos using text/icons for now -->
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined">shield</span> <span class="font-bold">EuroScout</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined">sports_soccer</span> <span class="font-bold">PremierData</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined">query_stats</span> <span class="font-bold">StatGoal</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>
