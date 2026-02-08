@@ -4,9 +4,6 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
 
-  // Monorepo: keep @prisma/client out of bundler (native query engine binary)
-  serverExternalPackages: ["@prisma/client"],
-
   // Image Optimization
   images: {
     formats: ["image/avif", "image/webp"],
