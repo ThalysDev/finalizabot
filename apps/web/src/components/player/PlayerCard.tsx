@@ -99,7 +99,7 @@ export function PlayerCard({
 }: PlayerCardProps) {
   const cfg = statusConfig(status);
   const StatusIcon = cfg.icon;
-  const formattedLine = Number.isInteger(line) ? `${line}.5` : line.toFixed(1);
+  const formattedLine = line.toFixed(1);
   const formattedOdds = odds.toFixed(2);
 
   const card = (
@@ -218,15 +218,18 @@ export function PlayerCard({
         {/* Mini sparkline */}
         {sparkline && sparkline.length > 0 && (
           <div className="flex items-end gap-[2px] h-4">
-            {sparkline.slice(-8).map((v, i) => (
-              <div
-                key={i}
-                className="w-1 rounded-full bg-fb-primary/40"
-                style={{
-                  height: `${Math.max(20, (v / Math.max(...sparkline)) * 100)}%`,
-                }}
-              />
-            ))}
+            {(() => {
+              const maxSpark = Math.max(...sparkline, 1);
+              return sparkline.slice(-8).map((v, i) => (
+                <div
+                  key={i}
+                  className="w-1 rounded-full bg-fb-primary/40"
+                  style={{
+                    height: `${Math.max(20, (v / maxSpark) * 100)}%`,
+                  }}
+                />
+              ));
+            })()}
           </div>
         )}
       </div>

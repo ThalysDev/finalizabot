@@ -230,7 +230,7 @@ export async function fetchMatchPageData(
             const avg = total / shots.length;
             const totalOnTarget = shotsOnTarget.reduce((a, b) => a + b, 0);
             const avgOnTarget = totalOnTarget / shotsOnTarget.length;
-            const overLine = shots.map((s) => s > line);
+              const overLine = shots.map((s) => s >= line);
             const variance =
               shots.reduce((a, s) => a + Math.pow(s - avg, 2), 0) /
               shots.length;

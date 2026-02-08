@@ -87,6 +87,9 @@ export async function fetchPlayerPageData(
   const playerTeamId = shotsRes.data
     ? detectPlayerTeamId(shotsRes.data.items)
     : undefined;
+  const etlTeamBadge = playerTeamId
+    ? `https://api.sofascore.com/api/v1/team/${playerTeamId}/image`
+    : undefined;
 
   // Se ETL falhar, tenta fallback para PlayerMatchStats do Prisma
   if (lastMatchesRes.error || !lastMatchesRes.data) {
@@ -152,9 +155,9 @@ export async function fetchPlayerPageData(
         };
       };
 
-      const last5Over = shots.slice(0, 5).map((s) => s > line);
-      const u5Hits = shots.slice(0, 5).filter((s) => s > line).length;
-      const u10Hits = shots.slice(0, 10).filter((s) => s > line).length;
+      const last5Over = shots.slice(0, 5).map((s) => s >= line);
+      const u5Hits = shots.slice(0, 5).filter((s) => s >= line).length;
+      const u10Hits = shots.slice(0, 10).filter((s) => s >= line).length;
 
       const localPlayerStats: PlayerStatsFromEtl = {
         avgShots: Number(avg.toFixed(1)),
@@ -200,7 +203,15 @@ export async function fetchPlayerPageData(
         }));
 
       return {
-        player: buildPlayerDetail(dbPlayer, localPlayerStats, undefined, undefined, undefined, etlPlayerImage),
+        player: buildPlayerDetail(
+          dbPlayer,
+          localPlayerStats,
+          undefined,
+          undefined,
+          undefined,
+          etlPlayerImage,
+          etlTeamBadge,
+        ),
         shotHistory: localShotHistory,
         matchHistory: localMatchHistory,
         stats: localPlayerStats,
@@ -209,7 +220,15 @@ export async function fetchPlayerPageData(
     }
 
     return {
-      player: buildPlayerDetail(dbPlayer, null, undefined, undefined, undefined, etlPlayerImage),
+      player: buildPlayerDetail(
+        dbPlayer,
+        null,
+        undefined,
+        undefined,
+        undefined,
+        etlPlayerImage,
+        etlTeamBadge,
+      ),
       shotHistory: [],
       matchHistory: [],
       stats: null,
@@ -224,7 +243,15 @@ export async function fetchPlayerPageData(
 
   if (recentItems.length === 0) {
     return {
-      player: buildPlayerDetail(dbPlayer, null, undefined, undefined, undefined, etlPlayerImage),
+      player: buildPlayerDetail(
+        dbPlayer,
+        null,
+        undefined,
+        undefined,
+        undefined,
+        etlPlayerImage,
+        etlTeamBadge,
+      ),
       shotHistory: [],
       matchHistory: [],
       stats: null,
@@ -300,6 +327,7 @@ export async function fetchPlayerPageData(
       latestAnalysis?.odds,
       nextMatchData,
       etlPlayerImage,
+      etlTeamBadge,
     ),
     shotHistory,
     matchHistory,
@@ -336,6 +364,7 @@ function buildPlayerDetail(
     competition: string;
   },
   overrideAvatarUrl?: string,
+  overrideTeamBadgeUrl?: string,
 ): PlayerDetail {
   const team = teamName ?? p.teamName ?? "\u2014";
   return {
@@ -345,7 +374,7 @@ function buildPlayerDetail(
     teamShort: team.slice(0, 3).toUpperCase(),
     position: p.position,
     avatarUrl: p.imageUrl ?? overrideAvatarUrl ?? undefined,
-    teamBadgeUrl: p.teamImageUrl ?? undefined,
+    teamBadgeUrl: p.teamImageUrl ?? overrideTeamBadgeUrl ?? undefined,
     number: 0,
     age: 0,
     nationality: "—",

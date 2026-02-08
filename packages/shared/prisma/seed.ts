@@ -150,6 +150,21 @@ async function main() {
 
   console.log(`👥 ${players.length} jogadores criados`);
 
+  const teamCatalog = Array.from(
+    new Map(
+      players
+        .filter((p) => p.teamName)
+        .map((p) => [
+          p.teamName as string,
+          {
+            name: p.teamName as string,
+            imageUrl: p.teamImageUrl,
+            id: extractTeamId(p.teamImageUrl),
+          },
+        ]),
+    ).values(),
+  ).filter((t) => t.name !== "—");
+
   // ── PARTIDAS DE HOJE ───────────────────────────────────────────────────
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
@@ -309,19 +324,34 @@ async function main() {
     return d;
   });
 
-  for (const sp of statsPlayers) {
+  for (const [playerIndex, sp] of statsPlayers.entries()) {
     for (let i = 0; i < 10; i++) {
       const histId = `seed-hist-${sp.player.sofascoreId}-${i}`;
+      const playerTeam = teamCatalog.find(
+        (t) => t.name === sp.player.teamName,
+      );
+      const fallbackTeam = teamCatalog[(playerIndex + i + 1) % teamCatalog.length];
+      const opponent =
+        !playerTeam || fallbackTeam?.name === playerTeam.name
+          ? teamCatalog[(playerIndex + i + 2) % teamCatalog.length]
+          : fallbackTeam;
+      const homeTeam = playerTeam?.name ?? "Time A";
+      const awayTeam = opponent?.name ?? "Time B";
+
       const histMatch = await prisma.match.upsert({
         where: { sofascoreId: histId },
         update: {},
         create: {
           sofascoreId: histId,
-          homeTeam: "Time A",
-          awayTeam: "Time B",
+          homeTeam,
+          awayTeam,
           competition: "Brasileirão Série A",
           matchDate: histDates[i],
           status: "finished",
+          homeTeamImageUrl: playerTeam?.imageUrl ?? null,
+          awayTeamImageUrl: opponent?.imageUrl ?? null,
+          homeTeamSofascoreId: playerTeam?.id ?? null,
+          awayTeamSofascoreId: opponent?.id ?? null,
         },
       });
 
@@ -350,6 +380,12 @@ async function main() {
   const analysisCount = await prisma.marketAnalysis.count();
 
   console.log(`\n✅ Seed concluído!\n  Partidas: ${matchCount}\n  Jogadores: ${playerCount}\n  Stats: ${statsCount}\n  Análises: ${analysisCount}`);
+}
+
+function extractTeamId(imageUrl?: string | null): string | null {
+  if (!imageUrl) return null;
+  const match = imageUrl.match(/team\/(\d+)\//);
+  return match ? match[1] : null;
 }
 
 main()

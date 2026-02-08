@@ -39,6 +39,8 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
   const [sortBy, setSortBy] = useState<"avgShots" | "cv" | "odds">("avgShots");
   const [metric, setMetric] = useState<"shots" | "sot">("shots");
   const lineLabel = formatLine(players[0]?.line ?? 1.5);
+  const homeTeamKey = match.homeTeam.toLowerCase();
+  const awayTeamKey = match.awayTeam.toLowerCase();
 
   const filteredPlayers = useMemo(() => {
     let result = [...players];
@@ -263,6 +265,15 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
                 metric === "sot"
                   ? player.avgShotsOnTarget ?? 0
                   : player.avgShots;
+              const resolvedBadge =
+                player.teamBadgeUrl ??
+                resolveBadgeFromMatch(
+                  player.team,
+                  homeTeamKey,
+                  awayTeamKey,
+                  match.homeBadgeUrl,
+                  match.awayBadgeUrl,
+                );
               return (
                 <PlayerCard
                   key={player.id}
@@ -271,6 +282,7 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
                   avgLabel={
                     metric === "sot" ? "Méd. No Alvo" : "Méd. Finalizações"
                   }
+                  teamBadgeUrl={resolvedBadge}
                   playerId={player.id}
                 />
               );
@@ -284,6 +296,19 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
       </div>
     </div>
   );
+}
+
+function resolveBadgeFromMatch(
+  team: string,
+  homeKey: string,
+  awayKey: string,
+  homeBadgeUrl?: string,
+  awayBadgeUrl?: string,
+): string | undefined {
+  const teamKey = team.toLowerCase();
+  if (teamKey.includes(homeKey)) return homeBadgeUrl;
+  if (teamKey.includes(awayKey)) return awayBadgeUrl;
+  return undefined;
 }
 
 function formatLine(value: number): string {
