@@ -5,9 +5,6 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "imports": {
-    "#generated/prisma": "./generated/prisma/index.js"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -33,10 +30,6 @@
       "types": "./dist/calc/market.d.ts",
       "import": "./dist/calc/market.js",
       "require": "./dist/calc/market.cjs"
-    },
-    "./generated/prisma": {
-      "types": "./generated/prisma/index.d.ts",
-      "default": "./generated/prisma/index.js"
     }
   },
   "scripts": {
@@ -48,7 +41,8 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "6.19.2"
+    "@prisma/client": "6.19.2",
+    "dotenv": "^16.4.7"
   },
   "devDependencies": {
     "prisma": "6.19.2",
