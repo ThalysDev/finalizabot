@@ -39,7 +39,10 @@ export async function GET(
       }
     }
 
-    return NextResponse.json({ match, etlShots });
+    return NextResponse.json(
+      { match, etlShots },
+      { headers: { "Cache-Control": "s-maxage=120, stale-while-revalidate=60" } },
+    );
   } catch (error) {
     console.error("Error fetching match:", error);
     return NextResponse.json(

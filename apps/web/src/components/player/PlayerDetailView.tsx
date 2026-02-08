@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   ChevronRight,
   Calendar,
@@ -14,10 +15,32 @@ import {
 } from "lucide-react";
 import { PlayerHeroCard } from "./PlayerHeroCard";
 import { MatchHistoryTable } from "./MatchHistoryTable";
-import {
-  ShotBarChart,
-  LineEvolutionChart,
-} from "@/components/charts/ShotBarChart";
+
+const ShotBarChart = dynamic(
+  () =>
+    import("@/components/charts/ShotBarChart").then((m) => ({
+      default: m.ShotBarChart,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 bg-fb-surface rounded-xl animate-pulse" />
+    ),
+  },
+);
+
+const LineEvolutionChart = dynamic(
+  () =>
+    import("@/components/charts/ShotBarChart").then((m) => ({
+      default: m.LineEvolutionChart,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-48 bg-fb-surface rounded-xl animate-pulse" />
+    ),
+  },
+);
 import { formatLine, buildLineIndicator } from "@/lib/helpers";
 import type {
   PlayerDetail,

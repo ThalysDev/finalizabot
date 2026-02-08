@@ -60,7 +60,10 @@ export async function GET(
       }
     }
 
-    return NextResponse.json({ player, etlShots });
+    return NextResponse.json(
+      { player, etlShots },
+      { headers: { "Cache-Control": "s-maxage=120, stale-while-revalidate=60" } },
+    );
   } catch (error) {
     console.error("Error fetching player:", error);
     return NextResponse.json(

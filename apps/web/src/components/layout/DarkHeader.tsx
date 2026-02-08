@@ -255,6 +255,13 @@ export function DarkHeader() {
               ))}
             </div>
           )}
+          {searchQuery.length >= 2 && searchResults.length === 0 && !searching && (
+            <div className="mt-2 bg-fb-surface rounded-lg p-3">
+              <p className="text-xs text-fb-text-muted text-center">
+                Nenhum jogador encontrado
+              </p>
+            </div>
+          )}
         </div>
       )}
     </header>

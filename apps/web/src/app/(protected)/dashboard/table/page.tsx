@@ -227,7 +227,7 @@ export default async function AdvancedTablePage() {
       </div>
 
       {/* Table */}
-      {players.length > 0 && (
+      {players.length > 0 ? (
         <DataTable
           columns={columns}
           data={players}
@@ -236,6 +236,31 @@ export default async function AdvancedTablePage() {
           activeFilter="all"
           pageSize={8}
         />
+      ) : (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="size-16 rounded-full bg-fb-surface flex items-center justify-center mb-4">
+            <svg
+              className="size-8 text-fb-text-muted"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-fb-text font-semibold text-lg mb-2">
+            Nenhum jogador encontrado
+          </h3>
+          <p className="text-fb-text-muted text-sm max-w-md">
+            Execute o sync ETL para popular a tabela com jogadores e suas
+            estatísticas de finalizações.
+          </p>
+        </div>
       )}
     </div>
   );

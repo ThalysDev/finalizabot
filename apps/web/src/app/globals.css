@@ -608,3 +608,18 @@ input[type="range"]::-moz-range-thumb {
 .animate-count {
   animation: count-pulse 0.3s ease-out;
 }
+
+/* ============================================================================
+   ACCESSIBILITY — Keyboard focus styles
+   ============================================================================ */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[role="switch"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="radio"]:focus-visible {
+  outline: 2px solid var(--fb-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
