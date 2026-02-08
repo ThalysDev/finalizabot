@@ -8,16 +8,21 @@ function delay(ms: number): Promise<void> {
 }
 
 const BASE = 'https://api.sofascore.com/api/v1';
+const SPORT_BASE = `${BASE}/sport/football`;
 const STATUS_FINISHED = 100;
 /** Status codes we exclude (e.g. canceled). Events with these are not included. */
 const STATUS_CANCELED = 70;
 
 function getTournamentSeasonsUrl(tournamentId: number): string {
-  return `${BASE}/tournament/${tournamentId}/seasons`;
+  return `${BASE}/unique-tournament/${tournamentId}/seasons`;
 }
 
 function getTournamentEventsUrl(tournamentId: number, seasonId: number): string {
-  return `${BASE}/tournament/${tournamentId}/season/${seasonId}/events`;
+  return `${BASE}/unique-tournament/${tournamentId}/season/${seasonId}/events`;
+}
+
+function getScheduledEventsUrl(date: string): string {
+  return `${SPORT_BASE}/scheduled-events/${date}`;
 }
 
 async function fetchJson<T = unknown>(url: string): Promise<T | null> {
@@ -47,6 +52,10 @@ interface EventItem {
 }
 
 interface EventsResponse {
+  events?: EventItem[];
+}
+
+interface ScheduledEventsResponse {
   events?: EventItem[];
 }
 
@@ -139,6 +148,38 @@ async function getMatchIdsForTodayTomorrow(
   return ids;
 }
 
+async function getMatchIdsFromScheduledDates(
+  targetDates: Set<string>,
+  tz: string,
+): Promise<string[]> {
+  const ids: string[] = [];
+  const fallbackIds: string[] = [];
+  for (const date of targetDates) {
+    const data = await fetchJson<ScheduledEventsResponse>(getScheduledEventsUrl(date));
+    const events = data?.events;
+    if (!Array.isArray(events)) continue;
+    for (const ev of events) {
+      const code = ev?.status?.code;
+      if (code === STATUS_CANCELED) continue;
+      const name = ev?.tournament?.name;
+      if (name != null && !isAllowedTournament(name)) {
+        const id = ev?.id;
+        if (id != null) fallbackIds.push(String(id));
+        continue;
+      }
+      const eventDate = eventDateString(ev, tz);
+      if (eventDate != null && !targetDates.has(eventDate)) continue;
+      const id = ev?.id;
+      if (id != null) ids.push(String(id));
+    }
+  }
+  if (ids.length === 0 && fallbackIds.length > 0) {
+    logger.warn('No matches after tournament-name filter; including scheduled-events fallback');
+    return fallbackIds;
+  }
+  return ids;
+}
+
 /**
  * Lista IDs de partidas finalizadas (status 100) cuja data está nos últimos N dias (UTC).
  * Usado como fallback para popular histórico (últimos 10 jogos) quando não há endpoint de jogador.
@@ -226,6 +267,16 @@ export async function discoverEuropeanMatchIds(): Promise<string[]> {
         count: ids.length,
       });
     }
+  }
+
+  const scheduledIds = await getMatchIdsFromScheduledDates(targetDates, tz);
+  if (scheduledIds.length > 0) {
+    scheduledIds.forEach((id) => allIds.add(id));
+    logger.info('Discovered matches from scheduled-events', {
+      count: scheduledIds.length,
+    });
+  } else if (allIds.size === 0) {
+    logger.warn('No matches from seasons or scheduled-events');
   }
 
   return [...allIds];
