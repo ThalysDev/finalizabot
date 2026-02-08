@@ -73,6 +73,11 @@ export interface MatchData {
   awayTeamId: string;
   tournament?: string | null;
   season?: string | null;
+  statusCode?: number | null;
+  statusType?: string | null;
+  homeScore?: number | null;
+  awayScore?: number | null;
+  minute?: number | null;
 }
 
 export async function upsertMatch(data: MatchData): Promise<void> {
@@ -85,6 +90,11 @@ export async function upsertMatch(data: MatchData): Promise<void> {
       awayTeamId: data.awayTeamId,
       tournament: data.tournament ?? null,
       season: data.season ?? null,
+      statusCode: data.statusCode ?? null,
+      statusType: data.statusType ?? null,
+      homeScore: data.homeScore ?? null,
+      awayScore: data.awayScore ?? null,
+      minute: data.minute ?? null,
     },
     update: {
       startTime: data.startTime,
@@ -92,6 +102,11 @@ export async function upsertMatch(data: MatchData): Promise<void> {
       awayTeamId: data.awayTeamId,
       tournament: data.tournament ?? null,
       season: data.season ?? null,
+      statusCode: data.statusCode ?? null,
+      statusType: data.statusType ?? null,
+      homeScore: data.homeScore ?? null,
+      awayScore: data.awayScore ?? null,
+      minute: data.minute ?? null,
     },
   });
 }

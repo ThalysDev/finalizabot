@@ -29,6 +29,10 @@ export interface MatchPageData {
     matchDate: string;
     matchTime: string;
     status: string;
+    homeScore?: number | null;
+    awayScore?: number | null;
+    minute?: number | null;
+    isLive?: boolean;
     homeBadgeUrl?: string;
     awayBadgeUrl?: string;
   } | null;
@@ -87,6 +91,10 @@ export async function fetchMatchPageData(
       minute: "2-digit",
     }),
     status: dbMatch.status,
+    homeScore: dbMatch.homeScore ?? null,
+    awayScore: dbMatch.awayScore ?? null,
+    minute: dbMatch.minute ?? null,
+    isLive: dbMatch.status === "live",
     homeBadgeUrl:
       dbMatch.homeTeamImageUrl ?? buildTeamBadgeUrl(dbMatch.homeTeamSofascoreId),
     awayBadgeUrl:
@@ -166,7 +174,7 @@ export async function fetchMatchPageData(
   }
 
   function buildTeamBadgeUrl(teamId?: string | null): string | undefined {
-    return teamId
+    return teamId && /^\d+$/.test(teamId)
       ? `https://api.sofascore.com/api/v1/team/${teamId}/image`
       : undefined;
   }

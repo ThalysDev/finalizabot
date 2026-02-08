@@ -17,6 +17,7 @@ import prisma from "@/lib/db/prisma";
 export interface DashboardPageData {
   matches: MatchCardData[];
   todayCount: number;
+  tomorrowCount: number;
 }
 
 export async function fetchDashboardData(): Promise<DashboardPageData> {
@@ -26,19 +27,26 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
   const todayStr = brt.toISOString().slice(0, 10);
   const dayStart = new Date(`${todayStr}T00:00:00-03:00`);
   const dayEnd = new Date(`${todayStr}T23:59:59-03:00`);
+  const tomorrow = new Date(dayStart);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+  const tomorrowStart = new Date(`${tomorrowStr}T00:00:00-03:00`);
+  const tomorrowEnd = new Date(`${tomorrowStr}T23:59:59-03:00`);
+  const rangeStart = dayStart;
+  const rangeEnd = tomorrowEnd;
 
-  // 1. Busca partidas do dia
+  // 1. Busca partidas de hoje e amanhã
   let dbMatches = await prisma.match.findMany({
     where: {
       matchDate: {
-        gte: dayStart,
-        lte: dayEnd,
+        gte: rangeStart,
+        lte: rangeEnd,
       },
     },
     orderBy: { matchDate: "asc" },
     include: {
       _count: {
-        select: { marketAnalyses: true },
+        select: { marketAnalyses: true, playerStats: true },
       },
     },
   });
@@ -54,7 +62,7 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
       take: 10,
       include: {
         _count: {
-          select: { marketAnalyses: true },
+          select: { marketAnalyses: true, playerStats: true },
         },
       },
     });
@@ -67,7 +75,7 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
       take: 10,
       include: {
         _count: {
-          select: { marketAnalyses: true },
+          select: { marketAnalyses: true, playerStats: true },
         },
       },
     });
@@ -84,23 +92,43 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
       month: "short",
       year: "numeric",
     }),
+    matchDateIso: m.matchDate.toISOString(),
+    dayKey: resolveDayKey(m.matchDate, dayStart, tomorrowStart),
     matchTime: m.matchDate.toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",
     }),
     status: m.status,
-    playerCount: m._count.marketAnalyses,
+    homeScore: m.homeScore ?? null,
+    awayScore: m.awayScore ?? null,
+    minute: m.minute ?? null,
+    isLive: m.status === "live",
+    playerCount: Math.max(m._count.marketAnalyses, m._count.playerStats),
     homeBadgeUrl:
       m.homeTeamImageUrl ?? buildTeamBadgeUrl(m.homeTeamSofascoreId),
     awayBadgeUrl:
       m.awayTeamImageUrl ?? buildTeamBadgeUrl(m.awayTeamSofascoreId),
   }));
 
-  return { matches, todayCount: matches.length };
+  const todayCount = matches.filter((m) => m.dayKey === "today").length;
+  const tomorrowCount = matches.filter((m) => m.dayKey === "tomorrow").length;
+  return { matches, todayCount, tomorrowCount };
 }
 
 function buildTeamBadgeUrl(teamId?: string | null): string | undefined {
-  return teamId
+  return teamId && /^\d+$/.test(teamId)
     ? `https://api.sofascore.com/api/v1/team/${teamId}/image`
     : undefined;
+}
+
+function resolveDayKey(
+  date: Date,
+  todayStart: Date,
+  tomorrowStart: Date,
+): "today" | "tomorrow" | "other" {
+  if (date >= todayStart && date < tomorrowStart) return "today";
+  const tomorrowEnd = new Date(tomorrowStart);
+  tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+  if (date >= tomorrowStart && date < tomorrowEnd) return "tomorrow";
+  return "other";
 }

@@ -1,5 +1,5 @@
 export const DEFAULT_EUROPE_LEAGUES =
-  'Premier League,LaLiga,Serie A,Bundesliga,Ligue 1,UEFA Champions League,UEFA Europa League,Brasileirão Série A,Copa Libertadores,Copa do Brasil,Copa Sul-Americana';
+  'Premier League,LaLiga,La Liga,Serie A,Bundesliga,Ligue 1,UEFA Champions League,Champions League,UEFA Europa League,Europa League,UEFA Europa Conference League,Conference League,Brasileirão Série A,Brasileirão Série B,Copa Libertadores,Copa do Brasil,Copa Sudamericana,Copa Sul-Americana,Copa América,Eliminatórias CONMEBOL,World Cup,MLS,Liga Portugal,Primeira Liga,Eredivisie,Superliga Turkey,Scottish Premiership,Pro League';
 
 const envNames = process.env.ALLOWED_TOURNAMENT_NAMES?.trim();
 const ALLOWED_NAMES = envNames === '' || envNames === undefined

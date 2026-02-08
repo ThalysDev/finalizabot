@@ -131,6 +131,12 @@ export async function runSofaScoreIngest(): Promise<void> {
           const startTime = startTimeStr != null
             ? new Date(typeof startTimeStr === 'number' ? startTimeStr * 1000 : startTimeStr)
             : new Date(0);
+          const statusObj = (o.status as Record<string, unknown> | undefined) ?? undefined;
+          const statusCode = coerceInt(statusObj?.code ?? statusObj?.id);
+          const statusType = typeof statusObj?.type === 'string' ? statusObj.type : undefined;
+          const homeScore = readScore(o.homeScore);
+          const awayScore = readScore(o.awayScore);
+          const minute = coerceInt(o.time ?? o.currentMinute ?? o.minute);
 
           await upsertTeam({ id: homeId, name: homeName, imageUrl: teamImageUrl(homeTeam) });
           await upsertTeam({ id: awayId, name: awayName, imageUrl: teamImageUrl(awayTeam) });
@@ -141,6 +147,11 @@ export async function runSofaScoreIngest(): Promise<void> {
             awayTeamId: awayId,
             tournament: (o.tournament as Record<string, unknown>)?.name as string | undefined,
             season: (o.season as Record<string, unknown>)?.name as string | undefined,
+            statusCode,
+            statusType,
+            homeScore,
+            awayScore,
+            minute,
           });
           await sleep(300);
           await fetchAndPersistLineups(matchId, homeId, awayId);
@@ -253,4 +264,29 @@ export async function runSofaScoreIngest(): Promise<void> {
     logger.error('Ingest failed', { runId: ingestRun.id, error: message });
     throw err;
   }
+}
+
+function readScore(value: unknown): number | null {
+  if (value == null) return null;
+  if (typeof value === 'number' && Number.isFinite(value)) return Math.trunc(value);
+  if (typeof value === 'string') {
+    const n = parseInt(value, 10);
+    return Number.isNaN(n) ? null : n;
+  }
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    const candidate = obj.current ?? obj.display ?? obj.value;
+    return readScore(candidate);
+  }
+  return null;
+}
+
+function coerceInt(value: unknown): number | null {
+  if (value == null) return null;
+  if (typeof value === 'number' && Number.isFinite(value)) return Math.trunc(value);
+  if (typeof value === 'string') {
+    const n = parseInt(value, 10);
+    return Number.isNaN(n) ? null : n;
+  }
+  return null;
 }

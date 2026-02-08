@@ -11,6 +11,7 @@ import type { MatchCardData } from "@/data/types";
 interface DashboardContentProps {
   matches: MatchCardData[];
   todayCount: number;
+  tomorrowCount: number;
 }
 
 /* ============================================================================
@@ -19,7 +20,9 @@ interface DashboardContentProps {
 export function DashboardContent({
   matches,
   todayCount,
+  tomorrowCount,
 }: DashboardContentProps) {
+  const [dayFilter, setDayFilter] = useState<"all" | "today" | "tomorrow">("all");
   const [compFilter, setCompFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -31,6 +34,10 @@ export function DashboardContent({
 
   const filteredMatches = useMemo(() => {
     let result = matches;
+
+    if (dayFilter !== "all") {
+      result = result.filter((m) => m.dayKey === dayFilter);
+    }
 
     if (compFilter !== "all") {
       result = result.filter((m) => m.competition === compFilter);
@@ -47,7 +54,7 @@ export function DashboardContent({
     }
 
     return result;
-  }, [matches, compFilter, searchQuery]);
+  }, [matches, dayFilter, compFilter, searchQuery]);
 
   // Group matches by competition
   const groupedMatches = useMemo(() => {
@@ -68,10 +75,10 @@ export function DashboardContent({
           <div>
             <h1 className="text-fb-text text-xl font-bold flex items-center gap-2">
               <Calendar className="size-5 text-fb-primary" />
-              Partidas do Dia
+              Partidas Hoje e Amanhã
             </h1>
             <p className="text-fb-text-muted text-sm mt-1">
-              {todayCount > 0
+              {filteredMatches.length > 0
                 ? `${filteredMatches.length} partida${filteredMatches.length !== 1 ? "s" : ""} encontrada${filteredMatches.length !== 1 ? "s" : ""}`
                 : "Mostrando próximas partidas agendadas"}
             </p>
@@ -88,6 +95,40 @@ export function DashboardContent({
               className="w-full pl-9 pr-3 py-2 bg-fb-surface border border-fb-border/60 rounded-lg text-sm text-fb-text placeholder:text-fb-text-muted focus:outline-none focus:ring-1 focus:ring-fb-primary/50"
             />
           </div>
+        </div>
+
+        {/* ── Competition filter tabs ─────────────────────────────── */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <button
+            onClick={() => setDayFilter("all")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              dayFilter === "all"
+                ? "bg-fb-primary text-white"
+                : "bg-fb-surface text-fb-text-secondary hover:text-fb-text border border-fb-border/40"
+            }`}
+          >
+            Todas ({matches.length})
+          </button>
+          <button
+            onClick={() => setDayFilter("today")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              dayFilter === "today"
+                ? "bg-fb-primary text-white"
+                : "bg-fb-surface text-fb-text-secondary hover:text-fb-text border border-fb-border/40"
+            }`}
+          >
+            Hoje ({todayCount})
+          </button>
+          <button
+            onClick={() => setDayFilter("tomorrow")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              dayFilter === "tomorrow"
+                ? "bg-fb-primary text-white"
+                : "bg-fb-surface text-fb-text-secondary hover:text-fb-text border border-fb-border/40"
+            }`}
+          >
+            Amanhã ({tomorrowCount})
+          </button>
         </div>
 
         {/* ── Competition filter tabs ─────────────────────────────── */}

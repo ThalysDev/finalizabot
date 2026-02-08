@@ -14,10 +14,15 @@ export function MatchCard({
   awayTeam,
   competition,
   matchTime,
+  homeScore,
+  awayScore,
+  minute,
+  isLive,
   playerCount,
   homeBadgeUrl,
   awayBadgeUrl,
 }: MatchCardData) {
+  const hasScore = homeScore != null && awayScore != null;
   return (
     <Link
       href={`/match/${id}`}
@@ -51,12 +56,28 @@ export function MatchCard({
             </span>
           </div>
 
-          {/* Time */}
+          {/* Time / Score */}
           <div className="flex flex-col items-center px-2 flex-shrink-0">
-            <div className="flex items-center gap-1 text-fb-primary font-bold text-base">
-              <Clock className="size-3.5" />
-              {matchTime}
-            </div>
+            {hasScore ? (
+              <div className="flex items-center gap-2 text-fb-text font-bold text-base">
+                <span>{homeScore}</span>
+                <span className="text-fb-text-muted">-</span>
+                <span>{awayScore}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-fb-primary font-bold text-base">
+                <Clock className="size-3.5" />
+                {matchTime}
+              </div>
+            )}
+            {isLive && minute != null && (
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className="size-1.5 rounded-full bg-fb-accent-red animate-pulse" />
+                <span className="text-[10px] text-fb-accent-red font-bold">
+                  {minute}&apos;
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Away team */}

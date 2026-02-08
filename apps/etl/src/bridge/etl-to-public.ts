@@ -66,6 +66,9 @@ async function syncMatches(): Promise<number> {
   let count = 0;
   for (const em of etlMatches) {
     try {
+      const resolvedStatus = mapStatus(em.statusType, em.statusCode, em.startTime);
+      const homeTeamId = isNumericId(em.homeTeamId) ? em.homeTeamId : undefined;
+      const awayTeamId = isNumericId(em.awayTeamId) ? em.awayTeamId : undefined;
       await prisma.match.upsert({
         where: { sofascoreId: em.id },
         create: {
@@ -74,22 +77,28 @@ async function syncMatches(): Promise<number> {
           awayTeam: em.awayTeam.name,
           competition: em.tournament ?? 'Unknown',
           matchDate: em.startTime,
-          status: em.startTime < new Date() ? 'finished' : 'scheduled',
-          homeTeamImageUrl: em.homeTeam.imageUrl ?? teamImageUrl(em.homeTeamId),
-          awayTeamImageUrl: em.awayTeam.imageUrl ?? teamImageUrl(em.awayTeamId),
-          homeTeamSofascoreId: em.homeTeamId,
-          awayTeamSofascoreId: em.awayTeamId,
+          status: resolvedStatus,
+          homeScore: em.homeScore ?? null,
+          awayScore: em.awayScore ?? null,
+          minute: em.minute ?? null,
+          homeTeamImageUrl: em.homeTeam.imageUrl ?? (homeTeamId ? teamImageUrl(homeTeamId) : null),
+          awayTeamImageUrl: em.awayTeam.imageUrl ?? (awayTeamId ? teamImageUrl(awayTeamId) : null),
+          homeTeamSofascoreId: homeTeamId ?? null,
+          awayTeamSofascoreId: awayTeamId ?? null,
         },
         update: {
           homeTeam: em.homeTeam.name,
           awayTeam: em.awayTeam.name,
           competition: em.tournament ?? 'Unknown',
           matchDate: em.startTime,
-          status: em.startTime < new Date() ? 'finished' : 'scheduled',
-          homeTeamImageUrl: em.homeTeam.imageUrl ?? teamImageUrl(em.homeTeamId),
-          awayTeamImageUrl: em.awayTeam.imageUrl ?? teamImageUrl(em.awayTeamId),
-          homeTeamSofascoreId: em.homeTeamId,
-          awayTeamSofascoreId: em.awayTeamId,
+          status: resolvedStatus,
+          homeScore: em.homeScore ?? null,
+          awayScore: em.awayScore ?? null,
+          minute: em.minute ?? null,
+          homeTeamImageUrl: em.homeTeam.imageUrl ?? (homeTeamId ? teamImageUrl(homeTeamId) : null),
+          awayTeamImageUrl: em.awayTeam.imageUrl ?? (awayTeamId ? teamImageUrl(awayTeamId) : null),
+          homeTeamSofascoreId: homeTeamId ?? null,
+          awayTeamSofascoreId: awayTeamId ?? null,
         },
       });
       count++;
@@ -98,6 +107,25 @@ async function syncMatches(): Promise<number> {
     }
   }
   return count;
+}
+
+function isNumericId(value: string): boolean {
+  return /^\d+$/.test(value);
+}
+
+function mapStatus(
+  statusType: string | null,
+  statusCode: number | null,
+  startTime: Date,
+): string {
+  const type = statusType?.toLowerCase();
+  if (type === 'finished') return 'finished';
+  if (type === 'inprogress' || type === 'live') return 'live';
+  if (type === 'notstarted') return 'scheduled';
+  if (statusCode === 100) return 'finished';
+  if (statusCode === 0 || statusCode === 1) return 'scheduled';
+  if (statusCode === 2 || statusCode === 3) return 'live';
+  return startTime < new Date() ? 'finished' : 'scheduled';
 }
 
 /* ============================================================================

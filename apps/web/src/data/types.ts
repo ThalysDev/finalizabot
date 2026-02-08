@@ -90,8 +90,14 @@ export interface MatchCardData {
   awayTeam: string;
   competition: string;
   matchDate: string; // ISO string
+  matchDateIso: string;
+  dayKey: "today" | "tomorrow" | "other";
   matchTime: string; // ex: "20:00"
   status: string;
+  homeScore?: number | null;
+  awayScore?: number | null;
+  minute?: number | null;
+  isLive?: boolean;
   playerCount: number;
   homeBadgeUrl?: string;
   awayBadgeUrl?: string;

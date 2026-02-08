@@ -25,6 +25,10 @@ interface MatchPageContentProps {
     matchDate: string;
     matchTime: string;
     status: string;
+    homeScore?: number | null;
+    awayScore?: number | null;
+    minute?: number | null;
+    isLive?: boolean;
     homeBadgeUrl?: string;
     awayBadgeUrl?: string;
   };
@@ -128,12 +132,28 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
               </div>
             </div>
 
-            {/* VS */}
+            {/* Score / Time */}
             <div className="flex flex-col items-center px-6">
-              <div className="flex items-center gap-1.5 text-fb-primary font-bold text-xl">
-                <Clock className="size-4" />
-                {match.matchTime}
-              </div>
+              {match.homeScore != null && match.awayScore != null ? (
+                <div className="flex items-center gap-2 text-fb-text font-bold text-2xl">
+                  <span>{match.homeScore}</span>
+                  <span className="text-fb-text-muted">-</span>
+                  <span>{match.awayScore}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-fb-primary font-bold text-xl">
+                  <Clock className="size-4" />
+                  {match.matchTime}
+                </div>
+              )}
+              {match.isLive && match.minute != null && (
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="size-2 rounded-full bg-fb-accent-red animate-pulse" />
+                  <span className="text-fb-accent-red text-xs font-bold">
+                    {match.minute}&apos;
+                  </span>
+                </div>
+              )}
               <p className="text-fb-text-muted text-[10px] uppercase tracking-wider mt-1">
                 {match.competition}
               </p>

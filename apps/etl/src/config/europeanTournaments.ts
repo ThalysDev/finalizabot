@@ -4,6 +4,9 @@
  * Pode ser sobrescrito por SYNC_TOURNAMENT_IDS no .env (vírgula-separado).
  */
 export const DEFAULT_TOURNAMENT_IDS = [
+  16,  // World Cup
+  133, // Copa América
+  242, // Eliminatórias CONMEBOL
   17,  // Premier League
   8,   // LaLiga
   23,  // Serie A
@@ -11,6 +14,8 @@ export const DEFAULT_TOURNAMENT_IDS = [
   34,  // Ligue 1
   7,   // UEFA Champions League
   679, // UEFA Europa League
+  390, // Brasileirão Série B
+  4407, // Copa do Brasil
   325, // Brasileirão Série A
   384, // Copa Libertadores
   373, // Copa do Brasil

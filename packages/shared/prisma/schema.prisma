@@ -44,6 +44,9 @@ model Match {
   competition        String
   matchDate          DateTime
   status             String              @default("scheduled")
+  homeScore          Int?
+  awayScore          Int?
+  minute             Int?
   homeTeamImageUrl   String?
   awayTeamImageUrl   String?
   homeTeamSofascoreId String?
@@ -229,6 +232,11 @@ model EtlMatch {
   startTime  DateTime
   homeTeamId String
   awayTeamId String
+  statusCode Int?
+  statusType String?
+  homeScore  Int?
+  awayScore  Int?
+  minute     Int?
 
   homeTeam     EtlTeam          @relation("HomeTeam", fields: [homeTeamId], references: [id])
   awayTeam     EtlTeam          @relation("AwayTeam", fields: [awayTeamId], references: [id])
