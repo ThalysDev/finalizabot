@@ -32,6 +32,7 @@ export interface PlayerCardData extends PlayerSummary {
   odds: number;
   impliedProbability: number;
   avgShots: number;
+  avgShotsOnTarget?: number;
   last5: boolean[];
   cv: number | null;
   status: ValueStatus;

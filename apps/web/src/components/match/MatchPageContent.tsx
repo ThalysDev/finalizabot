@@ -37,6 +37,8 @@ interface MatchPageContentProps {
 export function MatchPageContent({ match, players }: MatchPageContentProps) {
   const [posFilter, setPosFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"avgShots" | "cv" | "odds">("avgShots");
+  const [metric, setMetric] = useState<"shots" | "sot">("shots");
+  const lineLabel = formatLine(players[0]?.line ?? 1.5);
 
   const filteredPlayers = useMemo(() => {
     let result = [...players];
@@ -58,7 +60,11 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
 
     // Sort
     result.sort((a, b) => {
-      if (sortBy === "avgShots") return b.avgShots - a.avgShots;
+      if (sortBy === "avgShots") {
+        const aVal = metric === "sot" ? (a.avgShotsOnTarget ?? 0) : a.avgShots;
+        const bVal = metric === "sot" ? (b.avgShotsOnTarget ?? 0) : b.avgShots;
+        return bVal - aVal;
+      }
       if (sortBy === "cv") return (a.cv ?? 9) - (b.cv ?? 9); // Lower CV first
       if (sortBy === "odds") return (a.odds || 99) - (b.odds || 99); // Lower odds first
       return 0;
@@ -171,8 +177,30 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
           <div className="flex items-center gap-2 px-3 py-1.5 bg-fb-surface rounded-lg border border-fb-border/40">
             <TrendingUp className="size-4 text-fb-accent-green" />
             <span className="text-fb-text text-sm font-medium">
-              Over 1.5 Chutes
+              Over {lineLabel} Chutes
             </span>
+          </div>
+          <div className="flex items-center gap-1 bg-fb-surface rounded-lg border border-fb-border/40 p-1 ml-auto">
+            <button
+              onClick={() => setMetric("shots")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                metric === "shots"
+                  ? "bg-fb-primary/20 text-fb-primary"
+                  : "text-fb-text-secondary hover:text-fb-text"
+              }`}
+            >
+              Finalizações/Chutes
+            </button>
+            <button
+              onClick={() => setMetric("sot")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                metric === "sot"
+                  ? "bg-fb-primary/20 text-fb-primary"
+                  : "text-fb-text-secondary hover:text-fb-text"
+              }`}
+            >
+              No Alvo (Chutes ao gol)
+            </button>
           </div>
         </div>
 
@@ -230,9 +258,23 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
         {/* Player cards grid */}
         {filteredPlayers.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredPlayers.map((player) => (
-              <PlayerCard key={player.id} {...player} playerId={player.id} />
-            ))}
+            {filteredPlayers.map((player) => {
+              const avgValue =
+                metric === "sot"
+                  ? player.avgShotsOnTarget ?? 0
+                  : player.avgShots;
+              return (
+                <PlayerCard
+                  key={player.id}
+                  {...player}
+                  avgShots={avgValue}
+                  avgLabel={
+                    metric === "sot" ? "Méd. No Alvo" : "Méd. Finalizações"
+                  }
+                  playerId={player.id}
+                />
+              );
+            })}
           </div>
         ) : players.length > 0 ? (
           <EmptyFilterState />
@@ -242,6 +284,10 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
       </div>
     </div>
   );
+}
+
+function formatLine(value: number): string {
+  return Number.isInteger(value) ? value.toFixed(1) : value.toFixed(1);
 }
 
 /* ============================================================================

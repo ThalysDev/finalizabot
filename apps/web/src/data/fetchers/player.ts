@@ -62,11 +62,26 @@ export async function fetchPlayerPageData(
     };
   }
 
+  const now = new Date();
+  const nextMatch = await prisma.match.findFirst({
+    where: { status: "scheduled", matchDate: { gte: now } },
+    orderBy: { matchDate: "asc" },
+    select: {
+      homeTeam: true,
+      awayTeam: true,
+      competition: true,
+      matchDate: true,
+    },
+  });
+  const cutoffDate = nextMatch?.matchDate ?? now;
+
   // Busca ETL
   const [lastMatchesRes, shotsRes] = await Promise.all([
     etlPlayerLastMatches(dbPlayer.sofascoreId, 10),
     etlPlayerShots(dbPlayer.sofascoreId, { limit: 100 }),
   ]);
+
+  const etlPlayerImage = lastMatchesRes.data?.player?.imageUrl ?? undefined;
 
   // Detecta o teamId do jogador via shots
   const playerTeamId = shotsRes.data
@@ -81,9 +96,23 @@ export async function fetchPlayerPageData(
 
     // Fallback: usar PlayerMatchStats locais
     const localStats = await prisma.playerMatchStats.findMany({
-      where: { playerId: dbPlayer.id },
-      orderBy: { createdAt: "desc" },
+      where: {
+        playerId: dbPlayer.id,
+        match: {
+          matchDate: { lte: cutoffDate },
+        },
+      },
+      orderBy: { match: { matchDate: "desc" } },
       take: 10,
+      include: {
+        match: {
+          select: {
+            matchDate: true,
+            homeTeam: true,
+            awayTeam: true,
+          },
+        },
+      },
     });
 
     if (localStats.length > 0) {
@@ -119,7 +148,7 @@ export async function fetchPlayerPageData(
           over15: buildLHI(1.5),
           over25: buildLHI(2.5),
           sparkline: [...sliced].reverse().slice(-8),
-          last5Over: sliced.slice(0, 5).map((s) => s >= 1.5),
+          last5Over: sliced.slice(0, 5).map((s) => s >= line),
         };
       };
 
@@ -140,17 +169,47 @@ export async function fetchPlayerPageData(
         last10: buildWindowFromLocal(10),
       };
 
+      const localMatchHistory: MatchHistoryRow[] = localStats.map((s) => {
+        const matchDate = s.match?.matchDate ?? s.createdAt;
+        const opponent = resolveOpponentFromMatch(
+          s.match?.homeTeam,
+          s.match?.awayTeam,
+          dbPlayer.teamName ?? undefined,
+        );
+        return {
+          date: formatShortDate(matchDate),
+          opponent,
+          result: "—",
+          minutes: s.minutesPlayed != null ? `${s.minutesPlayed}'` : "—",
+          shots: s.shots,
+          sot: s.shotsOnTarget,
+          xg: "—",
+          over: s.shots >= line,
+          badgeBg: "bg-slate-700",
+          badgeText: "text-slate-300",
+        };
+      });
+
+      const localShotHistory: ShotHistoryPoint[] = [...localMatchHistory]
+        .reverse()
+        .map((row) => ({
+          label: row.opponent.slice(0, 3).toUpperCase(),
+          shots: row.shots,
+          sot: row.sot,
+          line,
+        }));
+
       return {
-        player: buildPlayerDetail(dbPlayer, localPlayerStats),
-        shotHistory: [],
-        matchHistory: [],
+        player: buildPlayerDetail(dbPlayer, localPlayerStats, undefined, undefined, undefined, etlPlayerImage),
+        shotHistory: localShotHistory,
+        matchHistory: localMatchHistory,
         stats: localPlayerStats,
         externalLinks: buildExternalLinks(dbPlayer.sofascoreId),
       };
     }
 
     return {
-      player: buildPlayerDetail(dbPlayer, null),
+      player: buildPlayerDetail(dbPlayer, null, undefined, undefined, undefined, etlPlayerImage),
       shotHistory: [],
       matchHistory: [],
       stats: null,
@@ -158,11 +217,14 @@ export async function fetchPlayerPageData(
     };
   }
 
-  const items = lastMatchesRes.data.items;
+  const items = lastMatchesRes.data.items.filter(
+    (item) => new Date(item.startTime) <= cutoffDate,
+  );
+  const recentItems = items.slice(0, 10);
 
-  if (items.length === 0) {
+  if (recentItems.length === 0) {
     return {
-      player: buildPlayerDetail(dbPlayer, null),
+      player: buildPlayerDetail(dbPlayer, null, undefined, undefined, undefined, etlPlayerImage),
       shotHistory: [],
       matchHistory: [],
       stats: null,
@@ -170,14 +232,14 @@ export async function fetchPlayerPageData(
     };
   }
 
-  const stats = computePlayerStats(items, line);
-  const shotHistory = lastMatchesToShotHistory(items, line, playerTeamId);
-  let matchHistory = lastMatchesToHistory(items, line, playerTeamId);
+  const stats = computePlayerStats(recentItems, line);
+  const shotHistory = lastMatchesToShotHistory(recentItems, line, playerTeamId);
+  let matchHistory = lastMatchesToHistory(recentItems, line, playerTeamId);
 
   // Enriquece com xG se shots disponíveis
   if (shotsRes.data && shotsRes.data.items.length > 0) {
     const xgMap = shotsToXgByMatch(shotsRes.data.items);
-    const matchItems = lastMatchesRes.data.items;
+    const matchItems = recentItems;
     matchHistory = matchHistory.map((row, i) => {
       const matchId = matchItems[i]?.matchId;
       const xg = matchId ? xgMap.get(matchId) : undefined;
@@ -189,7 +251,7 @@ export async function fetchPlayerPageData(
   }
 
   // Resolve nome do time do jogador corretamente
-  const latestItem = items[0];
+  const latestItem = recentItems[0];
   const teamName = latestItem
     ? resolvePlayerTeam(latestItem, playerTeamId)
     : undefined;
@@ -199,18 +261,6 @@ export async function fetchPlayerPageData(
     where: { playerId: dbPlayer.id },
     orderBy: { createdAt: "desc" },
     select: { odds: true },
-  });
-
-  // Fetch next scheduled match
-  const nextMatch = await prisma.match.findFirst({
-    where: { status: "scheduled", matchDate: { gte: new Date() } },
-    orderBy: { matchDate: "asc" },
-    select: {
-      homeTeam: true,
-      awayTeam: true,
-      competition: true,
-      matchDate: true,
-    },
   });
 
   const resolvedTeam = teamName ?? "—";
@@ -249,6 +299,7 @@ export async function fetchPlayerPageData(
       teamName,
       latestAnalysis?.odds,
       nextMatchData,
+      etlPlayerImage,
     ),
     shotHistory,
     matchHistory,
@@ -284,6 +335,7 @@ function buildPlayerDetail(
     time: string;
     competition: string;
   },
+  overrideAvatarUrl?: string,
 ): PlayerDetail {
   const team = teamName ?? p.teamName ?? "\u2014";
   return {
@@ -292,7 +344,7 @@ function buildPlayerDetail(
     team,
     teamShort: team.slice(0, 3).toUpperCase(),
     position: p.position,
-    avatarUrl: p.imageUrl ?? undefined,
+    avatarUrl: p.imageUrl ?? overrideAvatarUrl ?? undefined,
     teamBadgeUrl: p.teamImageUrl ?? undefined,
     number: 0,
     age: 0,
@@ -320,4 +372,23 @@ function buildExternalLinks(sofascoreId: string): ExternalLinkItem[] {
       href: `https://www.sofascore.com/player/${sofascoreId}`,
     },
   ];
+}
+
+function formatShortDate(date: Date): string {
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+}
+
+function resolveOpponentFromMatch(
+  homeTeam?: string,
+  awayTeam?: string,
+  teamName?: string,
+): string {
+  if (!homeTeam && !awayTeam) return "—";
+  if (!teamName) return awayTeam ?? homeTeam ?? "—";
+  const name = teamName.toLowerCase();
+  const home = homeTeam?.toLowerCase() ?? "";
+  const away = awayTeam?.toLowerCase() ?? "";
+  if (home && home.includes(name)) return awayTeam ?? "—";
+  if (away && away.includes(name)) return homeTeam ?? "—";
+  return awayTeam ?? homeTeam ?? "—";
 }

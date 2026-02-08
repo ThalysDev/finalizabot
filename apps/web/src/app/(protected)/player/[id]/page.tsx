@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { fetchPlayerPageData } from "@/data/fetchers";
 import { PlayerDetailView } from "@/components/player/PlayerDetailView";
 import prisma from "@/lib/db/prisma";
+import { DEFAULT_LINE } from "@/lib/etl/config";
 
 /* ============================================================================
    METADATA
@@ -62,6 +63,7 @@ export default async function PlayerDetailPage({
       externalLinks={data.externalLinks}
       last5Stats={data.stats?.last5}
       last10Stats={data.stats?.last10}
+      defaultLine={DEFAULT_LINE}
     />
   );
 }

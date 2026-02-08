@@ -90,9 +90,17 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
     }),
     status: m.status,
     playerCount: m._count.marketAnalyses,
-    homeBadgeUrl: m.homeTeamImageUrl ?? undefined,
-    awayBadgeUrl: m.awayTeamImageUrl ?? undefined,
+    homeBadgeUrl:
+      m.homeTeamImageUrl ?? buildTeamBadgeUrl(m.homeTeamSofascoreId),
+    awayBadgeUrl:
+      m.awayTeamImageUrl ?? buildTeamBadgeUrl(m.awayTeamSofascoreId),
   }));
 
   return { matches, todayCount: matches.length };
+}
+
+function buildTeamBadgeUrl(teamId?: string | null): string | undefined {
+  return teamId
+    ? `https://api.sofascore.com/api/v1/team/${teamId}/image`
+    : undefined;
 }

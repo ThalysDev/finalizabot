@@ -16,6 +16,7 @@ export interface PlayerCardProps {
   odds: number;
   impliedProbability: number;
   avgShots: number;
+  avgLabel?: string;
   last5: boolean[]; // true = hit, false = miss
   cv: number | null;
   status: ValueStatus;
@@ -89,6 +90,7 @@ export function PlayerCard({
   odds,
   impliedProbability,
   avgShots,
+  avgLabel,
   last5,
   cv,
   status,
@@ -162,7 +164,7 @@ export function PlayerCard({
         </div>
         <div className="bg-fb-surface rounded-lg p-2 text-center">
           <p className="text-[10px] text-fb-text-muted uppercase tracking-wider">
-            Méd. Chutes
+            {avgLabel ?? "Méd. Chutes"}
           </p>
           <p className="text-fb-text font-bold text-sm">
             {avgShots.toFixed(1)}

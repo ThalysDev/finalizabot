@@ -30,6 +30,10 @@ export interface EtlLastMatchItem {
 }
 
 export interface EtlLastMatchesResponse {
+  player?: {
+    position: string | null;
+    imageUrl: string | null;
+  };
   items: EtlLastMatchItem[];
 }
 

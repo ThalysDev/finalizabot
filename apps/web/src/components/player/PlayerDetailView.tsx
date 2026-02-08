@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -29,7 +29,7 @@ import type {
   MatchHistoryRow,
   ExternalLinkItem,
 } from "@/data/types";
-import type { WindowStats } from "@/lib/etl/transformers";
+import type { LineHitIndicator, WindowStats } from "@/lib/etl/transformers";
 
 const LINK_ICONS: Record<string, typeof BarChart3> = {
   BarChart3,
@@ -48,6 +48,7 @@ interface PlayerDetailViewProps {
   externalLinks: ExternalLinkItem[];
   last5Stats?: WindowStats;
   last10Stats?: WindowStats;
+  defaultLine?: number;
 }
 
 /* ============================================================================
@@ -95,10 +96,17 @@ function LineHitBadge({
 function WindowStatsSection({
   title,
   stats,
+  lineLabel,
+  lineIndicator,
 }: {
   title: string;
   stats: WindowStats;
+  lineLabel?: string;
+  lineIndicator?: LineHitIndicator;
 }) {
+  const midLabel = lineLabel ?? "Over 1.5";
+  const midIndicator = lineIndicator ?? stats.over15;
+
   return (
     <div className="bg-fb-card rounded-xl p-5 border border-fb-border">
       <h3 className="text-base font-bold text-fb-text mb-4 flex items-center gap-2">
@@ -154,10 +162,10 @@ function WindowStatsSection({
           percent={stats.over05.percent}
         />
         <LineHitBadge
-          label="Over 1.5"
-          hits={stats.over15.hits}
-          total={stats.over15.total}
-          percent={stats.over15.percent}
+          label={midLabel}
+          hits={midIndicator.hits}
+          total={midIndicator.total}
+          percent={midIndicator.percent}
         />
         <LineHitBadge
           label="Over 2.5"
@@ -181,8 +189,35 @@ export function PlayerDetailView({
   externalLinks,
   last5Stats,
   last10Stats,
+  defaultLine,
 }: PlayerDetailViewProps) {
   const [chartMode, setChartMode] = useState<"total" | "alvo">("total");
+  const [line, setLine] = useState<number>(
+    defaultLine ?? shotHistory[0]?.line ?? 1.5,
+  );
+
+  const formattedLine = useMemo(() => formatLine(line), [line]);
+  const lineLabel = `Over ${formattedLine}`;
+  const derivedMatchHistory = useMemo(
+    () => matchHistory.map((row) => ({ ...row, over: row.shots >= line })),
+    [matchHistory, line],
+  );
+  const derivedShotHistory = useMemo(
+    () => shotHistory.map((point) => ({ ...point, line })),
+    [shotHistory, line],
+  );
+  const shotValues = useMemo(
+    () => shotHistory.map((point) => point.shots),
+    [shotHistory],
+  );
+  const last5LineIndicator = useMemo(
+    () => buildLineIndicator(shotValues.slice(-5), line),
+    [shotValues, line],
+  );
+  const last10LineIndicator = useMemo(
+    () => buildLineIndicator(shotValues.slice(-10), line),
+    [shotValues, line],
+  );
 
   // Safe access on trends — avoids crash when trends is empty
   const trend0 = player.trends[0] ?? {
@@ -349,6 +384,44 @@ export function PlayerDetailView({
         </div>
       </div>
 
+      {/* Linha padrão selector */}
+      <div className="bg-fb-card rounded-xl p-4 border border-fb-border mb-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="text-sm font-semibold text-fb-text">
+            Linha padrão:
+          </div>
+          <div className="flex items-center gap-1 bg-fb-surface-darker rounded-lg p-1">
+            {[0.5, 1.5, 2.5].map((value) => (
+              <button
+                key={value}
+                onClick={() => setLine(value)}
+                className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                  line === value
+                    ? "bg-fb-card text-fb-text shadow-sm"
+                    : "text-fb-text-muted hover:text-fb-text"
+                }`}
+              >
+                Over {formatLine(value)}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-xs text-fb-text-muted">Custom:</span>
+            <input
+              type="number"
+              min={0}
+              step={0.5}
+              value={line}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                if (!Number.isNaN(next)) setLine(next);
+              }}
+              className="w-20 bg-fb-surface-darker border border-fb-border rounded-md px-2 py-1 text-xs text-fb-text"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Main grid: 2/3 left + 1/3 right */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Left column */}
@@ -358,8 +431,8 @@ export function PlayerDetailView({
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-fb-text">
                 {chartMode === "alvo"
-                  ? "Chutes no Alvo (Últimos 10)"
-                  : "Chutes por Jogo (Últimos 10)"}
+                  ? "Finalizações no Alvo (Últimos 10)"
+                  : "Finalizações/Chutes por Jogo (Últimos 10)"}
               </h2>
               <div className="flex bg-fb-surface-darker rounded-lg p-1">
                 <button
@@ -370,7 +443,7 @@ export function PlayerDetailView({
                       : "text-fb-text-muted hover:text-fb-text"
                   }`}
                 >
-                  Total de Chutes
+                  Finalizações/Chutes
                 </button>
                 <button
                   onClick={() => setChartMode("alvo")}
@@ -380,13 +453,13 @@ export function PlayerDetailView({
                       : "text-fb-text-muted hover:text-fb-text"
                   }`}
                 >
-                  No Alvo
+                  No Alvo (Chutes ao gol)
                 </button>
               </div>
             </div>
 
             <ShotBarChart
-              data={shotHistory}
+              data={derivedShotHistory}
               maxHeight={256}
               dataKey={chartMode === "alvo" ? "sot" : "shots"}
             />
@@ -418,11 +491,13 @@ export function PlayerDetailView({
                     <th className="px-6 py-4 text-center">Chutes Realizados</th>
                     <th className="px-6 py-4 text-center">No Alvo</th>
                     <th className="px-6 py-4 text-right">xG</th>
-                    <th className="px-6 py-4 text-center">Linha 1.5</th>
+                    <th className="px-6 py-4 text-center">
+                      Linha {formattedLine}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-fb-border/50">
-                  {matchHistory.map((row) => (
+                  {derivedMatchHistory.map((row) => (
                     <tr
                       key={`${row.date}-${row.opponent}`}
                       className="hover:bg-fb-surface-darker/50 transition-colors"
@@ -489,12 +564,19 @@ export function PlayerDetailView({
         <div className="flex flex-col gap-6 lg:gap-8">
           {/* L5 / L10 Stats */}
           {last5Stats && (
-            <WindowStatsSection title="Últimas 5 Partidas" stats={last5Stats} />
+            <WindowStatsSection
+              title="Últimas 5 Partidas"
+              stats={last5Stats}
+              lineLabel={lineLabel}
+              lineIndicator={last5LineIndicator}
+            />
           )}
           {last10Stats && (
             <WindowStatsSection
               title="Últimas 10 Partidas"
               stats={last10Stats}
+              lineLabel={lineLabel}
+              lineIndicator={last10LineIndicator}
             />
           )}
 
@@ -505,7 +587,7 @@ export function PlayerDetailView({
                 Evolução da Linha e Cotação
               </h3>
               <p className="text-sm text-fb-text-secondary">
-                Histórico de Fechamento — Mais de 1.5 Chutes
+                Histórico de Fechamento — Mais de {formattedLine} Chutes
               </p>
             </div>
 
@@ -603,4 +685,15 @@ export function PlayerDetailView({
       </div>
     </div>
   );
+}
+
+function formatLine(value: number): string {
+  return Number.isInteger(value) ? value.toFixed(1) : value.toFixed(1);
+}
+
+function buildLineIndicator(shots: number[], line: number): LineHitIndicator {
+  const total = shots.length;
+  const hits = shots.filter((s) => s >= line).length;
+  const percent = total > 0 ? Math.round((hits / total) * 100) : 0;
+  return { hits, total, label: `${hits}/${total}`, percent };
 }

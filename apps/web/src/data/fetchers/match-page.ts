@@ -87,8 +87,10 @@ export async function fetchMatchPageData(
       minute: "2-digit",
     }),
     status: dbMatch.status,
-    homeBadgeUrl: dbMatch.homeTeamImageUrl ?? undefined,
-    awayBadgeUrl: dbMatch.awayTeamImageUrl ?? undefined,
+    homeBadgeUrl:
+      dbMatch.homeTeamImageUrl ?? buildTeamBadgeUrl(dbMatch.homeTeamSofascoreId),
+    awayBadgeUrl:
+      dbMatch.awayTeamImageUrl ?? buildTeamBadgeUrl(dbMatch.awayTeamSofascoreId),
   };
 
   // 2. Coleta jogadores únicos (de MarketAnalysis e/ou PlayerStats)
@@ -163,6 +165,12 @@ export async function fetchMatchPageData(
     return { match, players: [] };
   }
 
+  function buildTeamBadgeUrl(teamId?: string | null): string | undefined {
+    return teamId
+      ? `https://api.sofascore.com/api/v1/team/${teamId}/image`
+      : undefined;
+  }
+
   // 3. Enriquecer cada jogador com ETL (com fallback para dados do Prisma)
   const enriched = await Promise.all(
     Array.from(playerMap.values()).map(
@@ -179,6 +187,7 @@ export async function fetchMatchPageData(
             lastMatchesRes.data &&
             lastMatchesRes.data.items.length > 0
           ) {
+            const etlPlayerImage = lastMatchesRes.data.player?.imageUrl ?? undefined;
             const stats = computePlayerStats(lastMatchesRes.data.items, line);
             const playerTeamId = shotsRes.data
               ? detectPlayerTeamId(shotsRes.data.items)
@@ -193,12 +202,13 @@ export async function fetchMatchPageData(
               name: p.name,
               team: teamName,
               position: p.position,
-              avatarUrl: p.avatarUrl,
+              avatarUrl: p.avatarUrl ?? etlPlayerImage ?? undefined,
               teamBadgeUrl: p.teamBadgeUrl,
               line,
               odds: p.odds,
               impliedProbability: Math.round(p.probability * 100),
               avgShots: stats.avgShots,
+              avgShotsOnTarget: stats.avgShotsOnTarget,
               last5: stats.last5Over,
               cv: stats.cv != null ? Number(stats.cv.toFixed(2)) : null,
               status: statusFromCV(stats.cv),
@@ -215,8 +225,11 @@ export async function fetchMatchPageData(
 
           if (dbStats.length > 0) {
             const shots = dbStats.map((s) => s.shots);
+            const shotsOnTarget = dbStats.map((s) => s.shotsOnTarget);
             const total = shots.reduce((a, b) => a + b, 0);
             const avg = total / shots.length;
+            const totalOnTarget = shotsOnTarget.reduce((a, b) => a + b, 0);
+            const avgOnTarget = totalOnTarget / shotsOnTarget.length;
             const overLine = shots.map((s) => s > line);
             const variance =
               shots.reduce((a, s) => a + Math.pow(s - avg, 2), 0) /
@@ -227,11 +240,14 @@ export async function fetchMatchPageData(
               id: p.id,
               name: p.name,
               team: "—",
-              position: p.position,              avatarUrl: p.avatarUrl,
-              teamBadgeUrl: p.teamBadgeUrl,              line,
+              position: p.position,
+              avatarUrl: p.avatarUrl,
+              teamBadgeUrl: p.teamBadgeUrl,
+              line,
               odds: p.odds,
               impliedProbability: Math.round(p.probability * 100),
               avgShots: Number(avg.toFixed(1)),
+              avgShotsOnTarget: Number(avgOnTarget.toFixed(1)),
               last5: overLine.slice(0, 5),
               cv: cv != null ? Number(cv.toFixed(2)) : null,
               status: statusFromCV(cv),
@@ -244,11 +260,14 @@ export async function fetchMatchPageData(
             id: p.id,
             name: p.name,
             team: "—",
-            position: p.position,            avatarUrl: p.avatarUrl,
-            teamBadgeUrl: p.teamBadgeUrl,            line,
+            position: p.position,
+            avatarUrl: p.avatarUrl,
+            teamBadgeUrl: p.teamBadgeUrl,
+            line,
             odds: p.odds,
             impliedProbability: Math.round(p.probability * 100),
             avgShots: 0,
+            avgShotsOnTarget: 0,
             last5: [],
             cv: null,
             status: "neutral",
@@ -263,11 +282,14 @@ export async function fetchMatchPageData(
             id: p.id,
             name: p.name,
             team: "—",
-            position: p.position,            avatarUrl: p.avatarUrl,
-            teamBadgeUrl: p.teamBadgeUrl,            line,
+            position: p.position,
+            avatarUrl: p.avatarUrl,
+            teamBadgeUrl: p.teamBadgeUrl,
+            line,
             odds: p.odds,
             impliedProbability: Math.round(p.probability * 100),
             avgShots: 0,
+            avgShotsOnTarget: 0,
             last5: [],
             cv: null,
             status: "neutral",
