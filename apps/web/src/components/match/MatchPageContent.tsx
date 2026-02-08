@@ -123,7 +123,6 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
                     width={40}
                     height={40}
                     className="size-10 object-contain"
-                    unoptimized
                   />
                 ) : (
                   <Shield className="size-7 text-fb-text-muted" />
@@ -183,7 +182,6 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
                     width={40}
                     height={40}
                     className="size-10 object-contain"
-                    unoptimized
                   />
                 ) : (
                   <Shield className="size-7 text-fb-text-muted" />

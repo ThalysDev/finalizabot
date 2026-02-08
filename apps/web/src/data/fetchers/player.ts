@@ -16,7 +16,7 @@ import {
   detectPlayerTeamId,
   resolvePlayerTeam,
 } from "@/lib/etl/transformers";
-import { DEFAULT_LINE } from "@/lib/etl/config";
+import { DEFAULT_LINE, getEtlBaseUrl } from "@/lib/etl/config";
 import type {
   PlayerDetail,
   ShotHistoryPoint,
@@ -75,11 +75,18 @@ export async function fetchPlayerPageData(
   });
   const cutoffDate = nextMatch?.matchDate ?? now;
 
-  // Busca ETL
-  const [lastMatchesRes, shotsRes] = await Promise.all([
-    etlPlayerLastMatches(dbPlayer.sofascoreId, 10),
-    etlPlayerShots(dbPlayer.sofascoreId, { limit: 100 }),
-  ]);
+  // Busca ETL (somente se configurado)
+  const etlConfigured = !!getEtlBaseUrl();
+
+  const [lastMatchesRes, shotsRes] = etlConfigured
+    ? await Promise.all([
+        etlPlayerLastMatches(dbPlayer.sofascoreId, 10),
+        etlPlayerShots(dbPlayer.sofascoreId, { limit: 100 }),
+      ])
+    : [
+        { data: null, error: "ETL not configured" } as const,
+        { data: null, error: "ETL not configured" } as const,
+      ];
 
   const etlPlayerImage = lastMatchesRes.data?.player?.imageUrl ?? undefined;
 
@@ -93,9 +100,6 @@ export async function fetchPlayerPageData(
 
   // Se ETL falhar, tenta fallback para PlayerMatchStats do Prisma
   if (lastMatchesRes.error || !lastMatchesRes.data) {
-    console.warn(
-      `[ETL] Falha last-matches p/ ${dbPlayer.sofascoreId}: ${lastMatchesRes.error}`,
-    );
 
     // Fallback: usar PlayerMatchStats locais
     const localStats = await prisma.playerMatchStats.findMany({

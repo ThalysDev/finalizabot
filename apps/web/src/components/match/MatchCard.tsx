@@ -49,7 +49,6 @@ export function MatchCard({
                   width={28}
                   height={28}
                   className="size-7 object-contain"
-                  unoptimized
                 />
               ) : (
                 <Shield className="size-5 text-fb-text-muted" />
@@ -97,7 +96,6 @@ export function MatchCard({
                   width={28}
                   height={28}
                   className="size-7 object-contain"
-                  unoptimized
                 />
               ) : (
                 <Shield className="size-5 text-fb-text-muted" />
