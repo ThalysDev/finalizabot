@@ -1,4 +1,4 @@
-import { HttpCrawler, HttpCrawlingContext, sleep } from 'crawlee';
+import { HttpCrawler, HttpCrawlingContext, ProxyConfiguration, sleep } from 'crawlee';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
@@ -20,6 +20,24 @@ import {
 
 const EVENTS_URL_TEMPLATE = 'https://api.sofascore.com/api/v1/event/{matchId}/incidents';
 const MATCH_URL_TEMPLATE = 'https://api.sofascore.com/api/v1/event/{matchId}';
+function getProxyConfiguration(): ProxyConfiguration | undefined {
+  const proxyUrl =
+    process.env.SOFASCORE_PROXY_URL?.trim() ||
+    process.env.HTTPS_PROXY?.trim() ||
+    process.env.HTTP_PROXY?.trim();
+  if (!proxyUrl) return undefined;
+  return new ProxyConfiguration({ proxyUrls: [proxyUrl] });
+}
+
+const HEADERS: HeadersInit = {
+  Accept: 'application/json',
+  'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+  'Cache-Control': 'no-cache',
+  Referer: 'https://www.sofascore.com/',
+  Origin: 'https://www.sofascore.com',
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+};
 
 function getEventsUrl(matchId: string): string {
   return EVENTS_URL_TEMPLATE.replace('{matchId}', matchId);
@@ -83,8 +101,11 @@ export async function runSofaScoreIngest(): Promise<void> {
       userData: { matchId } satisfies IngestUserData,
     }));
 
+    const proxyConfiguration = getProxyConfiguration();
     const matchCrawler = new HttpCrawler<HttpCrawlingContext<IngestUserData, any>>({
       maxConcurrency: 2,
+      additionalHttpHeaders: HEADERS,
+      proxyConfiguration,
       requestHandler: async ({ request, json }) => {
         const matchId = request.userData.matchId;
         const url = request.url;
@@ -180,6 +201,8 @@ export async function runSofaScoreIngest(): Promise<void> {
 
     const incidentCrawler = new HttpCrawler<HttpCrawlingContext<IngestUserData, any>>({
       maxConcurrency: 2,
+      additionalHttpHeaders: HEADERS,
+      proxyConfiguration,
       requestHandler: async ({ request, json }) => {
         const matchId = request.userData.matchId;
         const url = request.url;

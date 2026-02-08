@@ -1,6 +1,7 @@
 import { isAllowedTournament } from '../config/leagues.js';
 import { getSyncTournamentIds } from '../config/europeanTournaments.js';
 import { logger } from '../lib/logger.js';
+import { ProxyAgent } from 'undici';
 
 const DELAY_MS = 800;
 function delay(ms: number): Promise<void> {
@@ -12,6 +13,16 @@ const SPORT_BASE = `${BASE}/sport/football`;
 const STATUS_FINISHED = 100;
 /** Status codes we exclude (e.g. canceled). Events with these are not included. */
 const STATUS_CANCELED = 70;
+
+const HEADERS: HeadersInit = {
+  Accept: 'application/json',
+  'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+  'Cache-Control': 'no-cache',
+  Referer: 'https://www.sofascore.com/',
+  Origin: 'https://www.sofascore.com',
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+};
 
 function getTournamentSeasonsUrl(tournamentId: number): string {
   return `${BASE}/unique-tournament/${tournamentId}/seasons`;
@@ -27,14 +38,42 @@ function getScheduledEventsUrl(date: string): string {
 
 async function fetchJson<T = unknown>(url: string): Promise<T | null> {
   try {
+    const dispatcher = getProxyDispatcher();
     const res = await fetch(url, {
-      headers: { Accept: 'application/json', 'User-Agent': 'SofaScoreETL/1.0' },
+      headers: HEADERS,
+      signal: AbortSignal.timeout(15_000),
+      dispatcher,
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      logger.warn('Fetch non-OK', { url, status: res.status, statusText: res.statusText });
+      return null;
+    }
     return (await res.json()) as T;
   } catch (err) {
     logger.warn('Fetch error', { url, error: err instanceof Error ? err.message : String(err) });
     return null;
+  }
+}
+
+let cachedProxyDispatcher: ProxyAgent | null | undefined;
+function getProxyDispatcher(): ProxyAgent | undefined {
+  if (cachedProxyDispatcher !== undefined) return cachedProxyDispatcher ?? undefined;
+  const proxyUrl =
+    process.env.SOFASCORE_PROXY_URL?.trim() ||
+    process.env.HTTPS_PROXY?.trim() ||
+    process.env.HTTP_PROXY?.trim();
+  if (!proxyUrl) {
+    cachedProxyDispatcher = null;
+    return undefined;
+  }
+  try {
+    cachedProxyDispatcher = new ProxyAgent(proxyUrl);
+    logger.info('Using proxy for discovery fetches', { proxyUrl });
+    return cachedProxyDispatcher;
+  } catch (err) {
+    logger.warn('Failed to initialize proxy agent', { error: err instanceof Error ? err.message : String(err) });
+    cachedProxyDispatcher = null;
+    return undefined;
   }
 }
 
@@ -44,7 +83,7 @@ interface SeasonsResponse {
 
 interface EventItem {
   id?: number | string;
-  tournament?: { name?: string };
+  tournament?: { name?: string; uniqueTournament?: { id?: number } };
   status?: { code?: number };
   /** Unix seconds. API may return this in season events list. */
   startTimestamp?: number;
@@ -151,9 +190,11 @@ async function getMatchIdsForTodayTomorrow(
 async function getMatchIdsFromScheduledDates(
   targetDates: Set<string>,
   tz: string,
+  tournamentIds: number[],
 ): Promise<string[]> {
   const ids: string[] = [];
   const fallbackIds: string[] = [];
+  const idSet = new Set(tournamentIds);
   for (const date of targetDates) {
     const data = await fetchJson<ScheduledEventsResponse>(getScheduledEventsUrl(date));
     const events = data?.events;
@@ -161,6 +202,10 @@ async function getMatchIdsFromScheduledDates(
     for (const ev of events) {
       const code = ev?.status?.code;
       if (code === STATUS_CANCELED) continue;
+      const uniqueId = ev?.tournament?.uniqueTournament?.id;
+      if (typeof uniqueId === 'number' && idSet.size > 0 && !idSet.has(uniqueId)) {
+        continue;
+      }
       const name = ev?.tournament?.name;
       if (name != null && !isAllowedTournament(name)) {
         const id = ev?.id;
@@ -269,7 +314,7 @@ export async function discoverEuropeanMatchIds(): Promise<string[]> {
     }
   }
 
-  const scheduledIds = await getMatchIdsFromScheduledDates(targetDates, tz);
+  const scheduledIds = await getMatchIdsFromScheduledDates(targetDates, tz, tournamentIds);
   if (scheduledIds.length > 0) {
     scheduledIds.forEach((id) => allIds.add(id));
     logger.info('Discovered matches from scheduled-events', {
