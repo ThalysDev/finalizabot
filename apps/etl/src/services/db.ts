@@ -46,6 +46,21 @@ export interface PlayerData {
 }
 
 export async function upsertPlayer(data: PlayerData): Promise<void> {
+  // Don't overwrite a good name with a numeric ID
+  const isNumericName = /^\d+$/.test(data.name);
+
+  const updateData: Record<string, unknown> = {
+    slug: data.slug ?? null,
+    position: data.position ?? null,
+    imageUrl: data.imageUrl ?? null,
+    currentTeamId: data.currentTeamId ?? null,
+  };
+
+  // Only update name if the incoming value is an actual name (not a numeric ID)
+  if (!isNumericName) {
+    updateData.name = data.name;
+  }
+
   await prisma.etlPlayer.upsert({
     where: { id: data.id },
     create: {
@@ -56,13 +71,7 @@ export async function upsertPlayer(data: PlayerData): Promise<void> {
       imageUrl: data.imageUrl ?? null,
       currentTeamId: data.currentTeamId ?? null,
     },
-    update: {
-      name: data.name,
-      slug: data.slug ?? null,
-      position: data.position ?? null,
-      imageUrl: data.imageUrl ?? null,
-      currentTeamId: data.currentTeamId ?? null,
-    },
+    update: updateData,
   });
 }
 

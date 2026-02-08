@@ -154,6 +154,9 @@ async function syncPlayers(): Promise<number> {
   let count = 0;
   for (const ep of etlPlayers) {
     try {
+      // Don't overwrite a real name with a numeric ID
+      const isNumericName = /^\d+$/.test(ep.name);
+
       await prisma.player.upsert({
         where: { sofascoreId: ep.id },
         create: {
@@ -166,7 +169,8 @@ async function syncPlayers(): Promise<number> {
           teamImageUrl: ep.currentTeam?.imageUrl ?? (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
         },
         update: {
-          name: ep.name,
+          // Only update name if the incoming value is a real name (not a numeric ID)
+          ...(isNumericName ? {} : { name: ep.name }),
           position: ep.position ?? 'Unknown',
           imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),
           teamName: ep.currentTeam?.name ?? null,

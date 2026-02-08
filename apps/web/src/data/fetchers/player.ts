@@ -19,6 +19,7 @@ import {
 import { DEFAULT_LINE, getEtlBaseUrl } from "@/lib/etl/config";
 import type {
   PlayerDetail,
+  PlayerTrend,
   ShotHistoryPoint,
   MatchHistoryRow,
   ExternalLinkItem,
@@ -122,6 +123,8 @@ export async function fetchPlayerPageData(
             matchDate: true,
             homeTeam: true,
             awayTeam: true,
+            homeScore: true,
+            awayScore: true,
           },
         },
       },
@@ -188,17 +191,23 @@ export async function fetchPlayerPageData(
           s.match?.awayTeam,
           dbPlayer.teamName ?? undefined,
         );
+        const { result, badgeBg, badgeText } = resolveResultFromMatch(
+          s.match?.homeScore,
+          s.match?.awayScore,
+          s.match?.homeTeam,
+          dbPlayer.teamName ?? undefined,
+        );
         return {
           date: formatShortDate(matchDate),
           opponent,
-          result: "—",
+          result,
           minutes: s.minutesPlayed != null ? `${s.minutesPlayed}'` : "—",
           shots: s.shots,
           sot: s.shotsOnTarget,
           xg: "—",
           over: s.shots >= line,
-          badgeBg: "bg-slate-700",
-          badgeText: "text-slate-300",
+          badgeBg,
+          badgeText,
         };
       });
 
@@ -362,6 +371,91 @@ interface DbPlayer {
   teamImageId: string | null;
 }
 
+/**
+ * Computa trends (L5 vs L10) para Média Chutes, No Alvo, Conv. Gols e Minutos.
+ * Compara a janela de 5 jogos com a de 10 jogos para detectar direção.
+ */
+function computeTrends(stats: PlayerStatsFromEtl | null): PlayerTrend[] {
+  if (!stats || !stats.last5 || !stats.last10) {
+    return [
+      { value: "—", direction: "neutral" },
+      { value: "—", direction: "neutral" },
+      { value: "—", direction: "neutral" },
+      { value: "—", direction: "neutral" },
+    ];
+  }
+
+  const trendDir = (l5: number, l10: number): "up" | "down" | "neutral" => {
+    const diff = l5 - l10;
+    if (Math.abs(diff) < 0.05) return "neutral";
+    return diff > 0 ? "up" : "down";
+  };
+
+  const trendVal = (l5: number, l10: number): string => {
+    const diff = l5 - l10;
+    if (Math.abs(diff) < 0.05) return "=";
+    const sign = diff > 0 ? "+" : "";
+    return `${sign}${diff.toFixed(1)}`;
+  };
+
+  const shotsTrend: PlayerTrend = {
+    value: trendVal(stats.last5.avgShots, stats.last10.avgShots),
+    direction: trendDir(stats.last5.avgShots, stats.last10.avgShots),
+  };
+
+  const sotTrend: PlayerTrend = {
+    value: trendVal(stats.last5.avgShotsOnTarget, stats.last10.avgShotsOnTarget),
+    direction: trendDir(stats.last5.avgShotsOnTarget, stats.last10.avgShotsOnTarget),
+  };
+
+  const convL5 = stats.last5.avgShots > 0
+    ? (stats.last5.avgShotsOnTarget / stats.last5.avgShots) * 100
+    : 0;
+  const convL10 = stats.last10.avgShots > 0
+    ? (stats.last10.avgShotsOnTarget / stats.last10.avgShots) * 100
+    : 0;
+  const convTrend: PlayerTrend = {
+    value: Math.abs(convL5 - convL10) < 0.5 ? "=" : `${convL5 > convL10 ? "+" : ""}${(convL5 - convL10).toFixed(0)}%`,
+    direction: trendDir(convL5, convL10),
+  };
+
+  const minTrend: PlayerTrend = {
+    value: trendVal(stats.last5.avgMinutes, stats.last10.avgMinutes),
+    direction: trendDir(stats.last5.avgMinutes, stats.last10.avgMinutes),
+  };
+
+  return [shotsTrend, sotTrend, convTrend, minTrend];
+}
+
+/**
+ * Resolve o resultado de uma partida a partir dos dados do Prisma (fallback).
+ */
+function resolveResultFromMatch(
+  homeScore?: number | null,
+  awayScore?: number | null,
+  homeTeam?: string,
+  playerTeamName?: string,
+): { result: string; badgeBg: string; badgeText: string } {
+  if (homeScore == null || awayScore == null) {
+    return { result: "—", badgeBg: "bg-slate-700", badgeText: "text-slate-300" };
+  }
+
+  const isHome = playerTeamName && homeTeam
+    ? homeTeam.toLowerCase().includes(playerTeamName.toLowerCase().slice(0, 4))
+    : true;
+  const playerGoals = isHome ? homeScore : awayScore;
+  const opponentGoals = isHome ? awayScore : homeScore;
+  const score = `${homeScore}-${awayScore}`;
+
+  if (playerGoals > opponentGoals) {
+    return { result: `V ${score}`, badgeBg: "bg-green-500/10", badgeText: "text-green-400" };
+  }
+  if (playerGoals < opponentGoals) {
+    return { result: `D ${score}`, badgeBg: "bg-red-500/10", badgeText: "text-red-400" };
+  }
+  return { result: `E ${score}`, badgeBg: "bg-yellow-500/10", badgeText: "text-yellow-400" };
+}
+
 function buildPlayerDetail(
   p: DbPlayer,
   stats: PlayerStatsFromEtl | null,
@@ -396,7 +490,7 @@ function buildPlayerDetail(
       ? `${((stats.avgShotsOnTarget / (stats.avgShots || 1)) * 100).toFixed(0)}%`
       : "0%",
     avgMinutes: stats ? `${stats.avgMinutes}'` : "0'",
-    trends: [],
+    trends: computeTrends(stats),
     currentOdds,
     nextMatch: nextMatchData,
   };

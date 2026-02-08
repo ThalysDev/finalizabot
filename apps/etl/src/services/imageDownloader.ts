@@ -186,16 +186,17 @@ export async function downloadAndCacheImage(
 
   // Store in DB
   try {
+    const imageData = new Uint8Array(result.data) as Uint8Array<ArrayBuffer>;
     const cached = await prisma.imageCache.upsert({
       where: { sourceUrl },
       create: {
         sourceUrl,
         contentType: result.contentType,
-        data: result.data,
+        data: imageData,
       },
       update: {
         contentType: result.contentType,
-        data: result.data,
+        data: imageData,
         updatedAt: new Date(),
       },
       select: { id: true },

@@ -28,6 +28,7 @@ export interface NormalizedShot {
   id: string;
   matchId: string;
   playerId: string;
+  playerName?: string;
   teamId: string;
   minute: number;
   second?: number;

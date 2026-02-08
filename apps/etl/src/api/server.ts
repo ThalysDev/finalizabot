@@ -177,6 +177,8 @@ server.get<{
         shotCount: counts.total,
         shotsOnTarget: counts.onTarget,
         minutesPlayed: mp.minutesPlayed,
+        homeScore: mp.match.homeScore ?? null,
+        awayScore: mp.match.awayScore ?? null,
       };
     });
     await reply.send({
@@ -213,6 +215,8 @@ server.get<{
     shotCount: number;
     shotsOnTarget: number;
     minutesPlayed: number | null;
+    homeScore: number | null;
+    awayScore: number | null;
   }> = [];
   for (const s of shotsFromEvents) {
     if (seenMatchIds.has(s.matchId)) continue;
@@ -231,6 +235,8 @@ server.get<{
       shotCount: matchShots.length,
       shotsOnTarget: onTarget,
       minutesPlayed: null,
+      homeScore: s.match.homeScore ?? null,
+      awayScore: s.match.awayScore ?? null,
     });
     if (fallbackItems.length >= limit) break;
   }

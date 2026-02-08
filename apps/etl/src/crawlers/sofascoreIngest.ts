@@ -381,14 +381,19 @@ async function ingestShotmap(
     if (shots.length === 0) return 0;
 
     const seenPlayers = new Set<string>();
+    const playerNames = new Map<string, string>();
     const seenMatchPlayers = new Set<string>();
     for (const s of shots) {
       seenPlayers.add(s.playerId);
+      // Prefer actual player name over numeric ID
+      if (s.playerName && !playerNames.has(s.playerId)) {
+        playerNames.set(s.playerId, s.playerName);
+      }
       seenMatchPlayers.add(`${s.matchId}:${s.playerId}`);
     }
     await Promise.all(
       [...seenPlayers].map((playerId) =>
-        upsertPlayer({ id: playerId, name: playerId }),
+        upsertPlayer({ id: playerId, name: playerNames.get(playerId) ?? playerId }),
       ),
     );
     await Promise.all(

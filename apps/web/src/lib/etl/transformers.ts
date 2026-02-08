@@ -81,6 +81,31 @@ export function lastMatchesToShotHistory(
    ============================================================================ */
 
 /**
+ * Monta string de resultado (ex: "V 2-1", "D 0-3", "E 1-1") e cores do badge.
+ */
+function buildMatchResult(
+  m: EtlLastMatchItem,
+  playerTeamId?: string,
+): { result: string; badgeBg: string; badgeText: string } {
+  if (m.homeScore == null || m.awayScore == null) {
+    return { result: "—", badgeBg: "bg-slate-700", badgeText: "text-slate-300" };
+  }
+
+  const isHome = playerTeamId ? playerTeamId === m.homeTeamId : true;
+  const playerGoals = isHome ? m.homeScore : m.awayScore;
+  const opponentGoals = isHome ? m.awayScore : m.homeScore;
+  const score = `${m.homeScore}-${m.awayScore}`;
+
+  if (playerGoals > opponentGoals) {
+    return { result: `V ${score}`, badgeBg: "bg-green-500/10", badgeText: "text-green-400" };
+  }
+  if (playerGoals < opponentGoals) {
+    return { result: `D ${score}`, badgeBg: "bg-red-500/10", badgeText: "text-red-400" };
+  }
+  return { result: `E ${score}`, badgeBg: "bg-yellow-500/10", badgeText: "text-yellow-400" };
+}
+
+/**
  * Converte items do endpoint `/last-matches` em linhas para a tabela de
  * histórico de partidas.
  */
@@ -89,18 +114,21 @@ export function lastMatchesToHistory(
   line: number,
   playerTeamId?: string,
 ): MatchHistoryRow[] {
-  return items.map((m) => ({
-    date: shortDate(m.startTime),
-    opponent: resolveOpponent(m, playerTeamId),
-    result: "—",
-    minutes: m.minutesPlayed != null ? `${m.minutesPlayed}'` : "—",
-    shots: m.shotCount,
-    sot: m.shotsOnTarget,
-    xg: "—", // não vem do last-matches — enriquecido via shots
-    over: m.shotCount >= line,
-    badgeBg: "bg-slate-700",
-    badgeText: "text-slate-300",
-  }));
+  return items.map((m) => {
+    const { result, badgeBg, badgeText } = buildMatchResult(m, playerTeamId);
+    return {
+      date: shortDate(m.startTime),
+      opponent: resolveOpponent(m, playerTeamId),
+      result,
+      minutes: m.minutesPlayed != null ? `${m.minutesPlayed}'` : "—",
+      shots: m.shotCount,
+      sot: m.shotsOnTarget,
+      xg: "—", // não vem do last-matches — enriquecido via shots
+      over: m.shotCount >= line,
+      badgeBg,
+      badgeText,
+    };
+  });
 }
 
 /* ============================================================================

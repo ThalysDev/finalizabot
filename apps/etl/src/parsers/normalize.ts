@@ -24,6 +24,7 @@ export interface NormalizedShot {
   id: string;
   matchId: string;
   playerId: string;
+  playerName?: string;
   teamId: string;
   minute: number;
   second?: number;
@@ -155,6 +156,11 @@ export function normalizeShotsFromSofaScore(
           : undefined)
     );
 
+    /* --- Player Name: extract from nested player object if available --- */
+    const playerName = typeof o.player === 'object' && o.player !== null
+      ? safeStr((o.player as Record<string, unknown>).name ?? (o.player as Record<string, unknown>).shortName) || undefined
+      : undefined;
+
     /* --- Team ID: flat teamId, nested team.id, or derived from isHome --- */
     let teamId = safeStr(
       o.teamId ??
@@ -186,6 +192,7 @@ export function normalizeShotsFromSofaScore(
       id,
       matchId,
       playerId,
+      playerName,
       teamId,
       minute,
       second,
