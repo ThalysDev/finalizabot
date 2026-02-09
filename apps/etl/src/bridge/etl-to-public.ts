@@ -94,7 +94,6 @@ async function syncMatches(): Promise<number> {
       awayTeam: true,
     },
     orderBy: { startTime: "desc" },
-    take: 200,
   });
 
   // Batch upserts in chunks of 50 inside a transaction
@@ -251,7 +250,41 @@ async function syncPlayers(): Promise<number> {
       logger.warn(
         `[Bridge] Batch player sync failed (batch ${Math.floor(i / BATCH_SIZE) + 1}): ${err instanceof Error ? err.message : err}`,
       );
-      // Fall through — next batch still attempted
+      // Fallback: try individually for this failed batch
+      for (const ep of batch) {
+        try {
+          const isNumericName = /^\d+$/.test(ep.name);
+          const safeName = isNumericName ? "Unknown" : ep.name;
+          await prisma.player.upsert({
+            where: { sofascoreId: ep.id },
+            create: {
+              sofascoreId: ep.id,
+              name: safeName,
+              position: ep.position ?? "Unknown",
+              sofascoreUrl: `https://www.sofascore.com/player/${ep.slug ?? ep.id}/${ep.id}`,
+              imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),
+              teamName: ep.currentTeam?.name ?? null,
+              teamImageUrl:
+                ep.currentTeam?.imageUrl ??
+                (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
+            },
+            update: {
+              ...(isNumericName ? {} : { name: ep.name }),
+              position: ep.position ?? "Unknown",
+              imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),
+              teamName: ep.currentTeam?.name ?? null,
+              teamImageUrl:
+                ep.currentTeam?.imageUrl ??
+                (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
+            },
+          });
+          count++;
+        } catch (innerErr) {
+          logger.warn(
+            `[Bridge] Erro ao sync player ${ep.id}: ${innerErr instanceof Error ? innerErr.message : innerErr}`,
+          );
+        }
+      }
     }
   }
 
@@ -270,7 +303,6 @@ async function syncPlayerMatchStats(): Promise<number> {
       player: true,
     },
     orderBy: { match: { startTime: "desc" } },
-    take: 5000,
   });
 
   if (matchPlayers.length === 0) return 0;
@@ -311,11 +343,20 @@ async function syncPlayerMatchStats(): Promise<number> {
     shotMap.set(key, arr);
   }
 
-  // ── Build upsert operations ───────────────────────────────────
+  // ── Build stat data in-memory ───────────────────────────────────
   const BATCH_SIZE = 50;
   let count = 0;
 
-  const validOps: Array<ReturnType<typeof prisma.playerMatchStats.upsert>> = [];
+  interface StatData {
+    playerId: string;
+    matchId: string;
+    shots: number;
+    shotsOnTarget: number;
+    goals: number;
+    minutesPlayed: number;
+  }
+
+  const statItems: StatData[] = [];
 
   for (const mp of matchPlayers) {
     const publicMatchId = matchMap.get(mp.matchId);
@@ -329,47 +370,57 @@ async function syncPlayerMatchStats(): Promise<number> {
     ).length;
     const goals = shotEvents.filter((s) => s.outcome === "goal").length;
 
-    validOps.push(
-      prisma.playerMatchStats.upsert({
-        where: {
-          playerId_matchId: {
-            playerId: publicPlayerId,
-            matchId: publicMatchId,
-          },
+    statItems.push({
+      playerId: publicPlayerId,
+      matchId: publicMatchId,
+      shots: totalShots,
+      shotsOnTarget,
+      goals,
+      minutesPlayed: mp.minutesPlayed ?? 0,
+    });
+  }
+
+  // Helper to create a fresh upsert promise from data
+  function buildStatUpsert(item: StatData) {
+    return prisma.playerMatchStats.upsert({
+      where: {
+        playerId_matchId: {
+          playerId: item.playerId,
+          matchId: item.matchId,
         },
-        create: {
-          playerId: publicPlayerId,
-          matchId: publicMatchId,
-          shots: totalShots,
-          shotsOnTarget,
-          goals,
-          assists: 0,
-          minutesPlayed: mp.minutesPlayed ?? 0,
-        },
-        update: {
-          shots: totalShots,
-          shotsOnTarget,
-          goals,
-          minutesPlayed: mp.minutesPlayed ?? 0,
-        },
-      }),
-    );
+      },
+      create: {
+        playerId: item.playerId,
+        matchId: item.matchId,
+        shots: item.shots,
+        shotsOnTarget: item.shotsOnTarget,
+        goals: item.goals,
+        assists: 0,
+        minutesPlayed: item.minutesPlayed,
+      },
+      update: {
+        shots: item.shots,
+        shotsOnTarget: item.shotsOnTarget,
+        goals: item.goals,
+        minutesPlayed: item.minutesPlayed,
+      },
+    });
   }
 
   // Execute in batched transactions
-  for (let i = 0; i < validOps.length; i += BATCH_SIZE) {
-    const batch = validOps.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < statItems.length; i += BATCH_SIZE) {
+    const batchData = statItems.slice(i, i + BATCH_SIZE);
     try {
-      await prisma.$transaction(batch);
-      count += batch.length;
+      await prisma.$transaction(batchData.map(buildStatUpsert));
+      count += batchData.length;
     } catch (err) {
       logger.warn(
         `[Bridge] Erro ao sync stats batch (offset ${i}): ${err instanceof Error ? err.message : err}`,
       );
-      // Fallback: try individually
-      for (const op of batch) {
+      // Fallback: try individually (fresh promise per item)
+      for (const item of batchData) {
         try {
-          await op;
+          await buildStatUpsert(item);
           count++;
         } catch (innerErr) {
           logger.warn(
@@ -475,10 +526,23 @@ async function generateMarketAnalysis(): Promise<number> {
     statsByPlayer.set(s.playerId, arr);
   }
 
-  // ── Build all upsert operations in-memory ─────────────────────
+  // ── Build analysis data in-memory, then batch upsert ───────────
   const BATCH_SIZE = 50;
   let count = 0;
-  const ops: Array<ReturnType<typeof prisma.marketAnalysis.upsert>> = [];
+
+  interface AnalysisData {
+    id: string;
+    playerId: string;
+    matchId: string;
+    market: string;
+    odds: number;
+    probability: number;
+    confidence: number;
+    recommendation: string;
+    reasoning: string;
+  }
+
+  const analysisItems: AnalysisData[] = [];
 
   for (const match of scheduledMatches) {
     const playerIds = matchPlayerMap.get(match.id) ?? new Set();
@@ -505,46 +569,49 @@ async function generateMarketAnalysis(): Promise<number> {
 
       const reasoning = `Baseado em ${shots.length} jogos: média ${avgShots.toFixed(1)} chutes, ${hits}/${shots.length} acima da linha ${DEFAULT_LINE}. CV: ${cv?.toFixed(2) ?? "N/A"}.`;
 
-      ops.push(
-        prisma.marketAnalysis.upsert({
-          where: { id: `bridge-${playerId}-${match.id}` },
-          create: {
-            id: `bridge-${playerId}-${match.id}`,
-            playerId,
-            matchId: match.id,
-            market: `Over ${DEFAULT_LINE} Chutes`,
-            odds: Number(odds.toFixed(2)),
-            probability: Number(probability.toFixed(3)),
-            confidence: Number(confidence.toFixed(2)),
-            recommendation,
-            reasoning,
-          },
-          update: {
-            odds: Number(odds.toFixed(2)),
-            probability: Number(probability.toFixed(3)),
-            confidence: Number(confidence.toFixed(2)),
-            recommendation,
-            reasoning,
-          },
-        }),
-      );
+      analysisItems.push({
+        id: `bridge-${playerId}-${match.id}`,
+        playerId,
+        matchId: match.id,
+        market: `Over ${DEFAULT_LINE} Chutes`,
+        odds: Number(odds.toFixed(2)),
+        probability: Number(probability.toFixed(3)),
+        confidence: Number(confidence.toFixed(2)),
+        recommendation,
+        reasoning,
+      });
     }
   }
 
+  // Helper to create a fresh upsert promise from data
+  function buildAnalysisUpsert(item: AnalysisData) {
+    return prisma.marketAnalysis.upsert({
+      where: { id: item.id },
+      create: item,
+      update: {
+        odds: item.odds,
+        probability: item.probability,
+        confidence: item.confidence,
+        recommendation: item.recommendation,
+        reasoning: item.reasoning,
+      },
+    });
+  }
+
   // Execute in batched transactions
-  for (let i = 0; i < ops.length; i += BATCH_SIZE) {
-    const batch = ops.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < analysisItems.length; i += BATCH_SIZE) {
+    const batchData = analysisItems.slice(i, i + BATCH_SIZE);
     try {
-      await prisma.$transaction(batch);
-      count += batch.length;
+      await prisma.$transaction(batchData.map(buildAnalysisUpsert));
+      count += batchData.length;
     } catch (err) {
       logger.warn(
         `[Bridge] Erro ao gerar análise batch (offset ${i}): ${err instanceof Error ? err.message : err}`,
       );
-      // Fallback: try individually
-      for (const op of batch) {
+      // Fallback: try individually (fresh promise per item)
+      for (const item of batchData) {
         try {
-          await op;
+          await buildAnalysisUpsert(item);
           count++;
         } catch (innerErr) {
           logger.warn(

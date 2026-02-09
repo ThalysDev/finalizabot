@@ -16,7 +16,8 @@ export function statusFromCV(cv: number | null): ValueStatus {
   if (cv <= 0.25) return "high";
   if (cv <= 0.35) return "good";
   if (cv <= 0.5) return "neutral";
-  return "low";
+  if (cv <= 0.7) return "low";
+  return "cold";
 }
 
 /* ============================================================================

@@ -11,13 +11,18 @@ import { batchEnrichPlayers } from "@/lib/etl/enricher";
 import { DEFAULT_LINE } from "@/lib/etl/config";
 import { statusFromCV } from "@/lib/helpers";
 import prisma from "@/lib/db/prisma";
+import { calcCV, calcHits, mean } from "@finalizabot/shared";
 
 export const metadata: Metadata = {
   title: "Tabela Avançada - FinalizaBOT",
   description: "Análise avançada de jogadores por finalizações",
 };
 
-async function fetchTableData() {
+async function fetchTableData(): Promise<{
+  players: AdvancedPlayerRow[];
+  match: { homeTeam: string; awayTeam: string; competition: string; matchDate: string } | null;
+  etlDown: boolean;
+}> {
   const line = DEFAULT_LINE;
 
   const [dbPlayers, upcomingMatch] = await Promise.all([
@@ -28,12 +33,13 @@ async function fetchTableData() {
     }),
   ]);
 
+  // Try ETL enrichment first
   const enriched = await batchEnrichPlayers(
     dbPlayers.map((p) => ({ sofascoreId: p.sofascoreId })),
     line,
   );
 
-  // Batch fetch odds for all players in one query instead of N queries
+  // Batch fetch odds for all players in one query
   const analyses = await prisma.marketAnalysis.findMany({
     where: { playerId: { in: dbPlayers.map((p) => p.id) } },
     orderBy: { createdAt: "desc" },
@@ -42,25 +48,81 @@ async function fetchTableData() {
   });
   const oddsMap = new Map(analyses.map((a) => [a.playerId, a.odds]));
 
-  const players: AdvancedPlayerRow[] = dbPlayers
-    .map((p) => {
-      const e = enriched.get(String(p.sofascoreId));
-      if (!e?.stats) return null;
+  // Check if ETL returned any useful data
+  const hasEtlData = Array.from(enriched.values()).some((e) => e.stats !== null);
+  let etlDown = false;
 
-      return {
-        player: p.name,
-        team: e.teamName,
-        line: line.toFixed(1),
-        odds: oddsMap.get(p.id) ?? 0,
-        l5: e.stats.last5Over.filter(Boolean).length,
-        l10: e.stats.u10Hits,
-        cv: e.stats.cv != null ? Number(e.stats.cv.toFixed(2)) : 0,
-        avgShots: e.stats.avgShots,
-        avgMins: e.stats.avgMinutes,
-        status: statusFromCV(e.stats.cv),
-      };
-    })
-    .filter((p): p is AdvancedPlayerRow => p !== null);
+  let players: AdvancedPlayerRow[];
+
+  if (hasEtlData) {
+    // Primary path: use ETL enrichment
+    players = dbPlayers
+      .map((p) => {
+        const e = enriched.get(String(p.sofascoreId));
+        if (!e?.stats) return null;
+
+        return {
+          player: p.name,
+          team: e.teamName,
+          line: line.toFixed(1),
+          odds: oddsMap.get(p.id) ?? 0,
+          l5: e.stats.last5Over.filter(Boolean).length,
+          l10: e.stats.u10Hits,
+          cv: e.stats.cv != null ? Number(e.stats.cv.toFixed(2)) : 0,
+          avgShots: e.stats.avgShots,
+          avgMins: e.stats.avgMinutes,
+          status: statusFromCV(e.stats.cv),
+        };
+      })
+      .filter((p): p is AdvancedPlayerRow => p !== null);
+  } else {
+    // Fallback: compute stats from Prisma PlayerMatchStats
+    etlDown = true;
+
+    const allStats = await prisma.playerMatchStats.findMany({
+      where: { playerId: { in: dbPlayers.map((p) => p.id) } },
+      orderBy: { match: { matchDate: "desc" } },
+      select: { playerId: true, shots: true, minutesPlayed: true },
+    });
+
+    // Group by player, keep last 10
+    const statsByPlayer = new Map<string, { shots: number[]; minutes: number[] }>();
+    for (const s of allStats) {
+      const entry = statsByPlayer.get(s.playerId) ?? { shots: [], minutes: [] };
+      if (entry.shots.length < 10) {
+        entry.shots.push(s.shots);
+        entry.minutes.push(s.minutesPlayed);
+      }
+      statsByPlayer.set(s.playerId, entry);
+    }
+
+    players = dbPlayers
+      .map((p) => {
+        const pStats = statsByPlayer.get(p.id);
+        if (!pStats || pStats.shots.length < 2) return null;
+
+        const cv = calcCV(pStats.shots);
+        const l5Shots = pStats.shots.slice(0, 5);
+        const l5Hits = l5Shots.filter((s) => s >= line).length;
+        const l10Hits = calcHits(pStats.shots, line, Math.min(pStats.shots.length, 10));
+        const avgShots = mean(pStats.shots);
+        const avgMins = pStats.minutes.length > 0 ? Math.round(mean(pStats.minutes)) : 0;
+
+        return {
+          player: p.name,
+          team: p.teamName ?? "—",
+          line: line.toFixed(1),
+          odds: oddsMap.get(p.id) ?? 0,
+          l5: l5Hits,
+          l10: l10Hits,
+          cv: cv != null ? Number(cv.toFixed(2)) : 0,
+          avgShots,
+          avgMins,
+          status: statusFromCV(cv),
+        };
+      })
+      .filter((p): p is AdvancedPlayerRow => p !== null);
+  }
 
   const match = upcomingMatch
     ? {
@@ -77,7 +139,7 @@ async function fetchTableData() {
       }
     : null;
 
-  return { players, match };
+  return { players, match, etlDown };
 }
 
 const columns: Column<AdvancedPlayerRow>[] = [
@@ -112,7 +174,7 @@ const columns: Column<AdvancedPlayerRow>[] = [
     align: "center",
     render: (row) => (
       <span className="text-fb-text font-bold text-sm">
-        {row.odds.toFixed(2)}
+        {row.odds > 0 ? row.odds.toFixed(2) : "—"}
       </span>
     ),
   },
@@ -181,10 +243,20 @@ const columns: Column<AdvancedPlayerRow>[] = [
    PAGE
    ============================================================================ */
 export default async function AdvancedTablePage() {
-  const { players, match } = await fetchTableData();
+  const { players, match, etlDown } = await fetchTableData();
 
   return (
     <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
+      {/* ETL warning */}
+      {etlDown && players.length > 0 && (
+        <div className="mb-4 px-4 py-3 rounded-lg bg-fb-accent-gold/10 border border-fb-accent-gold/30 text-fb-accent-gold text-sm flex items-center gap-2">
+          <svg className="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+          Dados calculados a partir do histórico local. ETL temporariamente indisponível.
+        </div>
+      )}
+
       {/* Match banner */}
       {match && (
         <MatchBanner

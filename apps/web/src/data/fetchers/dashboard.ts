@@ -19,6 +19,8 @@ export interface DashboardPageData {
   matches: MatchCardData[];
   todayCount: number;
   tomorrowCount: number;
+  /** Label shown when no today/tomorrow matches found and fallback data is displayed */
+  fallbackLabel?: string;
 }
 
 export async function fetchDashboardData(): Promise<DashboardPageData> {
@@ -30,22 +32,29 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
     month: "2-digit",
     day: "2-digit",
   });
+
+  // Detect current BRT/BRST offset dynamically
+  const sampleParts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    timeZoneName: "shortOffset",
+  }).formatToParts(now);
+  const tzPart = sampleParts.find((p) => p.type === "timeZoneName");
+  // e.g. "GMT-3" or "GMT-2" → parse to "-03:00" or "-02:00"
+  const offsetMatch = tzPart?.value?.match(/GMT([+-]?\d+)/);
+  const offsetHours = offsetMatch ? parseInt(offsetMatch[1]!, 10) : -3;
+  const offsetStr = `${offsetHours <= 0 ? "-" : "+"}${String(Math.abs(offsetHours)).padStart(2, "0")}:00`;
+
   const todayStr = formatter.format(now); // YYYY-MM-DD
-  const dayStart = new Date(`${todayStr}T00:00:00-03:00`);
-  const dayEnd = new Date(`${todayStr}T23:59:59-03:00`);
+  const dayStart = new Date(`${todayStr}T00:00:00${offsetStr}`);
   const tomorrow = new Date(dayStart);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowFormatter = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "America/Sao_Paulo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  const tomorrowStr = tomorrowFormatter.format(tomorrow);
-  const tomorrowStart = new Date(`${tomorrowStr}T00:00:00-03:00`);
-  const tomorrowEnd = new Date(`${tomorrowStr}T23:59:59-03:00`);
+  const tomorrowStr = formatter.format(tomorrow);
+  const tomorrowStart = new Date(`${tomorrowStr}T00:00:00${offsetStr}`);
+  const tomorrowEnd = new Date(`${tomorrowStr}T23:59:59${offsetStr}`);
   const rangeStart = dayStart;
   const rangeEnd = tomorrowEnd;
+
+  let fallbackLabel: string | undefined;
 
   // 1. Busca partidas de hoje e amanhã
   let dbMatches = await prisma.match.findMany({
@@ -78,6 +87,9 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
         },
       },
     });
+    if (dbMatches.length > 0) {
+      fallbackLabel = "Próximas partidas agendadas";
+    }
   }
 
   // 3. Se ainda não há, buscar as partidas mais recentes (para não ficar vazio)
@@ -91,6 +103,9 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
         },
       },
     });
+    if (dbMatches.length > 0) {
+      fallbackLabel = "Partidas recentes";
+    }
   }
 
   const matches: MatchCardData[] = dbMatches.map((m) => ({
@@ -128,7 +143,7 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
 
   const todayCount = matches.filter((m) => m.dayKey === "today").length;
   const tomorrowCount = matches.filter((m) => m.dayKey === "tomorrow").length;
-  return { matches, todayCount, tomorrowCount };
+  return { matches, todayCount, tomorrowCount, fallbackLabel };
 }
 
 function resolveDayKey(

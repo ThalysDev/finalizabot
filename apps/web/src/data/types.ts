@@ -146,6 +146,8 @@ export interface AlertData {
   currentOdds: number;
   confidence: Confidence;
   isHighValue: boolean;
+  /** Competition/league name for filtering */
+  competition?: string;
 }
 
 /* ============================================================================

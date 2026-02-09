@@ -14,13 +14,14 @@ export const revalidate = 120;
    PAGE
    ============================================================================ */
 export default async function DashboardPage() {
-  const { matches, todayCount, tomorrowCount } = await fetchDashboardData();
+  const { matches, todayCount, tomorrowCount, fallbackLabel } = await fetchDashboardData();
 
   return (
     <DashboardContent
       matches={matches}
       todayCount={todayCount}
       tomorrowCount={tomorrowCount}
+      fallbackLabel={fallbackLabel}
     />
   );
 }

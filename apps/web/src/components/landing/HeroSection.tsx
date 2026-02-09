@@ -101,8 +101,8 @@ function HeroSection({ playerCount, matchCount }: HeroSectionProps = {}) {
           {/* Stats strip */}
           <div className="animate-fade-up delay-600 mt-10 flex items-center gap-6 sm:gap-10">
             {[
-              { value: displayPlayers, label: "Jogadores" },
-              { value: displayMatches, label: "Partidas" },
+              { value: displayPlayers, label: "Jogadores monitorados" },
+              { value: displayMatches, label: "Partidas analisadas" },
               { value: "24/7", label: "Atualização" },
             ].map(({ value, label }) => (
               <div key={label} className="text-center">

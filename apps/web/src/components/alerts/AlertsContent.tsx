@@ -60,12 +60,20 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
   const filteredAlerts = useMemo(() => {
     return alerts.filter((a) => {
       if (a.evPercent < minROI) return false;
-      // CV-based confidence filter
-      if (a.confidence === "low" && maxCV < 0.7) return false;
-      if (a.confidence === "medium" && maxCV < 0.4) return false;
+      // CV-based confidence filter: maxCV controls threshold
+      // Lower maxCV = stricter filter (only high confidence)
+      if (maxCV < 1.0) {
+        if (a.confidence === "low" && maxCV < 0.7) return false;
+        if (a.confidence === "medium" && maxCV < 0.5) return false;
+        if (a.confidence === "high" && maxCV < 0.3) return false;
+      }
+      // League filter
+      if (a.competition && selectedLeagues.size < ALL_LEAGUES.length) {
+        if (!selectedLeagues.has(a.competition)) return false;
+      }
       return true;
     });
-  }, [alerts, minROI, maxCV]);
+  }, [alerts, minROI, maxCV, selectedLeagues]);
 
   const sidebar = (
     <>
@@ -166,8 +174,9 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
       <div className="mb-5">
         <label className="text-[10px] text-fb-text-muted uppercase tracking-wider font-medium block mb-3">
           Notificações
+          <span className="ml-1 text-[9px] text-fb-accent-gold font-normal normal-case">(em breve)</span>
         </label>
-        <div className="space-y-2">
+        <div className="space-y-2 opacity-50 pointer-events-none">
           <NotifToggle
             icon={Bell}
             label="Notificações Push"

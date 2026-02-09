@@ -12,6 +12,8 @@ interface DashboardContentProps {
   matches: MatchCardData[];
   todayCount: number;
   tomorrowCount: number;
+  /** Label shown when fallback data is displayed (no today/tomorrow matches) */
+  fallbackLabel?: string;
 }
 
 /* ============================================================================
@@ -21,6 +23,7 @@ export function DashboardContent({
   matches,
   todayCount,
   tomorrowCount,
+  fallbackLabel,
 }: DashboardContentProps) {
   const [dayFilter, setDayFilter] = useState<"all" | "today" | "tomorrow">("all");
   const [compFilter, setCompFilter] = useState<string>("all");
@@ -75,12 +78,12 @@ export function DashboardContent({
           <div>
             <h1 className="text-fb-text text-xl font-bold flex items-center gap-2">
               <Calendar className="size-5 text-fb-primary" />
-              Partidas Hoje e Amanhã
+              {fallbackLabel ?? "Partidas Hoje e Amanhã"}
             </h1>
             <p className="text-fb-text-muted text-sm mt-1">
               {filteredMatches.length > 0
                 ? `${filteredMatches.length} partida${filteredMatches.length !== 1 ? "s" : ""} encontrada${filteredMatches.length !== 1 ? "s" : ""}`
-                : "Mostrando próximas partidas agendadas"}
+                : "Nenhuma partida encontrada"}
             </p>
           </div>
 
