@@ -1,4 +1,4 @@
-name: Sync daily
+name: Sync 30m
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: sync-daily
+  group: sync-30m
   cancel-in-progress: true
 
 jobs:
@@ -27,6 +27,12 @@ jobs:
 
       - name: Build shared
         run: npm -w @finalizabot/shared run build
+
+      - name: Prisma generate
+        run: npm run db:generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
 
       - name: Run ETL ingest
         run: npm run sync
