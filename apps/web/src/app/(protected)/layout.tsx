@@ -34,7 +34,7 @@ export default async function ProtectedLayout({
   return (
     <div className="min-h-screen bg-fb-bg text-fb-text">
       <DarkHeader />
-      <main className="pb-16 md:pb-0">
+      <main id="main-content" className="pb-16 md:pb-0">
         <Suspense fallback={<PageSkeleton />}>{children}</Suspense>
       </main>
       <BottomNavBar />

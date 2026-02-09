@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   description: "Visão geral do mercado de finalizações",
 };
 
+// ISR: revalidate every 2 minutes
+export const revalidate = 120;
+
 /* ============================================================================
    PAGE
    ============================================================================ */

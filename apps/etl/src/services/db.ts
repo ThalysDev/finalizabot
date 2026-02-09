@@ -1,6 +1,6 @@
-import { prisma } from '@finalizabot/shared';
-import type { PrismaClient } from '@finalizabot/shared';
-import type { NormalizedShot } from '../parsers/normalize.js';
+import { prisma } from "@finalizabot/shared";
+import type { PrismaClient } from "@finalizabot/shared";
+import type { NormalizedShot } from "../parsers/normalize.js";
 
 const BATCH_SIZE = 500;
 
@@ -50,12 +50,18 @@ export async function upsertPlayer(data: PlayerData): Promise<void> {
   const isNumericName = /^\d+$/.test(data.name);
   const safeName = isNumericName ? "Unknown" : data.name;
 
-  const updateData: Record<string, unknown> = {
-    slug: data.slug ?? null,
-    position: data.position ?? null,
-    imageUrl: data.imageUrl ?? null,
-    currentTeamId: data.currentTeamId ?? null,
-  };
+  const updateData: Record<string, unknown> = {};
+
+  // Only update fields that are actually provided (non-undefined)
+  if (data.slug !== undefined) updateData.slug = data.slug ?? null;
+  if (data.position !== undefined && data.position !== null)
+    updateData.position = data.position;
+  if (data.imageUrl !== undefined && data.imageUrl !== null)
+    updateData.imageUrl = data.imageUrl;
+  // Only update currentTeamId if explicitly provided (don't reset to null)
+  if (data.currentTeamId !== undefined && data.currentTeamId !== null) {
+    updateData.currentTeamId = data.currentTeamId;
+  }
 
   // Only update name if the incoming value is an actual name (not a numeric ID)
   if (!isNumericName) {
@@ -132,7 +138,7 @@ export async function attachMatchPlayer(
   matchId: string,
   playerId: string,
   teamId: string,
-  minutesPlayed?: number | null
+  minutesPlayed?: number | null,
 ): Promise<void> {
   const minutes = minutesPlayed ?? undefined;
   await prisma.etlMatchPlayer.upsert({
@@ -140,11 +146,14 @@ export async function attachMatchPlayer(
       matchId_playerId: { matchId, playerId },
     },
     create: { matchId, playerId, teamId, minutesPlayed: minutes },
-    update: minutes !== undefined ? { teamId, minutesPlayed: minutes } : { teamId },
+    update:
+      minutes !== undefined ? { teamId, minutesPlayed: minutes } : { teamId },
   });
 }
 
-export async function insertShotEvents(events: NormalizedShot[]): Promise<void> {
+export async function insertShotEvents(
+  events: NormalizedShot[],
+): Promise<void> {
   if (events.length === 0) return;
   const rows = events.map((e) => ({
     id: e.id,
@@ -153,7 +162,7 @@ export async function insertShotEvents(events: NormalizedShot[]): Promise<void> 
     teamId: e.teamId,
     minute: e.minute,
     second: e.second ?? null,
-    type: 'shot',
+    type: "shot",
     outcome: e.outcome,
     xg: e.xg ?? null,
     bodyPart: e.bodyPart ?? null,

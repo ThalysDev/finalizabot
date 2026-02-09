@@ -14,7 +14,12 @@ import {
 } from "@/lib/etl/transformers";
 import { DEFAULT_LINE, getEtlBaseUrl } from "@/lib/etl/config";
 import type { PlayerCardData } from "@/data/types";
-import { statusFromCV, buildTeamBadgeUrl, proxySofascoreUrl, cachedImageUrl } from "@/lib/helpers";
+import {
+  statusFromCV,
+  buildTeamBadgeUrl,
+  proxySofascoreUrl,
+  cachedImageUrl,
+} from "@/lib/helpers";
 import prisma from "@/lib/db/prisma";
 
 /* ============================================================================
@@ -86,10 +91,12 @@ export async function fetchMatchPageData(
     isLive: dbMatch.status === "live",
     homeBadgeUrl:
       cachedImageUrl(dbMatch.homeTeamImageId) ??
-      proxySofascoreUrl(dbMatch.homeTeamImageUrl) ?? buildTeamBadgeUrl(dbMatch.homeTeamSofascoreId),
+      proxySofascoreUrl(dbMatch.homeTeamImageUrl) ??
+      buildTeamBadgeUrl(dbMatch.homeTeamSofascoreId),
     awayBadgeUrl:
       cachedImageUrl(dbMatch.awayTeamImageId) ??
-      proxySofascoreUrl(dbMatch.awayTeamImageUrl) ?? buildTeamBadgeUrl(dbMatch.awayTeamSofascoreId),
+      proxySofascoreUrl(dbMatch.awayTeamImageUrl) ??
+      buildTeamBadgeUrl(dbMatch.awayTeamSofascoreId),
   };
 
   // 2. Coleta jogadores únicos (de MarketAnalysis e/ou PlayerStats)
@@ -117,8 +124,14 @@ export async function fetchMatchPageData(
         sofascoreId: ma.player.sofascoreId,
         odds: ma.odds,
         probability: ma.probability,
-        avatarUrl: cachedImageUrl(ma.player.imageId) ?? proxySofascoreUrl(ma.player.imageUrl) ?? undefined,
-        teamBadgeUrl: cachedImageUrl(ma.player.teamImageId) ?? proxySofascoreUrl(ma.player.teamImageUrl) ?? undefined,
+        avatarUrl:
+          cachedImageUrl(ma.player.imageId) ??
+          proxySofascoreUrl(ma.player.imageUrl) ??
+          undefined,
+        teamBadgeUrl:
+          cachedImageUrl(ma.player.teamImageId) ??
+          proxySofascoreUrl(ma.player.teamImageUrl) ??
+          undefined,
         teamName: ma.player.teamName ?? null,
       });
     }
@@ -134,18 +147,30 @@ export async function fetchMatchPageData(
         sofascoreId: ps.player.sofascoreId,
         odds: 0,
         probability: 0,
-        avatarUrl: cachedImageUrl(ps.player.imageId) ?? proxySofascoreUrl(ps.player.imageUrl) ?? undefined,
-        teamBadgeUrl: cachedImageUrl(ps.player.teamImageId) ?? proxySofascoreUrl(ps.player.teamImageUrl) ?? undefined,
+        avatarUrl:
+          cachedImageUrl(ps.player.imageId) ??
+          proxySofascoreUrl(ps.player.imageUrl) ??
+          undefined,
+        teamBadgeUrl:
+          cachedImageUrl(ps.player.teamImageId) ??
+          proxySofascoreUrl(ps.player.teamImageUrl) ??
+          undefined,
         teamName: ps.player.teamName ?? null,
       });
     }
   }
 
-  // Se não há jogadores via MarketAnalysis/PlayerStats, buscar todos os players do banco
-  // que tenham sofascoreId (para partidas onde sync só criou jogadores sem análise)
+  // Se não há jogadores via MarketAnalysis/PlayerStats, buscar players associados
+  // ao match (pelo teamName que contém homeTeam ou awayTeam)
   if (playerMap.size === 0) {
     const allPlayers = await prisma.player.findMany({
-      take: 30,
+      where: {
+        OR: [
+          { teamName: { contains: match.homeTeam, mode: "insensitive" } },
+          { teamName: { contains: match.awayTeam, mode: "insensitive" } },
+        ],
+      },
+      take: 50,
       orderBy: { updatedAt: "desc" },
     });
 
@@ -157,8 +182,14 @@ export async function fetchMatchPageData(
         sofascoreId: p.sofascoreId,
         odds: 0,
         probability: 0,
-        avatarUrl: cachedImageUrl(p.imageId) ?? proxySofascoreUrl(p.imageUrl) ?? undefined,
-        teamBadgeUrl: cachedImageUrl(p.teamImageId) ?? proxySofascoreUrl(p.teamImageUrl) ?? undefined,
+        avatarUrl:
+          cachedImageUrl(p.imageId) ??
+          proxySofascoreUrl(p.imageUrl) ??
+          undefined,
+        teamBadgeUrl:
+          cachedImageUrl(p.teamImageId) ??
+          proxySofascoreUrl(p.teamImageUrl) ??
+          undefined,
         teamName: p.teamName ?? null,
       });
     }
@@ -190,7 +221,8 @@ export async function fetchMatchPageData(
             lastMatchesRes.data.items.length > 0
           ) {
             const etlPlayerImage =
-              proxySofascoreUrl(lastMatchesRes.data.player?.imageUrl) ?? undefined;
+              proxySofascoreUrl(lastMatchesRes.data.player?.imageUrl) ??
+              undefined;
             const stats = computePlayerStats(lastMatchesRes.data.items, line);
             const playerTeamId = shotsRes.data
               ? detectPlayerTeamId(shotsRes.data.items)
@@ -198,7 +230,7 @@ export async function fetchMatchPageData(
             const latestItem = lastMatchesRes.data.items[0];
             const teamName = latestItem
               ? resolvePlayerTeam(latestItem, playerTeamId)
-              : p.teamName ?? "—";
+              : (p.teamName ?? "—");
 
             return {
               id: p.id,
@@ -232,19 +264,16 @@ export async function fetchMatchPageData(
     const playerIds = playerEntries.map((p) => p.id);
     const allStats = await prisma.playerMatchStats.findMany({
       where: { playerId: { in: playerIds } },
-      orderBy: { createdAt: "desc" },
+      orderBy: { match: { matchDate: "desc" } },
       include: {
         match: {
-          select: { homeTeam: true, awayTeam: true },
+          select: { homeTeam: true, awayTeam: true, matchDate: true },
         },
       },
     });
 
     // Group stats by playerId
-    const statsByPlayer = new Map<
-      string,
-      (typeof allStats)[number][]
-    >();
+    const statsByPlayer = new Map<string, (typeof allStats)[number][]>();
     for (const s of allStats) {
       const arr = statsByPlayer.get(s.playerId) ?? [];
       arr.push(s);
@@ -341,7 +370,7 @@ async function enrichFromPrisma(
 ): Promise<PlayerCardData> {
   const dbStats = await prisma.playerMatchStats.findMany({
     where: { playerId: p.id },
-    orderBy: { createdAt: "desc" },
+    orderBy: { match: { matchDate: "desc" } },
     take: 10,
     include: { match: { select: { homeTeam: true, awayTeam: true } } },
   });
@@ -350,9 +379,11 @@ async function enrichFromPrisma(
     const shots = dbStats.map((s) => s.shots);
     const shotsOnTarget = dbStats.map((s) => s.shotsOnTarget);
     const avg = shots.reduce((a, b) => a + b, 0) / shots.length;
-    const avgOnTarget = shotsOnTarget.reduce((a, b) => a + b, 0) / shotsOnTarget.length;
+    const avgOnTarget =
+      shotsOnTarget.reduce((a, b) => a + b, 0) / shotsOnTarget.length;
     const overLine = shots.map((s) => s >= line);
-    const variance = shots.reduce((a, s) => a + Math.pow(s - avg, 2), 0) / shots.length;
+    const variance =
+      shots.reduce((a, s) => a + Math.pow(s - avg, 2), 0) / shots.length;
     const cv = avg > 0 ? Math.sqrt(variance) / avg : null;
     const teamName = resolvePlayerTeamFromStats(dbStats[0], p.teamName ?? null);
 
@@ -399,16 +430,26 @@ function resolvePlayerTeamFromStats(
   stat: { match?: { homeTeam: string; awayTeam: string } | null },
   playerTeamName: string | null,
 ): string {
-  if (!stat.match) return "—";
+  if (!stat.match) return playerTeamName ?? "—";
+
+  // If we have the player's team name from the DB, try to match
   if (playerTeamName) {
-    const team = playerTeamName.toLowerCase();
-    const home = stat.match.homeTeam.toLowerCase();
-    const away = stat.match.awayTeam.toLowerCase();
-    if (home.includes(team)) return stat.match.homeTeam;
-    if (away.includes(team)) return stat.match.awayTeam;
+    const team = playerTeamName.toLowerCase().trim();
+    const home = stat.match.homeTeam.toLowerCase().trim();
+    const away = stat.match.awayTeam.toLowerCase().trim();
+
+    // Exact match first
+    if (home === team) return stat.match.homeTeam;
+    if (away === team) return stat.match.awayTeam;
+
+    // Bidirectional inclusion check (handles partial names)
+    if (home.includes(team) || team.includes(home)) return stat.match.homeTeam;
+    if (away.includes(team) || team.includes(away)) return stat.match.awayTeam;
+
+    // Return the original team name from DB as-is (better than guessing)
+    return playerTeamName;
   }
-  // Fallback heuristic: keep original shortest name rule
-  return stat.match.homeTeam.length <= stat.match.awayTeam.length
-    ? stat.match.homeTeam
-    : stat.match.awayTeam;
+
+  // No team name available at all
+  return "—";
 }

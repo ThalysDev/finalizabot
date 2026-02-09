@@ -65,8 +65,30 @@ export async function fetchPlayerPageData(
   }
 
   const now = new Date();
+  const playerTeam = dbPlayer.teamName ?? "";
   const nextMatch = await prisma.match.findFirst({
-    where: { status: "scheduled", matchDate: { gte: now } },
+    where: {
+      status: "scheduled",
+      matchDate: { gte: now },
+      ...(playerTeam
+        ? {
+            OR: [
+              {
+                homeTeam: {
+                  contains: playerTeam,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                awayTeam: {
+                  contains: playerTeam,
+                  mode: "insensitive" as const,
+                },
+              },
+            ],
+          }
+        : {}),
+    },
     orderBy: { matchDate: "asc" },
     select: {
       homeTeam: true,
@@ -90,14 +112,17 @@ export async function fetchPlayerPageData(
         { data: null, error: "ETL not configured" } as const,
       ];
 
-  const etlPlayerImage = proxySofascoreUrl(lastMatchesRes.data?.player?.imageUrl) ?? undefined;
+  const etlPlayerImage =
+    proxySofascoreUrl(lastMatchesRes.data?.player?.imageUrl) ?? undefined;
 
   // Detecta o teamId do jogador via shots
   const playerTeamId = shotsRes.data
     ? detectPlayerTeamId(shotsRes.data.items)
-    : lastMatchesRes.data?.items[0]?.playerTeamId ?? undefined;
+    : (lastMatchesRes.data?.items[0]?.playerTeamId ?? undefined);
   const etlTeamBadge = playerTeamId
-    ? proxySofascoreUrl(`https://api.sofascore.com/api/v1/team/${playerTeamId}/image`)
+    ? proxySofascoreUrl(
+        `https://api.sofascore.com/api/v1/team/${playerTeamId}/image`,
+      )
     : undefined;
 
   // Resolve cached image URLs from DB
@@ -106,7 +131,6 @@ export async function fetchPlayerPageData(
 
   // Se ETL falhar, tenta fallback para PlayerMatchStats do Prisma
   if (lastMatchesRes.error || !lastMatchesRes.data) {
-
     // Fallback: usar PlayerMatchStats locais
     const localStats = await prisma.playerMatchStats.findMany({
       where: {
@@ -134,30 +158,68 @@ export async function fetchPlayerPageData(
       const shots = localStats.map((s) => s.shots);
       const total = shots.reduce((a, b) => a + b, 0);
       const avg = total / shots.length;
-      const onTarget = localStats.reduce((a, s) => a + s.shotsOnTarget, 0) / localStats.length;
-      const minutes = localStats.reduce((a, s) => a + s.minutesPlayed, 0) / localStats.length;
-      const cvVal = shots.length >= 2 ? (() => {
-        const variance = shots.reduce((a, s) => a + Math.pow(s - avg, 2), 0) / shots.length;
-        return avg > 0 ? Math.sqrt(variance) / avg : null;
-      })() : null;
+      const onTarget =
+        localStats.reduce((a, s) => a + s.shotsOnTarget, 0) / localStats.length;
+      const minutes =
+        localStats.reduce((a, s) => a + s.minutesPlayed, 0) / localStats.length;
+      const cvVal =
+        shots.length >= 2
+          ? (() => {
+              const variance =
+                shots.reduce((a, s) => a + Math.pow(s - avg, 2), 0) /
+                shots.length;
+              return avg > 0 ? Math.sqrt(variance) / avg : null;
+            })()
+          : null;
 
       const buildWindowFromLocal = (window: number) => {
         const sliced = shots.slice(0, window);
-        const slicedOnTarget = localStats.slice(0, window).map((s) => s.shotsOnTarget);
-        const slicedMinutes = localStats.slice(0, window).map((s) => s.minutesPlayed);
+        if (sliced.length === 0) {
+          const emptyLHI = { hits: 0, total: 0, label: "0/0", percent: 0 };
+          return {
+            avgShots: 0,
+            avgShotsOnTarget: 0,
+            avgMinutes: 0,
+            cv: null,
+            over05: emptyLHI,
+            over15: emptyLHI,
+            over25: emptyLHI,
+            sparkline: [],
+            last5Over: [],
+          };
+        }
+        const slicedOnTarget = localStats
+          .slice(0, window)
+          .map((s) => s.shotsOnTarget);
+        const slicedMinutes = localStats
+          .slice(0, window)
+          .map((s) => s.minutesPlayed);
         const wAvg = sliced.reduce((a, b) => a + b, 0) / sliced.length;
-        const wVariance = sliced.reduce((a, s) => a + Math.pow(s - wAvg, 2), 0) / sliced.length;
+        const wVariance =
+          sliced.reduce((a, s) => a + Math.pow(s - wAvg, 2), 0) / sliced.length;
         const wCv = wAvg > 0 ? Math.sqrt(wVariance) / wAvg : null;
         const hitCount = (l: number) => sliced.filter((s) => s >= l).length;
         const buildLHI = (l: number) => {
           const h = hitCount(l);
-          const p = sliced.length > 0 ? Math.round((h / sliced.length) * 100) : 0;
-          return { hits: h, total: sliced.length, label: `${h}/${sliced.length}`, percent: p };
+          const p =
+            sliced.length > 0 ? Math.round((h / sliced.length) * 100) : 0;
+          return {
+            hits: h,
+            total: sliced.length,
+            label: `${h}/${sliced.length}`,
+            percent: p,
+          };
         };
         return {
           avgShots: Number(wAvg.toFixed(1)),
-          avgShotsOnTarget: Number((slicedOnTarget.reduce((a, b) => a + b, 0) / slicedOnTarget.length).toFixed(1)),
-          avgMinutes: Math.round(slicedMinutes.reduce((a, b) => a + b, 0) / slicedMinutes.length),
+          avgShotsOnTarget: Number(
+            (
+              slicedOnTarget.reduce((a, b) => a + b, 0) / slicedOnTarget.length
+            ).toFixed(1),
+          ),
+          avgMinutes: Math.round(
+            slicedMinutes.reduce((a, b) => a + b, 0) / slicedMinutes.length,
+          ),
           cv: wCv,
           over05: buildLHI(0.5),
           over15: buildLHI(1.5),
@@ -179,7 +241,7 @@ export async function fetchPlayerPageData(
         u5Hits,
         u10Hits,
         cv: cvVal,
-        sparkline: shots.slice(0, 8),
+        sparkline: shots.slice(0, 8).reverse(),
         last5: buildWindowFromLocal(5),
         last10: buildWindowFromLocal(10),
       };
@@ -309,18 +371,20 @@ export async function fetchPlayerPageData(
   });
 
   const resolvedTeam = teamName ?? "—";
-  let nextMatchData: {
-    opponent: string;
-    opponentShort: string;
-    date: string;
-    time: string;
-    competition: string;
-  } | undefined;
+  let nextMatchData:
+    | {
+        opponent: string;
+        opponentShort: string;
+        date: string;
+        time: string;
+        competition: string;
+      }
+    | undefined;
 
   if (nextMatch) {
-    const isHome = nextMatch.homeTeam
-      .toLowerCase()
-      .includes(resolvedTeam.toLowerCase().slice(0, 4));
+    const homeKey = nextMatch.homeTeam.toLowerCase().trim();
+    const teamKey = resolvedTeam.toLowerCase().trim();
+    const isHome = homeKey.includes(teamKey) || teamKey.includes(homeKey);
     const opponent = isHome ? nextMatch.awayTeam : nextMatch.homeTeam;
     nextMatchData = {
       opponent,
@@ -404,18 +468,29 @@ function computeTrends(stats: PlayerStatsFromEtl | null): PlayerTrend[] {
   };
 
   const sotTrend: PlayerTrend = {
-    value: trendVal(stats.last5.avgShotsOnTarget, stats.last10.avgShotsOnTarget),
-    direction: trendDir(stats.last5.avgShotsOnTarget, stats.last10.avgShotsOnTarget),
+    value: trendVal(
+      stats.last5.avgShotsOnTarget,
+      stats.last10.avgShotsOnTarget,
+    ),
+    direction: trendDir(
+      stats.last5.avgShotsOnTarget,
+      stats.last10.avgShotsOnTarget,
+    ),
   };
 
-  const convL5 = stats.last5.avgShots > 0
-    ? (stats.last5.avgShotsOnTarget / stats.last5.avgShots) * 100
-    : 0;
-  const convL10 = stats.last10.avgShots > 0
-    ? (stats.last10.avgShotsOnTarget / stats.last10.avgShots) * 100
-    : 0;
+  const convL5 =
+    stats.last5.avgShots > 0
+      ? (stats.last5.avgShotsOnTarget / stats.last5.avgShots) * 100
+      : 0;
+  const convL10 =
+    stats.last10.avgShots > 0
+      ? (stats.last10.avgShotsOnTarget / stats.last10.avgShots) * 100
+      : 0;
   const convTrend: PlayerTrend = {
-    value: Math.abs(convL5 - convL10) < 0.5 ? "=" : `${convL5 > convL10 ? "+" : ""}${(convL5 - convL10).toFixed(0)}%`,
+    value:
+      Math.abs(convL5 - convL10) < 0.5
+        ? "="
+        : `${convL5 > convL10 ? "+" : ""}${(convL5 - convL10).toFixed(0)}%`,
     direction: trendDir(convL5, convL10),
   };
 
@@ -437,23 +512,41 @@ function resolveResultFromMatch(
   playerTeamName?: string,
 ): { result: string; badgeBg: string; badgeText: string } {
   if (homeScore == null || awayScore == null) {
-    return { result: "—", badgeBg: "bg-slate-700", badgeText: "text-slate-300" };
+    return {
+      result: "—",
+      badgeBg: "bg-slate-700",
+      badgeText: "text-slate-300",
+    };
   }
 
-  const isHome = playerTeamName && homeTeam
-    ? homeTeam.toLowerCase().includes(playerTeamName.toLowerCase().slice(0, 4))
-    : true;
+  const isHome =
+    playerTeamName && homeTeam
+      ? homeTeam.toLowerCase().includes(playerTeamName.toLowerCase()) ||
+        playerTeamName.toLowerCase().includes(homeTeam.toLowerCase())
+      : true;
   const playerGoals = isHome ? homeScore : awayScore;
   const opponentGoals = isHome ? awayScore : homeScore;
   const score = `${homeScore}-${awayScore}`;
 
   if (playerGoals > opponentGoals) {
-    return { result: `V ${score}`, badgeBg: "bg-green-500/10", badgeText: "text-green-400" };
+    return {
+      result: `V ${score}`,
+      badgeBg: "bg-green-500/10",
+      badgeText: "text-green-400",
+    };
   }
   if (playerGoals < opponentGoals) {
-    return { result: `D ${score}`, badgeBg: "bg-red-500/10", badgeText: "text-red-400" };
+    return {
+      result: `D ${score}`,
+      badgeBg: "bg-red-500/10",
+      badgeText: "text-red-400",
+    };
   }
-  return { result: `E ${score}`, badgeBg: "bg-yellow-500/10", badgeText: "text-yellow-400" };
+  return {
+    result: `E ${score}`,
+    badgeBg: "bg-yellow-500/10",
+    badgeText: "text-yellow-400",
+  };
 }
 
 function buildPlayerDetail(
@@ -478,8 +571,16 @@ function buildPlayerDetail(
     team,
     teamShort: team.slice(0, 3).toUpperCase(),
     position: p.position,
-    avatarUrl: cachedImageUrl(p.imageId) ?? proxySofascoreUrl(p.imageUrl) ?? overrideAvatarUrl ?? undefined,
-    teamBadgeUrl: cachedImageUrl(p.teamImageId) ?? proxySofascoreUrl(p.teamImageUrl) ?? overrideTeamBadgeUrl ?? undefined,
+    avatarUrl:
+      cachedImageUrl(p.imageId) ??
+      proxySofascoreUrl(p.imageUrl) ??
+      overrideAvatarUrl ??
+      undefined,
+    teamBadgeUrl:
+      cachedImageUrl(p.teamImageId) ??
+      proxySofascoreUrl(p.teamImageUrl) ??
+      overrideTeamBadgeUrl ??
+      undefined,
     number: 0,
     age: 0,
     nationality: "—",
@@ -519,10 +620,14 @@ function resolveOpponentFromMatch(
 ): string {
   if (!homeTeam && !awayTeam) return "—";
   if (!teamName) return awayTeam ?? homeTeam ?? "—";
-  const name = teamName.toLowerCase();
-  const home = homeTeam?.toLowerCase() ?? "";
-  const away = awayTeam?.toLowerCase() ?? "";
-  if (home && home.includes(name)) return awayTeam ?? "—";
-  if (away && away.includes(name)) return homeTeam ?? "—";
+  const name = teamName.toLowerCase().trim();
+  const home = homeTeam?.toLowerCase().trim() ?? "";
+  const away = awayTeam?.toLowerCase().trim() ?? "";
+
+  // Bidirectional match: handles both "Barcelona" includes "Barce" and vice versa
+  if (home && (home.includes(name) || name.includes(home)))
+    return awayTeam ?? "—";
+  if (away && (away.includes(name) || name.includes(away)))
+    return homeTeam ?? "—";
   return awayTeam ?? homeTeam ?? "—";
 }

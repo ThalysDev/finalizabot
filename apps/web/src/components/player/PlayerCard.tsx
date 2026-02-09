@@ -75,6 +75,15 @@ function statusConfig(s: ValueStatus) {
         icon: Snowflake,
         glow: "",
       };
+    default:
+      return {
+        label: "Neutro",
+        border: "border-fb-border",
+        bg: "bg-fb-surface",
+        text: "text-fb-text-secondary",
+        icon: Minus,
+        glow: "",
+      };
   }
 }
 
@@ -109,7 +118,7 @@ export function PlayerCard({
     >
       {/* Header: avatar + info */}
       <div className="flex items-start gap-3 mb-3">
-        <div className="size-12 rounded-full bg-gradient-to-br from-fb-primary/20 to-fb-accent-green/10 flex items-center justify-center overflow-hidden shrink-0 border border-fb-primary/15 transition-transform duration-300 group-hover:scale-105">
+        <div className="size-12 rounded-full bg-linear-to-br from-fb-primary/20 to-fb-accent-green/10 flex items-center justify-center overflow-hidden shrink-0 border border-fb-primary/15 transition-transform duration-300 group-hover:scale-105">
           {avatarUrl ? (
             <Image
               src={avatarUrl}
@@ -180,12 +189,18 @@ export function PlayerCard({
       </div>
 
       {/* Odds button */}
-      <button
-        aria-label={`Odds ${formattedOdds} para ${name}`}
-        className="w-full py-2.5 rounded-xl bg-fb-primary/10 border border-fb-primary/15 text-fb-primary font-bold text-sm hover:bg-fb-primary/20 transition-all duration-200 mb-3 btn-press"
-      >
-        {formattedOdds}
-      </button>
+      {odds > 0 ? (
+        <button
+          aria-label={`Odds ${formattedOdds} para ${name}`}
+          className="w-full py-2.5 rounded-xl bg-fb-primary/10 border border-fb-primary/15 text-fb-primary font-bold text-sm hover:bg-fb-primary/20 transition-all duration-200 mb-3 btn-press"
+        >
+          {formattedOdds}
+        </button>
+      ) : (
+        <div className="w-full py-2.5 rounded-xl bg-fb-surface border border-fb-border/40 text-fb-text-muted font-medium text-sm text-center mb-3">
+          Sem cotação
+        </div>
+      )}
 
       {/* Last 5 hit/miss bars */}
       <div className="flex items-center justify-between mb-2">
@@ -224,7 +239,7 @@ export function PlayerCard({
 
         {/* Mini sparkline */}
         {sparkline && sparkline.length > 0 && (
-          <div className="flex items-end gap-[2px] h-4">
+          <div className="flex items-end gap-0.5 h-4">
             {(() => {
               const maxSpark = Math.max(...sparkline, 1);
               return sparkline.slice(-8).map((v, i) => (

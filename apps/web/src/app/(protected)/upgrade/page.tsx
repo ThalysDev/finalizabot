@@ -61,7 +61,7 @@ export default function UpgradePage() {
       {/* Main card */}
       <div className="relative w-full max-w-[960px] bg-fb-surface-darker border border-fb-border rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
         {/* Left: Benefits */}
-        <div className="flex-1 p-8 md:p-10 flex flex-col justify-center border-b md:border-b-0 md:border-r border-fb-border bg-gradient-to-br from-fb-surface-darker to-fb-bg">
+        <div className="flex-1 p-8 md:p-10 flex flex-col justify-center border-b md:border-b-0 md:border-r border-fb-border bg-linear-to-br from-fb-surface-darker to-fb-bg">
           <div className="mb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-fb-primary/10 border border-fb-primary/20 text-fb-primary text-xs font-bold tracking-wide uppercase mb-4">
               <Lock className="size-3.5" />
@@ -208,7 +208,7 @@ export default function UpgradePage() {
                 </span>
               </div>
               <button
-                onClick={() => alert("Integração com Stripe em breve! Você será notificado quando o pagamento estiver disponível.")}
+                onClick={() => alert("Pagamento será disponibilizado em breve! Você receberá uma notificação quando o checkout estiver ativo.")}
                 className="w-full bg-fb-primary hover:brightness-110 text-fb-primary-content font-bold text-base py-4 px-6 rounded-lg transition-all shadow-lg shadow-fb-primary/20 flex items-center justify-center gap-2 mt-4"
               >
                 <Lock className="size-5" />

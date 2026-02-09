@@ -32,7 +32,7 @@ export function CTASection() {
             >
               Pare de adivinhar.
               <br />
-              <span className="bg-gradient-to-r from-fb-primary to-fb-accent-green bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-fb-primary to-fb-accent-green bg-clip-text text-transparent">
                 Decida com dados reais.
               </span>
             </h2>

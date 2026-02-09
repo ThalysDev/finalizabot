@@ -220,9 +220,7 @@ async function ingestMatchData(
         ? (event as Record<string, unknown>)
         : {};
 
-    const tournamentObj = o.tournament as
-      | Record<string, unknown>
-      | undefined;
+    const tournamentObj = o.tournament as Record<string, unknown> | undefined;
     const tournamentName =
       tournamentObj && typeof tournamentObj.name === "string"
         ? tournamentObj.name
@@ -250,15 +248,13 @@ async function ingestMatchData(
     const homeId =
       homeTeam && typeof homeTeam.id !== "undefined"
         ? String(homeTeam.id)
-        : typeof o.homeTeamId === "number" ||
-            typeof o.homeTeamId === "string"
+        : typeof o.homeTeamId === "number" || typeof o.homeTeamId === "string"
           ? String(o.homeTeamId)
           : `home-${matchId}`;
     const awayId =
       awayTeam && typeof awayTeam.id !== "undefined"
         ? String(awayTeam.id)
-        : typeof o.awayTeamId === "number" ||
-            typeof o.awayTeamId === "string"
+        : typeof o.awayTeamId === "number" || typeof o.awayTeamId === "string"
           ? String(o.awayTeamId)
           : `away-${matchId}`;
     const homeName =
@@ -327,9 +323,7 @@ async function ingestMatchData(
       tournament: (o.tournament as Record<string, unknown>)?.name as
         | string
         | undefined,
-      season: (o.season as Record<string, unknown>)?.name as
-        | string
-        | undefined,
+      season: (o.season as Record<string, unknown>)?.name as string | undefined,
       statusCode,
       statusType,
       homeScore,
@@ -382,6 +376,7 @@ async function ingestShotmap(
 
     const seenPlayers = new Set<string>();
     const playerNames = new Map<string, string>();
+    const playerTeams = new Map<string, string>();
     const seenMatchPlayers = new Set<string>();
     for (const s of shots) {
       seenPlayers.add(s.playerId);
@@ -389,11 +384,19 @@ async function ingestShotmap(
       if (s.playerName && !playerNames.has(s.playerId)) {
         playerNames.set(s.playerId, s.playerName);
       }
+      // Track which team this player belongs to
+      if (s.teamId && !playerTeams.has(s.playerId)) {
+        playerTeams.set(s.playerId, s.teamId);
+      }
       seenMatchPlayers.add(`${s.matchId}:${s.playerId}`);
     }
     await Promise.all(
       [...seenPlayers].map((playerId) =>
-        upsertPlayer({ id: playerId, name: playerNames.get(playerId) ?? playerId }),
+        upsertPlayer({
+          id: playerId,
+          name: playerNames.get(playerId) ?? playerId,
+          currentTeamId: playerTeams.get(playerId) ?? undefined,
+        }),
       ),
     );
     await Promise.all(
@@ -517,10 +520,10 @@ export async function runSofaScoreIngest(): Promise<void> {
     );
     if (phase2Ids.length > 0) {
       stats.phase2Matches = phase2Ids.length;
-      logger.info(
-        "Phase 2: ingesting last-N-days matches for player history",
-        { count: phase2Ids.length, concurrency: CONCURRENCY },
-      );
+      logger.info("Phase 2: ingesting last-N-days matches for player history", {
+        count: phase2Ids.length,
+        concurrency: CONCURRENCY,
+      });
 
       await mapConcurrent(phase2Ids, CONCURRENCY, async (matchId) => {
         await randomDelay();

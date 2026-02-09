@@ -52,7 +52,7 @@ function HeroSection({ playerCount, matchCount }: HeroSectionProps = {}) {
           >
             Dados de Finalizações para
             <br className="hidden sm:block" />
-            <span className="bg-gradient-to-r from-fb-primary via-fb-accent-green to-emerald-400 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-fb-primary via-fb-accent-green to-emerald-400 bg-clip-text text-transparent">
               {" "}
               Apostadores Inteligentes
             </span>

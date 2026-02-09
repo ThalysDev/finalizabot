@@ -10,7 +10,7 @@ export default function LiveInPlayPage() {
   return (
     <div className="flex flex-col items-center justify-center h-[calc(100vh-57px)] text-center px-4">
       <div className="relative mb-8">
-        <div className="size-24 rounded-full bg-gradient-to-br from-fb-primary/20 to-fb-primary/5 flex items-center justify-center border border-fb-primary/20">
+        <div className="size-24 rounded-full bg-linear-to-br from-fb-primary/20 to-fb-primary/5 flex items-center justify-center border border-fb-primary/20">
           <Activity className="size-12 text-fb-primary" />
         </div>
         <div className="absolute -top-1 -right-1 size-8 rounded-full bg-fb-surface flex items-center justify-center border border-fb-border">
@@ -34,6 +34,11 @@ export default function LiveInPlayPage() {
         Em breve você poderá acompanhar mercados de finalizações ao vivo,
         com dados de momentum, chutes em tempo real e alertas instantâneos.
       </p>
+
+      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-fb-surface border border-fb-border text-fb-text-muted text-xs font-medium mb-8">
+        <Clock className="size-3.5" />
+        Previsão de lançamento: em breve
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-lg w-full">
         <div className="bg-fb-surface rounded-xl p-4 border border-fb-border">

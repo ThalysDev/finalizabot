@@ -21,6 +21,7 @@ apps/etl/storage/
 # Logs
 *.log
 npm-debug.log*
+logs/
 
 # OS
 .DS_Store

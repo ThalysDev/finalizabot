@@ -40,7 +40,7 @@ function DemoCard() {
               {/* Player header */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="size-12 rounded-full bg-gradient-to-br from-fb-primary/20 to-fb-accent-green/10 flex items-center justify-center border border-fb-primary/20">
+                  <div className="size-12 rounded-full bg-linear-to-br from-fb-primary/20 to-fb-accent-green/10 flex items-center justify-center border border-fb-primary/20">
                     <span className="text-fb-primary font-bold text-lg">A</span>
                   </div>
                   <div>

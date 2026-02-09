@@ -35,9 +35,7 @@ export function resolvePlayerTeam(
 ): string {
   const teamId = playerTeamId ?? item.playerTeamId ?? undefined;
   if (!teamId) return item.homeTeamName;
-  return teamId === item.homeTeamId
-    ? item.homeTeamName
-    : item.awayTeamName;
+  return teamId === item.homeTeamId ? item.homeTeamName : item.awayTeamName;
 }
 
 /**
@@ -51,9 +49,7 @@ export function resolveOpponent(
 ): string {
   const teamId = playerTeamId ?? item.playerTeamId ?? undefined;
   if (!teamId) return item.awayTeamName;
-  return teamId === item.homeTeamId
-    ? item.awayTeamName
-    : item.homeTeamName;
+  return teamId === item.homeTeamId ? item.awayTeamName : item.homeTeamName;
 }
 
 /* ============================================================================
@@ -90,24 +86,44 @@ function buildMatchResult(
   playerTeamId?: string,
 ): { result: string; badgeBg: string; badgeText: string } {
   if (m.homeScore == null || m.awayScore == null) {
-    return { result: "—", badgeBg: "bg-slate-700", badgeText: "text-slate-300" };
+    return {
+      result: "—",
+      badgeBg: "bg-slate-700",
+      badgeText: "text-slate-300",
+    };
   }
   const teamId = playerTeamId ?? m.playerTeamId ?? undefined;
   const score = `${m.homeScore}-${m.awayScore}`;
   if (!teamId) {
-    return { result: `— ${score}`, badgeBg: "bg-slate-700", badgeText: "text-slate-300" };
+    return {
+      result: `— ${score}`,
+      badgeBg: "bg-slate-700",
+      badgeText: "text-slate-300",
+    };
   }
   const isHome = teamId === m.homeTeamId;
   const playerGoals = isHome ? m.homeScore : m.awayScore;
   const opponentGoals = isHome ? m.awayScore : m.homeScore;
 
   if (playerGoals > opponentGoals) {
-    return { result: `V ${score}`, badgeBg: "bg-green-500/10", badgeText: "text-green-400" };
+    return {
+      result: `V ${score}`,
+      badgeBg: "bg-green-500/10",
+      badgeText: "text-green-400",
+    };
   }
   if (playerGoals < opponentGoals) {
-    return { result: `D ${score}`, badgeBg: "bg-red-500/10", badgeText: "text-red-400" };
+    return {
+      result: `D ${score}`,
+      badgeBg: "bg-red-500/10",
+      badgeText: "text-red-400",
+    };
   }
-  return { result: `E ${score}`, badgeBg: "bg-yellow-500/10", badgeText: "text-yellow-400" };
+  return {
+    result: `E ${score}`,
+    badgeBg: "bg-yellow-500/10",
+    badgeText: "text-yellow-400",
+  };
 }
 
 /**
@@ -184,6 +200,7 @@ export interface WindowStats {
 function computeWindowStats(
   items: EtlLastMatchItem[],
   window: 5 | 10,
+  line = 1.5,
 ): WindowStats {
   const sliced = items.slice(0, window); // items already sorted recent→old
   const shots = sliced.map((m) => m.shotCount);
@@ -201,7 +218,7 @@ function computeWindowStats(
     over15: buildLineHitIndicator(shotsReversed, 1.5, window),
     over25: buildLineHitIndicator(shotsReversed, 2.5, window),
     sparkline: shotsReversed.slice(-8),
-    last5Over: shots.slice(0, 5).map((s) => s >= 1.5),
+    last5Over: shots.slice(0, 5).map((s) => s >= line),
   };
 }
 
@@ -238,8 +255,8 @@ export function computePlayerStats(
   const shotsReversed = [...shots].reverse(); // cronológico para calc
   const minutes = items.map((m) => m.minutesPlayed ?? 0);
 
-  const last5 = computeWindowStats(items, 5);
-  const last10 = computeWindowStats(items, 10);
+  const last5 = computeWindowStats(items, 5, line);
+  const last10 = computeWindowStats(items, 10, line);
 
   return {
     avgShots: Number(mean(shots).toFixed(1)),

@@ -113,7 +113,7 @@ export function GatedOverlay({
   return (
     <div className="absolute bottom-0 left-0 right-0 z-20">
       {/* Gradient fade */}
-      <div className="h-40 bg-gradient-to-t from-fb-bg via-fb-bg/90 to-transparent" />
+      <div className="h-40 bg-linear-to-t from-fb-bg via-fb-bg/90 to-transparent" />
 
       {/* CTA card */}
       <div className="bg-fb-bg pb-8 px-6">

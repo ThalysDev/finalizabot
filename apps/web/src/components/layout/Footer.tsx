@@ -13,9 +13,9 @@ interface FooterLink {
 }
 
 const PRODUCT_LINKS: readonly FooterLink[] = [
-  { label: "Demo", href: "#demo" },
-  { label: "Benefícios", href: "#benefits" },
-  { label: "Como funciona", href: "#how-it-works" },
+  { label: "Demo", href: "/#demo" },
+  { label: "Benefícios", href: "/#benefits" },
+  { label: "Como funciona", href: "/#how-it-works" },
 ];
 
 const LEGAL_LINKS: readonly FooterLink[] = [

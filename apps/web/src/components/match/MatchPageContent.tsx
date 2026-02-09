@@ -82,10 +82,19 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
   }, [players, posFilter, sortBy, metric]);
 
   const positionCounts = useMemo(() => {
-    const counts = { all: players.length, forward: 0, midfielder: 0, defender: 0 };
+    const counts = {
+      all: players.length,
+      forward: 0,
+      midfielder: 0,
+      defender: 0,
+    };
     for (const p of players) {
       const pos = p.position.toLowerCase();
-      if (["atacante", "forward", "ponta", "centroavante"].some((a) => pos.includes(a)))
+      if (
+        ["atacante", "forward", "ponta", "centroavante"].some((a) =>
+          pos.includes(a),
+        )
+      )
         counts.forward++;
       else if (["meia", "midfielder", "meio"].some((a) => pos.includes(a)))
         counts.midfielder++;
@@ -98,7 +107,7 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
   return (
     <div className="min-h-[calc(100vh-57px)] bg-fb-bg">
       {/* ── Header Banner ─────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-fb-surface via-fb-surface/90 to-fb-surface border-b border-fb-border/40">
+      <div className="bg-linear-to-r from-fb-surface via-fb-surface/90 to-fb-surface border-b border-fb-border/40">
         {/* Back button */}
         <div className="max-w-7xl mx-auto px-4 pt-4">
           <Link
@@ -111,43 +120,45 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
         </div>
 
         {/* Match info */}
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 py-4 md:py-6">
+          <div className="flex items-center justify-between gap-2">
             {/* Home */}
-            <div className="flex items-center gap-3 flex-1">
-              <div className="size-14 rounded-full bg-fb-surface-lighter flex items-center justify-center border border-fb-border/50 overflow-hidden">
+            <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+              <div className="size-10 md:size-14 rounded-full bg-fb-surface-lighter flex items-center justify-center border border-fb-border/50 overflow-hidden shrink-0">
                 {match.homeBadgeUrl ? (
                   <Image
                     src={match.homeBadgeUrl}
                     alt={match.homeTeam}
                     width={40}
                     height={40}
-                    className="size-10 object-contain"
+                    className="size-8 md:size-10 object-contain"
                     unoptimized
                   />
                 ) : (
-                  <Shield className="size-7 text-fb-text-muted" />
+                  <Shield className="size-5 md:size-7 text-fb-text-muted" />
                 )}
               </div>
-              <div>
-                <h2 className="text-fb-text font-bold text-lg">
+              <div className="min-w-0">
+                <h2 className="text-fb-text font-bold text-sm md:text-lg truncate">
                   {match.homeTeam}
                 </h2>
-                <p className="text-fb-text-muted text-xs">Casa</p>
+                <p className="text-fb-text-muted text-[10px] md:text-xs">
+                  Casa
+                </p>
               </div>
             </div>
 
             {/* Score / Time */}
-            <div className="flex flex-col items-center px-6">
+            <div className="flex flex-col items-center px-2 md:px-6 shrink-0">
               {match.homeScore != null && match.awayScore != null ? (
-                <div className="flex items-center gap-2 text-fb-text font-bold text-2xl">
+                <div className="flex items-center gap-1.5 md:gap-2 text-fb-text font-bold text-xl md:text-2xl">
                   <span>{match.homeScore}</span>
                   <span className="text-fb-text-muted">-</span>
                   <span>{match.awayScore}</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 text-fb-primary font-bold text-xl">
-                  <Clock className="size-4" />
+                <div className="flex items-center gap-1 md:gap-1.5 text-fb-primary font-bold text-lg md:text-xl">
+                  <Clock className="size-3.5 md:size-4" />
                   {match.matchTime}
                 </div>
               )}
@@ -168,25 +179,27 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
             </div>
 
             {/* Away */}
-            <div className="flex items-center gap-3 flex-1 justify-end">
-              <div className="text-right">
-                <h2 className="text-fb-text font-bold text-lg">
+            <div className="flex items-center gap-2 md:gap-3 flex-1 justify-end min-w-0">
+              <div className="text-right min-w-0">
+                <h2 className="text-fb-text font-bold text-sm md:text-lg truncate">
                   {match.awayTeam}
                 </h2>
-                <p className="text-fb-text-muted text-xs">Fora</p>
+                <p className="text-fb-text-muted text-[10px] md:text-xs">
+                  Fora
+                </p>
               </div>
-              <div className="size-14 rounded-full bg-fb-surface-lighter flex items-center justify-center border border-fb-border/50 overflow-hidden">
+              <div className="size-10 md:size-14 rounded-full bg-fb-surface-lighter flex items-center justify-center border border-fb-border/50 overflow-hidden shrink-0">
                 {match.awayBadgeUrl ? (
                   <Image
                     src={match.awayBadgeUrl}
                     alt={match.awayTeam}
                     width={40}
                     height={40}
-                    className="size-10 object-contain"
+                    className="size-8 md:size-10 object-contain"
                     unoptimized
                   />
                 ) : (
-                  <Shield className="size-7 text-fb-text-muted" />
+                  <Shield className="size-5 md:size-7 text-fb-text-muted" />
                 )}
               </div>
             </div>
@@ -197,47 +210,47 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
       {/* ── Content ───────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Stats bar */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-4 md:mb-6">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-fb-surface rounded-lg border border-fb-border/40">
             <Users className="size-4 text-fb-primary" />
-            <span className="text-fb-text text-sm font-medium">
+            <span className="text-fb-text text-xs md:text-sm font-medium">
               {filteredPlayers.length} jogadores
             </span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-fb-surface rounded-lg border border-fb-border/40">
             <TrendingUp className="size-4 text-fb-accent-green" />
-            <span className="text-fb-text text-sm font-medium">
-              Over {lineLabel} Chutes
+            <span className="text-fb-text text-xs md:text-sm font-medium">
+              Over {lineLabel}
             </span>
           </div>
           <div className="flex items-center gap-1 bg-fb-surface rounded-lg border border-fb-border/40 p-1 ml-auto">
             <button
               onClick={() => setMetric("shots")}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`px-2 md:px-3 py-1.5 rounded-md text-[11px] md:text-xs font-medium transition-colors ${
                 metric === "shots"
                   ? "bg-fb-primary/20 text-fb-primary"
                   : "text-fb-text-secondary hover:text-fb-text"
               }`}
             >
-              Finalizações/Chutes
+              Chutes
             </button>
             <button
               onClick={() => setMetric("sot")}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`px-2 md:px-3 py-1.5 rounded-md text-[11px] md:text-xs font-medium transition-colors ${
                 metric === "sot"
                   ? "bg-fb-primary/20 text-fb-primary"
                   : "text-fb-text-secondary hover:text-fb-text"
               }`}
             >
-              No Alvo (Chutes ao gol)
+              No Alvo
             </button>
           </div>
         </div>
 
         {/* Filters + Sort row */}
-        <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-4 md:mb-6">
           {/* Position filter */}
-          <div className="flex items-center gap-1 bg-fb-surface rounded-lg border border-fb-border/40 p-1">
+          <div className="flex items-center gap-1 bg-fb-surface rounded-lg border border-fb-border/40 p-1 overflow-x-auto scrollbar-none">
             {(
               [
                 { key: "all", label: "Todos" },
@@ -249,7 +262,7 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
               <button
                 key={key}
                 onClick={() => setPosFilter(key)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                className={`px-2 md:px-3 py-1.5 rounded-md text-[11px] md:text-xs font-medium transition-colors whitespace-nowrap ${
                   posFilter === key
                     ? "bg-fb-primary text-white"
                     : "text-fb-text-secondary hover:text-fb-text hover:bg-fb-surface-lighter"
@@ -291,7 +304,7 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
             {filteredPlayers.map((player) => {
               const avgValue =
                 metric === "sot"
-                  ? player.avgShotsOnTarget ?? 0
+                  ? (player.avgShotsOnTarget ?? 0)
                   : player.avgShots;
               const resolvedBadge =
                 player.teamBadgeUrl ??

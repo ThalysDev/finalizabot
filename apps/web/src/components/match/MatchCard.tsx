@@ -41,7 +41,7 @@ export function MatchCard({
         <div className="flex items-center justify-between gap-3">
           {/* Home team */}
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center flex-shrink-0 border border-fb-border/40 overflow-hidden">
+            <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center shrink-0 border border-fb-border/40 overflow-hidden">
               {homeBadgeUrl ? (
                 <Image
                   src={homeBadgeUrl}
@@ -61,7 +61,7 @@ export function MatchCard({
           </div>
 
           {/* Time / Score */}
-          <div className="flex flex-col items-center px-2 flex-shrink-0">
+          <div className="flex flex-col items-center px-2 shrink-0">
             {hasScore ? (
               <div className="flex items-center gap-2 text-fb-text font-bold text-base">
                 <span>{homeScore}</span>
@@ -89,7 +89,7 @@ export function MatchCard({
             <span className="text-fb-text font-semibold text-sm truncate text-right">
               {awayTeam}
             </span>
-            <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center flex-shrink-0 border border-fb-border/40 overflow-hidden">
+            <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center shrink-0 border border-fb-border/40 overflow-hidden">
               {awayBadgeUrl ? (
                 <Image
                   src={awayBadgeUrl}

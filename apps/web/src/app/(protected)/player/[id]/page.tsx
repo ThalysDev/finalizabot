@@ -1,9 +1,25 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { fetchPlayerPageData } from "@/data/fetchers";
 import { PlayerDetailView } from "@/components/player/PlayerDetailView";
 import prisma from "@/lib/db/prisma";
 import { DEFAULT_LINE } from "@/lib/etl/config";
+
+/* ============================================================================
+   CACHED QUERIES (deduplicate generateMetadata + page render)
+   ============================================================================ */
+const getPlayerName = cache(async (id: string): Promise<string> => {
+  try {
+    const dbPlayer = await prisma.player.findUnique({
+      where: { id },
+      select: { name: true },
+    });
+    return dbPlayer?.name ?? "Jogador";
+  } catch {
+    return "Jogador";
+  }
+});
 
 /* ============================================================================
    METADATA
@@ -14,17 +30,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-
-  let playerName = "Jogador";
-  try {
-    const dbPlayer = await prisma.player.findUnique({
-      where: { id },
-      select: { name: true },
-    });
-    if (dbPlayer) playerName = dbPlayer.name;
-  } catch {
-    /* Prisma indisponível */
-  }
+  const playerName = await getPlayerName(id);
 
   return {
     title: `${playerName} — FinalizaBOT`,

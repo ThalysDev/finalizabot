@@ -7,10 +7,10 @@
  * Execução: MODE=bridge tsx src/index.ts
  */
 
-import { prisma } from '@finalizabot/shared';
-import { calcHits, mean, stdev, calcCV } from '@finalizabot/shared';
-import { logger } from '../lib/logger.js';
-import { syncAllImages } from '../services/imageDownloader.js';
+import { prisma } from "@finalizabot/shared";
+import { calcHits, mean, stdev, calcCV } from "@finalizabot/shared";
+import { logger } from "../lib/logger.js";
+import { syncAllImages } from "../services/imageDownloader.js";
 
 /* ============================================================================
    SofaScore image URL helpers
@@ -29,7 +29,7 @@ function playerImageUrl(sofascoreId: string): string {
    ============================================================================ */
 
 export async function runBridge(): Promise<void> {
-  logger.info('[Bridge] Iniciando sincronização ETL → Public...');
+  logger.info("[Bridge] Iniciando sincronização ETL → Public...");
 
   // 1. Sync matches (ETL → Public)
   const matchCount = await syncMatches();
@@ -51,10 +51,12 @@ export async function runBridge(): Promise<void> {
   try {
     await syncAllImages();
   } catch (err) {
-    logger.warn(`[Bridge] Image sync failed (non-fatal): ${err instanceof Error ? err.message : err}`);
+    logger.warn(
+      `[Bridge] Image sync failed (non-fatal): ${err instanceof Error ? err.message : err}`,
+    );
   }
 
-  logger.info('[Bridge] Sincronização concluída!');
+  logger.info("[Bridge] Sincronização concluída!");
 }
 
 /* ============================================================================
@@ -67,14 +69,18 @@ async function syncMatches(): Promise<number> {
       homeTeam: true,
       awayTeam: true,
     },
-    orderBy: { startTime: 'desc' },
+    orderBy: { startTime: "desc" },
     take: 200, // last 200 matches
   });
 
   let count = 0;
   for (const em of etlMatches) {
     try {
-      const resolvedStatus = mapStatus(em.statusType, em.statusCode, em.startTime);
+      const resolvedStatus = mapStatus(
+        em.statusType,
+        em.statusCode,
+        em.startTime,
+      );
       const homeTeamId = isNumericId(em.homeTeamId) ? em.homeTeamId : undefined;
       const awayTeamId = isNumericId(em.awayTeamId) ? em.awayTeamId : undefined;
       await prisma.match.upsert({
@@ -83,35 +89,45 @@ async function syncMatches(): Promise<number> {
           sofascoreId: em.id,
           homeTeam: em.homeTeam.name,
           awayTeam: em.awayTeam.name,
-          competition: em.tournament ?? 'Unknown',
+          competition: em.tournament ?? "Unknown",
           matchDate: em.startTime,
           status: resolvedStatus,
           homeScore: em.homeScore ?? null,
           awayScore: em.awayScore ?? null,
           minute: em.minute ?? null,
-          homeTeamImageUrl: em.homeTeam.imageUrl ?? (homeTeamId ? teamImageUrl(homeTeamId) : null),
-          awayTeamImageUrl: em.awayTeam.imageUrl ?? (awayTeamId ? teamImageUrl(awayTeamId) : null),
+          homeTeamImageUrl:
+            em.homeTeam.imageUrl ??
+            (homeTeamId ? teamImageUrl(homeTeamId) : null),
+          awayTeamImageUrl:
+            em.awayTeam.imageUrl ??
+            (awayTeamId ? teamImageUrl(awayTeamId) : null),
           homeTeamSofascoreId: homeTeamId ?? null,
           awayTeamSofascoreId: awayTeamId ?? null,
         },
         update: {
           homeTeam: em.homeTeam.name,
           awayTeam: em.awayTeam.name,
-          competition: em.tournament ?? 'Unknown',
+          competition: em.tournament ?? "Unknown",
           matchDate: em.startTime,
           status: resolvedStatus,
           homeScore: em.homeScore ?? null,
           awayScore: em.awayScore ?? null,
           minute: em.minute ?? null,
-          homeTeamImageUrl: em.homeTeam.imageUrl ?? (homeTeamId ? teamImageUrl(homeTeamId) : null),
-          awayTeamImageUrl: em.awayTeam.imageUrl ?? (awayTeamId ? teamImageUrl(awayTeamId) : null),
+          homeTeamImageUrl:
+            em.homeTeam.imageUrl ??
+            (homeTeamId ? teamImageUrl(homeTeamId) : null),
+          awayTeamImageUrl:
+            em.awayTeam.imageUrl ??
+            (awayTeamId ? teamImageUrl(awayTeamId) : null),
           homeTeamSofascoreId: homeTeamId ?? null,
           awayTeamSofascoreId: awayTeamId ?? null,
         },
       });
       count++;
     } catch (err) {
-      logger.warn(`[Bridge] Erro ao sync match ${em.id}: ${err instanceof Error ? err.message : err}`);
+      logger.warn(
+        `[Bridge] Erro ao sync match ${em.id}: ${err instanceof Error ? err.message : err}`,
+      );
     }
   }
   return count;
@@ -127,13 +143,13 @@ function mapStatus(
   startTime: Date,
 ): string {
   const type = statusType?.toLowerCase();
-  if (type === 'finished') return 'finished';
-  if (type === 'inprogress' || type === 'live') return 'live';
-  if (type === 'notstarted') return 'scheduled';
-  if (statusCode === 100) return 'finished';
-  if (statusCode === 0 || statusCode === 1) return 'scheduled';
-  if (statusCode === 2 || statusCode === 3) return 'live';
-  return startTime < new Date() ? 'finished' : 'scheduled';
+  if (type === "finished") return "finished";
+  if (type === "inprogress" || type === "live") return "live";
+  if (type === "notstarted") return "scheduled";
+  if (statusCode === 100) return "finished";
+  if (statusCode === 0 || statusCode === 1) return "scheduled";
+  if (statusCode === 2 || statusCode === 3) return "live";
+  return startTime < new Date() ? "finished" : "scheduled";
 }
 
 /* ============================================================================
@@ -163,24 +179,30 @@ async function syncPlayers(): Promise<number> {
         create: {
           sofascoreId: ep.id,
           name: safeName,
-          position: ep.position ?? 'Unknown',
+          position: ep.position ?? "Unknown",
           sofascoreUrl: `https://www.sofascore.com/player/${ep.slug ?? ep.id}/${ep.id}`,
           imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),
           teamName: ep.currentTeam?.name ?? null,
-          teamImageUrl: ep.currentTeam?.imageUrl ?? (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
+          teamImageUrl:
+            ep.currentTeam?.imageUrl ??
+            (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
         },
         update: {
           // Only update name if the incoming value is a real name (not a numeric ID)
           ...(isNumericName ? {} : { name: ep.name }),
-          position: ep.position ?? 'Unknown',
+          position: ep.position ?? "Unknown",
           imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),
           teamName: ep.currentTeam?.name ?? null,
-          teamImageUrl: ep.currentTeam?.imageUrl ?? (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
+          teamImageUrl:
+            ep.currentTeam?.imageUrl ??
+            (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
         },
       });
       count++;
     } catch (err) {
-      logger.warn(`[Bridge] Erro ao sync player ${ep.id} (${ep.name}): ${err instanceof Error ? err.message : err}`);
+      logger.warn(
+        `[Bridge] Erro ao sync player ${ep.id} (${ep.name}): ${err instanceof Error ? err.message : err}`,
+      );
     }
   }
   return count;
@@ -197,7 +219,7 @@ async function syncPlayerMatchStats(): Promise<number> {
       match: true,
       player: true,
     },
-    orderBy: { match: { startTime: 'desc' } },
+    orderBy: { match: { startTime: "desc" } },
     take: 5000,
   });
 
@@ -225,9 +247,9 @@ async function syncPlayerMatchStats(): Promise<number> {
 
       const totalShots = shotEvents.length;
       const shotsOnTarget = shotEvents.filter(
-        (s) => s.outcome === 'goal' || s.outcome === 'saved' || s.outcome === 'on-target'
+        (s) => s.outcome === "goal" || s.outcome === "on_target",
       ).length;
-      const goals = shotEvents.filter((s) => s.outcome === 'goal').length;
+      const goals = shotEvents.filter((s) => s.outcome === "goal").length;
 
       await prisma.playerMatchStats.upsert({
         where: {
@@ -274,7 +296,7 @@ async function generateMarketAnalysis(): Promise<number> {
   const scheduledMatches = await prisma.match.findMany({
     where: {
       OR: [
-        { status: 'scheduled' },
+        { status: "scheduled" },
         { matchDate: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }, // include matches within last 24h
       ],
     },
@@ -301,10 +323,7 @@ async function generateMarketAnalysis(): Promise<number> {
     if (playerIds.size === 0) {
       const teamPlayers = await prisma.player.findMany({
         where: {
-          OR: [
-            { teamName: match.homeTeam },
-            { teamName: match.awayTeam },
-          ],
+          OR: [{ teamName: match.homeTeam }, { teamName: match.awayTeam }],
         },
         take: 30,
       });
@@ -318,8 +337,9 @@ async function generateMarketAnalysis(): Promise<number> {
         // Get the player's recent match stats (last 10)
         const recentStats = await prisma.playerMatchStats.findMany({
           where: { playerId },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { match: { matchDate: "desc" } },
           take: 10,
+          include: { match: { select: { matchDate: true } } },
         });
 
         if (recentStats.length < 2) continue; // Need at least 2 matches for analysis
@@ -340,12 +360,13 @@ async function generateMarketAnalysis(): Promise<number> {
         else if (shots.length < 3) confidence = 0.3;
 
         // Recommendation
-        let recommendation = 'NEUTRO';
-        if (probability >= 0.7 && confidence >= 0.6) recommendation = 'APOSTAR';
-        else if (probability >= 0.5 && confidence >= 0.5) recommendation = 'CONSIDERAR';
-        else if (probability < 0.3) recommendation = 'EVITAR';
+        let recommendation = "NEUTRO";
+        if (probability >= 0.7 && confidence >= 0.6) recommendation = "APOSTAR";
+        else if (probability >= 0.5 && confidence >= 0.5)
+          recommendation = "CONSIDERAR";
+        else if (probability < 0.3) recommendation = "EVITAR";
 
-        const reasoning = `Baseado em ${shots.length} jogos: média ${avgShots.toFixed(1)} chutes, ${hits}/${shots.length} acima da linha ${DEFAULT_LINE}. CV: ${cv?.toFixed(2) ?? 'N/A'}.`;
+        const reasoning = `Baseado em ${shots.length} jogos: média ${avgShots.toFixed(1)} chutes, ${hits}/${shots.length} acima da linha ${DEFAULT_LINE}. CV: ${cv?.toFixed(2) ?? "N/A"}.`;
 
         await prisma.marketAnalysis.upsert({
           where: {

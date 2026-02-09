@@ -405,7 +405,7 @@ export function PlayerDetailView({
 
           {/* Next match card */}
           {player.nextMatch && (
-            <div className="bg-gradient-to-br from-fb-surface to-fb-surface-darker rounded-xl p-6 border border-fb-border">
+            <div className="bg-linear-to-br from-fb-surface to-fb-surface-darker rounded-xl p-6 border border-fb-border">
               <h3 className="text-fb-text font-bold mb-4 flex items-center gap-2">
                 <Calendar className="size-5 text-fb-primary" />
                 Próxima Partida

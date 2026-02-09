@@ -38,7 +38,7 @@ export function AlertCard({
     >
       {/* High value indicator */}
       {isHighValue && (
-        <div className="h-1 w-full bg-gradient-to-r from-fb-accent-gold/60 via-fb-accent-gold to-fb-accent-gold/60 rounded-full -mt-3 mb-4" />
+        <div className="h-1 w-full bg-linear-to-r from-fb-accent-gold/60 via-fb-accent-gold to-fb-accent-gold/60 rounded-full -mt-3 mb-4" />
       )}
 
       {/* Player info */}
@@ -140,7 +140,12 @@ export function AlertCard({
                 : "Baixa"}
           </span>
         </div>
-        <button className="px-4 py-2 bg-fb-primary text-fb-primary-content text-xs font-bold rounded-lg hover:bg-fb-primary-dark transition-colors">
+        <button
+          type="button"
+          aria-label={`Ver aposta de ${playerName}`}
+          onClick={() => window.alert("Integração com casas de apostas em breve!")}
+          className="px-4 py-2 bg-fb-primary text-fb-primary-content text-xs font-bold rounded-lg hover:bg-fb-primary-dark transition-colors cursor-pointer"
+        >
           Apostar
         </button>
       </div>

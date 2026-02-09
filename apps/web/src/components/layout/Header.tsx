@@ -55,7 +55,7 @@ export function Header() {
               </Link>
               <Link
                 href="/sign-up"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-fb-primary-content bg-gradient-to-r from-fb-primary to-fb-accent-green px-4 py-2 rounded-xl hover:shadow-lg hover:shadow-fb-primary/20 transition-all duration-300 btn-press"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-fb-primary-content bg-linear-to-r from-fb-primary to-fb-accent-green px-4 py-2 rounded-xl hover:shadow-lg hover:shadow-fb-primary/20 transition-all duration-300 btn-press"
               >
                 Criar Conta
                 <ArrowRight className="size-3.5" />

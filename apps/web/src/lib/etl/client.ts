@@ -55,6 +55,9 @@ function getCached<T>(key: string): T | undefined {
     cache.delete(key);
     return undefined;
   }
+  // Move to end for true LRU behavior
+  cache.delete(key);
+  cache.set(key, entry);
   return entry.data;
 }
 

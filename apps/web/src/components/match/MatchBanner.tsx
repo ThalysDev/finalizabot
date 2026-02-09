@@ -27,11 +27,11 @@ export function MatchBanner({
   awayBadgeUrl,
 }: MatchBannerProps) {
   return (
-    <div className="rounded-2xl bg-gradient-to-r from-fb-primary/8 via-fb-surface/80 to-fb-primary/8 border border-fb-border/60 p-4 md:p-6 backdrop-blur-sm">
+    <div className="rounded-2xl bg-linear-to-r from-fb-primary/8 via-fb-surface/80 to-fb-primary/8 border border-fb-border/60 p-4 md:p-6 backdrop-blur-sm">
       <div className="flex items-center justify-between">
         {/* Home team */}
         <div className="flex items-center gap-3 flex-1">
-          <div className="size-10 md:size-12 rounded-full bg-gradient-to-br from-fb-surface-lighter to-fb-surface flex items-center justify-center overflow-hidden border border-fb-border/50">
+          <div className="size-10 md:size-12 rounded-full bg-linear-to-br from-fb-surface-lighter to-fb-surface flex items-center justify-center overflow-hidden border border-fb-border/50">
             {homeBadgeUrl ? (
               <Image
                 src={homeBadgeUrl}

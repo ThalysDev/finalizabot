@@ -23,7 +23,7 @@ interface AuthCTAProps {
 
 export function AuthCTA({ variant = "inline" }: AuthCTAProps) {
   const primaryClasses =
-    "inline-flex items-center justify-center gap-2 text-base font-bold text-fb-primary-content bg-gradient-to-r from-fb-primary to-fb-accent-green rounded-xl hover:shadow-xl hover:shadow-fb-primary/25 transition-all duration-300 btn-press";
+    "inline-flex items-center justify-center gap-2 text-base font-bold text-fb-primary-content bg-linear-to-r from-fb-primary to-fb-accent-green rounded-xl hover:shadow-xl hover:shadow-fb-primary/25 transition-all duration-300 btn-press";
 
   const padding = variant === "section" ? "px-8 py-3.5" : "px-7 py-3";
 

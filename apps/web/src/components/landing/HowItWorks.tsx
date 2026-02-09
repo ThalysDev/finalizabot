@@ -69,7 +69,7 @@ export function HowItWorks() {
 
         <div className="relative mx-auto max-w-4xl">
           {/* Connector line (desktop) */}
-          <div className="hidden sm:block absolute top-16 left-[16%] right-[16%] h-px bg-gradient-to-r from-fb-primary/30 via-fb-primary/15 to-fb-primary/30" />
+          <div className="hidden sm:block absolute top-16 left-[16%] right-[16%] h-px bg-linear-to-r from-fb-primary/30 via-fb-primary/15 to-fb-primary/30" />
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
             {STEPS.map((step, i) => {
@@ -81,7 +81,7 @@ export function HowItWorks() {
                 >
                   <div className="group h-full flex flex-col items-center text-center rounded-2xl border border-fb-border/60 bg-fb-card/80 backdrop-blur-sm p-6 transition-all duration-300 hover:border-fb-primary/30 hover:shadow-lg hover:shadow-fb-primary/5">
                     {/* Number Circle */}
-                    <div className="relative z-10 w-12 h-12 rounded-full bg-gradient-to-br from-fb-primary to-fb-accent-green text-fb-primary-content flex items-center justify-center font-bold text-lg mb-5 shadow-lg shadow-fb-primary/20 transition-transform duration-300 group-hover:scale-110">
+                    <div className="relative z-10 w-12 h-12 rounded-full bg-linear-to-br from-fb-primary to-fb-accent-green text-fb-primary-content flex items-center justify-center font-bold text-lg mb-5 shadow-lg shadow-fb-primary/20 transition-transform duration-300 group-hover:scale-110">
                       {step.number}
                     </div>
 

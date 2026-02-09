@@ -138,7 +138,7 @@ export function DashboardContent({
               <button
                 key={comp}
                 onClick={() => setCompFilter(comp)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   compFilter === comp
                     ? "bg-fb-primary text-white"
                     : "bg-fb-surface text-fb-text-secondary hover:text-fb-text border border-fb-border/40"
@@ -192,7 +192,7 @@ export function DashboardContent({
         ) : (
           /* No matches at all */
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="size-20 rounded-full bg-gradient-to-br from-fb-primary/10 to-fb-surface flex items-center justify-center mb-6">
+            <div className="size-20 rounded-full bg-linear-to-br from-fb-primary/10 to-fb-surface flex items-center justify-center mb-6">
               <Calendar className="size-10 text-fb-primary" />
             </div>
             <h3 className="text-fb-text font-bold text-xl mb-3">
