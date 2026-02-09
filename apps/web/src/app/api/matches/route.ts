@@ -4,9 +4,15 @@ import prisma from "@/lib/db/prisma";
 export async function GET() {
   try {
     const matches = await prisma.match.findMany({
+      where: {
+        matchDate: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // last 7 days
+        },
+      },
       orderBy: {
         matchDate: "desc",
       },
+      take: 50,
       select: {
         id: true,
         homeTeam: true,

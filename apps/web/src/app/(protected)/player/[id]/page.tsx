@@ -6,6 +6,8 @@ import { PlayerDetailView } from "@/components/player/PlayerDetailView";
 import prisma from "@/lib/db/prisma";
 import { DEFAULT_LINE } from "@/lib/etl/config";
 
+export const revalidate = 120; // ISR: regenerate every 2 minutes
+
 /* ============================================================================
    CACHED QUERIES (deduplicate generateMetadata + page render)
    ============================================================================ */

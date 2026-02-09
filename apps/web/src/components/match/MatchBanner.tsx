@@ -39,7 +39,6 @@ export function MatchBanner({
                 width={32}
                 height={32}
                 className="size-8 object-contain"
-                unoptimized
               />
             ) : (
               <Shield className="size-5 text-fb-text-muted" />
@@ -102,7 +101,6 @@ export function MatchBanner({
                 width={32}
                 height={32}
                 className="size-8 object-contain"
-                unoptimized
               />
             ) : (
               <Shield className="size-5 text-fb-text-muted" />

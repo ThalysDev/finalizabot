@@ -5,6 +5,8 @@ import { fetchMatchPageData } from "@/data/fetchers/match-page";
 import { MatchPageContent } from "@/components/match/MatchPageContent";
 import prisma from "@/lib/db/prisma";
 
+export const revalidate = 60; // ISR: regenerate every 60s
+
 const getMatchTitle = cache(async (id: string) => {
   const match = await prisma.match.findUnique({
     where: { id },
@@ -12,6 +14,8 @@ const getMatchTitle = cache(async (id: string) => {
   });
   return match ? `${match.homeTeam} vs ${match.awayTeam}` : "Partida";
 });
+
+const getMatchData = cache((id: string) => fetchMatchPageData(id));
 
 export async function generateMetadata({
   params,
@@ -35,7 +39,7 @@ export default async function MatchPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { match, players } = await fetchMatchPageData(id);
+  const { match, players } = await getMatchData(id);
 
   if (!match) return notFound();
 

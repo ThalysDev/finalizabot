@@ -47,6 +47,7 @@ model Player {
   marketAnalyses MarketAnalysis[]
   favoritedBy    UserFavorite[]
 
+  @@index([teamName])
   @@schema("public")
 }
 
@@ -73,6 +74,8 @@ model Match {
   playerStats    PlayerMatchStats[]
   marketAnalyses MarketAnalysis[]
 
+  @@index([matchDate])
+  @@index([status, matchDate])
   @@schema("public")
 }
 
@@ -92,6 +95,8 @@ model PlayerMatchStats {
   match  Match  @relation(fields: [matchId], references: [id])
 
   @@unique([playerId, matchId])
+  @@index([playerId])
+  @@index([matchId])
   @@schema("public")
 }
 
@@ -110,6 +115,8 @@ model MarketAnalysis {
   player Player @relation(fields: [playerId], references: [id])
   match  Match  @relation(fields: [matchId], references: [id])
 
+  @@index([playerId, createdAt])
+  @@index([matchId])
   @@schema("public")
 }
 

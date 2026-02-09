@@ -70,64 +70,79 @@ async function syncMatches(): Promise<number> {
       awayTeam: true,
     },
     orderBy: { startTime: "desc" },
-    take: 200, // last 200 matches
+    take: 200,
   });
 
+  // Batch upserts in chunks of 50 inside a transaction
+  const BATCH_SIZE = 50;
   let count = 0;
-  for (const em of etlMatches) {
-    try {
-      const resolvedStatus = mapStatus(
-        em.statusType,
-        em.statusCode,
-        em.startTime,
-      );
+
+  for (let i = 0; i < etlMatches.length; i += BATCH_SIZE) {
+    const batch = etlMatches.slice(i, i + BATCH_SIZE);
+    const ops = batch.map((em) => {
+      const resolvedStatus = mapStatus(em.statusType, em.statusCode, em.startTime);
       const homeTeamId = isNumericId(em.homeTeamId) ? em.homeTeamId : undefined;
       const awayTeamId = isNumericId(em.awayTeamId) ? em.awayTeamId : undefined;
-      await prisma.match.upsert({
+      const data = {
+        homeTeam: em.homeTeam.name,
+        awayTeam: em.awayTeam.name,
+        competition: em.tournament ?? "Unknown",
+        matchDate: em.startTime,
+        status: resolvedStatus,
+        homeScore: em.homeScore ?? null,
+        awayScore: em.awayScore ?? null,
+        minute: em.minute ?? null,
+        homeTeamImageUrl: em.homeTeam.imageUrl ?? (homeTeamId ? teamImageUrl(homeTeamId) : null),
+        awayTeamImageUrl: em.awayTeam.imageUrl ?? (awayTeamId ? teamImageUrl(awayTeamId) : null),
+        homeTeamSofascoreId: homeTeamId ?? null,
+        awayTeamSofascoreId: awayTeamId ?? null,
+      };
+      return prisma.match.upsert({
         where: { sofascoreId: em.id },
-        create: {
-          sofascoreId: em.id,
-          homeTeam: em.homeTeam.name,
-          awayTeam: em.awayTeam.name,
-          competition: em.tournament ?? "Unknown",
-          matchDate: em.startTime,
-          status: resolvedStatus,
-          homeScore: em.homeScore ?? null,
-          awayScore: em.awayScore ?? null,
-          minute: em.minute ?? null,
-          homeTeamImageUrl:
-            em.homeTeam.imageUrl ??
-            (homeTeamId ? teamImageUrl(homeTeamId) : null),
-          awayTeamImageUrl:
-            em.awayTeam.imageUrl ??
-            (awayTeamId ? teamImageUrl(awayTeamId) : null),
-          homeTeamSofascoreId: homeTeamId ?? null,
-          awayTeamSofascoreId: awayTeamId ?? null,
-        },
-        update: {
-          homeTeam: em.homeTeam.name,
-          awayTeam: em.awayTeam.name,
-          competition: em.tournament ?? "Unknown",
-          matchDate: em.startTime,
-          status: resolvedStatus,
-          homeScore: em.homeScore ?? null,
-          awayScore: em.awayScore ?? null,
-          minute: em.minute ?? null,
-          homeTeamImageUrl:
-            em.homeTeam.imageUrl ??
-            (homeTeamId ? teamImageUrl(homeTeamId) : null),
-          awayTeamImageUrl:
-            em.awayTeam.imageUrl ??
-            (awayTeamId ? teamImageUrl(awayTeamId) : null),
-          homeTeamSofascoreId: homeTeamId ?? null,
-          awayTeamSofascoreId: awayTeamId ?? null,
-        },
+        create: { sofascoreId: em.id, ...data },
+        update: data,
       });
-      count++;
+    });
+
+    try {
+      await prisma.$transaction(ops);
+      count += batch.length;
     } catch (err) {
       logger.warn(
-        `[Bridge] Erro ao sync match ${em.id}: ${err instanceof Error ? err.message : err}`,
+        `[Bridge] Erro ao sync batch de matches (offset ${i}): ${err instanceof Error ? err.message : err}`,
       );
+      // Fallback: try individually for this failed batch
+      for (const em of batch) {
+        try {
+          const resolvedStatus = mapStatus(em.statusType, em.statusCode, em.startTime);
+          const homeTeamId = isNumericId(em.homeTeamId) ? em.homeTeamId : undefined;
+          const awayTeamId = isNumericId(em.awayTeamId) ? em.awayTeamId : undefined;
+          const data = {
+            homeTeam: em.homeTeam.name,
+            awayTeam: em.awayTeam.name,
+            competition: em.tournament ?? "Unknown",
+            matchDate: em.startTime,
+            status: resolvedStatus,
+            homeScore: em.homeScore ?? null,
+            awayScore: em.awayScore ?? null,
+            minute: em.minute ?? null,
+            homeTeamImageUrl: em.homeTeam.imageUrl ?? (homeTeamId ? teamImageUrl(homeTeamId) : null),
+            awayTeamImageUrl: em.awayTeam.imageUrl ?? (awayTeamId ? teamImageUrl(awayTeamId) : null),
+            homeTeamSofascoreId: homeTeamId ?? null,
+            awayTeamSofascoreId: awayTeamId ?? null,
+          };
+          await prisma.match.upsert({
+            where: { sofascoreId: em.id },
+            create: { sofascoreId: em.id, ...data },
+            update: data,
+          });
+          count++;
+        } catch (innerErr) {
+          logger.warn(
+            `[Bridge] Erro ao sync match ${em.id}: ${innerErr instanceof Error ? innerErr.message : innerErr}`,
+          );
+        }
+      }
     }
   }
   return count;
@@ -213,7 +228,7 @@ async function syncPlayers(): Promise<number> {
    ============================================================================ */
 
 async function syncPlayerMatchStats(): Promise<number> {
-  // Get all ETL match-player records with shot data
+  // Get all ETL match-player records
   const matchPlayers = await prisma.etlMatchPlayer.findMany({
     include: {
       match: true,
@@ -223,44 +238,73 @@ async function syncPlayerMatchStats(): Promise<number> {
     take: 5000,
   });
 
+  if (matchPlayers.length === 0) return 0;
+
+  // ── Pre-load lookup maps (eliminates N+1) ─────────────────────
+  const etlMatchIds = [...new Set(matchPlayers.map((mp) => mp.matchId))];
+  const etlPlayerIds = [...new Set(matchPlayers.map((mp) => mp.playerId))];
+
+  // Load all public matches by sofascoreId
+  const publicMatches = await prisma.match.findMany({
+    where: { sofascoreId: { in: etlMatchIds } },
+    select: { id: true, sofascoreId: true },
+  });
+  const matchMap = new Map(publicMatches.map((m) => [m.sofascoreId, m.id]));
+
+  // Load all public players by sofascoreId
+  const publicPlayers = await prisma.player.findMany({
+    where: { sofascoreId: { in: etlPlayerIds } },
+    select: { id: true, sofascoreId: true },
+  });
+  const playerMap = new Map(publicPlayers.map((p) => [p.sofascoreId, p.id]));
+
+  // Pre-load ALL shot events for these matches/players in a single query
+  const allShotEvents = await prisma.etlShotEvent.findMany({
+    where: {
+      matchId: { in: etlMatchIds },
+      playerId: { in: etlPlayerIds },
+    },
+    select: { matchId: true, playerId: true, outcome: true },
+  });
+
+  // Group shot events by matchId+playerId
+  const shotMap = new Map<string, typeof allShotEvents>();
+  for (const shot of allShotEvents) {
+    const key = `${shot.matchId}:${shot.playerId}`;
+    const arr = shotMap.get(key) ?? [];
+    arr.push(shot);
+    shotMap.set(key, arr);
+  }
+
+  // ── Build upsert operations ───────────────────────────────────
+  const BATCH_SIZE = 50;
   let count = 0;
 
+  const validOps: Array<ReturnType<typeof prisma.playerMatchStats.upsert>> = [];
+
   for (const mp of matchPlayers) {
-    try {
-      // Find the public match and player
-      const publicMatch = await prisma.match.findUnique({
-        where: { sofascoreId: mp.matchId },
-      });
-      const publicPlayer = await prisma.player.findUnique({
-        where: { sofascoreId: mp.playerId },
-      });
+    const publicMatchId = matchMap.get(mp.matchId);
+    const publicPlayerId = playerMap.get(mp.playerId);
+    if (!publicMatchId || !publicPlayerId) continue;
 
-      if (!publicMatch || !publicPlayer) continue;
+    const shotEvents = shotMap.get(`${mp.matchId}:${mp.playerId}`) ?? [];
+    const totalShots = shotEvents.length;
+    const shotsOnTarget = shotEvents.filter(
+      (s) => s.outcome === "goal" || s.outcome === "on_target",
+    ).length;
+    const goals = shotEvents.filter((s) => s.outcome === "goal").length;
 
-      // Count shots for this player in this match
-      const shotEvents = await prisma.etlShotEvent.findMany({
-        where: {
-          matchId: mp.matchId,
-          playerId: mp.playerId,
-        },
-      });
-
-      const totalShots = shotEvents.length;
-      const shotsOnTarget = shotEvents.filter(
-        (s) => s.outcome === "goal" || s.outcome === "on_target",
-      ).length;
-      const goals = shotEvents.filter((s) => s.outcome === "goal").length;
-
-      await prisma.playerMatchStats.upsert({
+    validOps.push(
+      prisma.playerMatchStats.upsert({
         where: {
           playerId_matchId: {
-            playerId: publicPlayer.id,
-            matchId: publicMatch.id,
+            playerId: publicPlayerId,
+            matchId: publicMatchId,
           },
         },
         create: {
-          playerId: publicPlayer.id,
-          matchId: publicMatch.id,
+          playerId: publicPlayerId,
+          matchId: publicMatchId,
           shots: totalShots,
           shotsOnTarget,
           goals,
@@ -273,12 +317,31 @@ async function syncPlayerMatchStats(): Promise<number> {
           goals,
           minutesPlayed: mp.minutesPlayed ?? 0,
         },
-      });
-      count++;
+      }),
+    );
+  }
+
+  // Execute in batched transactions
+  for (let i = 0; i < validOps.length; i += BATCH_SIZE) {
+    const batch = validOps.slice(i, i + BATCH_SIZE);
+    try {
+      await prisma.$transaction(batch);
+      count += batch.length;
     } catch (err) {
       logger.warn(
-        `[Bridge] Erro ao sync stats ${mp.playerId}@${mp.matchId}: ${err instanceof Error ? err.message : err}`,
+        `[Bridge] Erro ao sync stats batch (offset ${i}): ${err instanceof Error ? err.message : err}`,
       );
+      // Fallback: try individually
+      for (const op of batch) {
+        try {
+          await op;
+          count++;
+        } catch (innerErr) {
+          logger.warn(
+            `[Bridge] Erro ao sync stat individual: ${innerErr instanceof Error ? innerErr.message : innerErr}`,
+          );
+        }
+      }
     }
   }
 
@@ -292,12 +355,12 @@ async function syncPlayerMatchStats(): Promise<number> {
 async function generateMarketAnalysis(): Promise<number> {
   const DEFAULT_LINE = 1.5;
 
-  // Get all public matches that are scheduled (future)
+  // Get all public matches that are scheduled or recent
   const scheduledMatches = await prisma.match.findMany({
     where: {
       OR: [
         { status: "scheduled" },
-        { matchDate: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }, // include matches within last 24h
+        { matchDate: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
       ],
     },
     include: {
@@ -307,72 +370,109 @@ async function generateMarketAnalysis(): Promise<number> {
     },
   });
 
-  let count = 0;
+  if (scheduledMatches.length === 0) return 0;
+
+  // ── Collect all unique playerIds across all matches ───────────
+  const allPlayerIds = new Set<string>();
+  const matchPlayerMap = new Map<string, Set<string>>(); // matchId → Set<playerId>
 
   for (const match of scheduledMatches) {
-    // Get all players linked to this match via PlayerMatchStats from other matches
-    // Use players that have stats in any match
-    const playerIds = new Set<string>();
-
-    // Collect players from this match's stats
+    const pids = new Set<string>();
     for (const ps of match.playerStats) {
-      playerIds.add(ps.player.id);
+      pids.add(ps.player.id);
+      allPlayerIds.add(ps.player.id);
+    }
+    matchPlayerMap.set(match.id, pids);
+  }
+
+  // For matches with no direct stats, find players from same teams (batched)
+  const matchesWithoutPlayers = scheduledMatches.filter(
+    (m) => (matchPlayerMap.get(m.id)?.size ?? 0) === 0,
+  );
+
+  if (matchesWithoutPlayers.length > 0) {
+    const teamNames = new Set<string>();
+    for (const m of matchesWithoutPlayers) {
+      teamNames.add(m.homeTeam);
+      teamNames.add(m.awayTeam);
     }
 
-    // If no direct stats, try to find players from the same teams
-    if (playerIds.size === 0) {
-      const teamPlayers = await prisma.player.findMany({
-        where: {
-          OR: [{ teamName: match.homeTeam }, { teamName: match.awayTeam }],
-        },
-        take: 30,
-      });
-      for (const p of teamPlayers) {
-        playerIds.add(p.id);
-      }
+    const teamPlayers = await prisma.player.findMany({
+      where: { teamName: { in: [...teamNames] } },
+      select: { id: true, teamName: true },
+    });
+
+    // Map team → playerIds
+    const teamToPlayers = new Map<string, string[]>();
+    for (const p of teamPlayers) {
+      if (!p.teamName) continue;
+      const arr = teamToPlayers.get(p.teamName) ?? [];
+      arr.push(p.id);
+      teamToPlayers.set(p.teamName, arr);
     }
+
+    for (const match of matchesWithoutPlayers) {
+      const pids = matchPlayerMap.get(match.id) ?? new Set();
+      const homePlayers = teamToPlayers.get(match.homeTeam) ?? [];
+      const awayPlayers = teamToPlayers.get(match.awayTeam) ?? [];
+      for (const pid of [...homePlayers, ...awayPlayers].slice(0, 30)) {
+        pids.add(pid);
+        allPlayerIds.add(pid);
+      }
+      matchPlayerMap.set(match.id, pids);
+    }
+  }
+
+  if (allPlayerIds.size === 0) return 0;
+
+  // ── Pre-load all recent stats for all players in ONE query ────
+  const allRecentStats = await prisma.playerMatchStats.findMany({
+    where: { playerId: { in: [...allPlayerIds] } },
+    orderBy: { match: { matchDate: "desc" } },
+    select: { playerId: true, shots: true },
+  });
+
+  // Group by playerId, keep only last 10 per player
+  const statsByPlayer = new Map<string, number[]>();
+  for (const s of allRecentStats) {
+    const arr = statsByPlayer.get(s.playerId) ?? [];
+    if (arr.length < 10) arr.push(s.shots);
+    statsByPlayer.set(s.playerId, arr);
+  }
+
+  // ── Build all upsert operations in-memory ─────────────────────
+  const BATCH_SIZE = 50;
+  let count = 0;
+  const ops: Array<ReturnType<typeof prisma.marketAnalysis.upsert>> = [];
+
+  for (const match of scheduledMatches) {
+    const playerIds = matchPlayerMap.get(match.id) ?? new Set();
 
     for (const playerId of playerIds) {
-      try {
-        // Get the player's recent match stats (last 10)
-        const recentStats = await prisma.playerMatchStats.findMany({
-          where: { playerId },
-          orderBy: { match: { matchDate: "desc" } },
-          take: 10,
-          include: { match: { select: { matchDate: true } } },
-        });
+      const shots = statsByPlayer.get(playerId);
+      if (!shots || shots.length < 2) continue;
 
-        if (recentStats.length < 2) continue; // Need at least 2 matches for analysis
+      const avgShots = mean(shots);
+      const cv = calcCV(shots);
+      const hits = calcHits(shots, DEFAULT_LINE, shots.length);
+      const probability = hits / shots.length;
+      const odds = probability > 0 ? 1 / probability : 10;
 
-        const shots = recentStats.map((s) => s.shots);
-        const avgShots = mean(shots);
-        const cv = calcCV(shots);
-        const hits = calcHits(shots, DEFAULT_LINE, shots.length);
-        const probability = hits / shots.length;
+      let confidence = 0.5;
+      if (cv !== null && cv < 0.3 && shots.length >= 5) confidence = 0.8;
+      else if (cv !== null && cv < 0.5 && shots.length >= 3) confidence = 0.6;
+      else if (shots.length < 3) confidence = 0.3;
 
-        // Simple odds estimation from probability
-        const odds = probability > 0 ? 1 / probability : 10;
+      let recommendation = "NEUTRO";
+      if (probability >= 0.7 && confidence >= 0.6) recommendation = "APOSTAR";
+      else if (probability >= 0.5 && confidence >= 0.5) recommendation = "CONSIDERAR";
+      else if (probability < 0.3) recommendation = "EVITAR";
 
-        // Confidence based on CV and sample size
-        let confidence = 0.5;
-        if (cv !== null && cv < 0.3 && shots.length >= 5) confidence = 0.8;
-        else if (cv !== null && cv < 0.5 && shots.length >= 3) confidence = 0.6;
-        else if (shots.length < 3) confidence = 0.3;
+      const reasoning = `Baseado em ${shots.length} jogos: média ${avgShots.toFixed(1)} chutes, ${hits}/${shots.length} acima da linha ${DEFAULT_LINE}. CV: ${cv?.toFixed(2) ?? "N/A"}.`;
 
-        // Recommendation
-        let recommendation = "NEUTRO";
-        if (probability >= 0.7 && confidence >= 0.6) recommendation = "APOSTAR";
-        else if (probability >= 0.5 && confidence >= 0.5)
-          recommendation = "CONSIDERAR";
-        else if (probability < 0.3) recommendation = "EVITAR";
-
-        const reasoning = `Baseado em ${shots.length} jogos: média ${avgShots.toFixed(1)} chutes, ${hits}/${shots.length} acima da linha ${DEFAULT_LINE}. CV: ${cv?.toFixed(2) ?? "N/A"}.`;
-
-        await prisma.marketAnalysis.upsert({
-          where: {
-            // Use a compound approach — find existing or create new
-            id: `bridge-${playerId}-${match.id}`,
-          },
+      ops.push(
+        prisma.marketAnalysis.upsert({
+          where: { id: `bridge-${playerId}-${match.id}` },
           create: {
             id: `bridge-${playerId}-${match.id}`,
             playerId,
@@ -391,12 +491,31 @@ async function generateMarketAnalysis(): Promise<number> {
             recommendation,
             reasoning,
           },
-        });
-        count++;
-      } catch (err) {
-        logger.warn(
-          `[Bridge] Erro ao gerar análise ${playerId}@${match.id}: ${err instanceof Error ? err.message : err}`,
-        );
+        }),
+      );
+    }
+  }
+
+  // Execute in batched transactions
+  for (let i = 0; i < ops.length; i += BATCH_SIZE) {
+    const batch = ops.slice(i, i + BATCH_SIZE);
+    try {
+      await prisma.$transaction(batch);
+      count += batch.length;
+    } catch (err) {
+      logger.warn(
+        `[Bridge] Erro ao gerar análise batch (offset ${i}): ${err instanceof Error ? err.message : err}`,
+      );
+      // Fallback: try individually
+      for (const op of batch) {
+        try {
+          await op;
+          count++;
+        } catch (innerErr) {
+          logger.warn(
+            `[Bridge] Erro ao gerar análise individual: ${innerErr instanceof Error ? innerErr.message : innerErr}`,
+          );
+        }
       }
     }
   }
