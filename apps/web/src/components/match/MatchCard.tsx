@@ -38,9 +38,9 @@ export function MatchCard({
 
       {/* Match body */}
       <div className="p-4">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-2">
           {/* Home team */}
-          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+          <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
             <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center shrink-0 border border-fb-border/40 overflow-hidden">
               {homeBadgeUrl ? (
                 <Image
@@ -55,17 +55,17 @@ export function MatchCard({
                 <Shield className="size-5 text-fb-text-muted" />
               )}
             </div>
-            <span className="text-fb-text font-semibold text-sm truncate">
+            <span className="text-fb-text font-semibold text-xs text-center leading-tight line-clamp-2">
               {homeTeam}
             </span>
           </div>
 
           {/* Time / Score */}
-          <div className="flex flex-col items-center px-2 shrink-0">
+          <div className="flex flex-col items-center px-1 shrink-0">
             {hasScore ? (
-              <div className="flex items-center gap-2 text-fb-text font-bold text-base">
+              <div className="flex items-center gap-1.5 text-fb-text font-bold text-lg">
                 <span>{homeScore}</span>
-                <span className="text-fb-text-muted">-</span>
+                <span className="text-fb-text-muted text-sm">-</span>
                 <span>{awayScore}</span>
               </div>
             ) : (
@@ -85,10 +85,7 @@ export function MatchCard({
           </div>
 
           {/* Away team */}
-          <div className="flex items-center gap-2.5 flex-1 min-w-0 justify-end">
-            <span className="text-fb-text font-semibold text-sm truncate text-right">
-              {awayTeam}
-            </span>
+          <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
             <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center shrink-0 border border-fb-border/40 overflow-hidden">
               {awayBadgeUrl ? (
                 <Image
@@ -103,6 +100,9 @@ export function MatchCard({
                 <Shield className="size-5 text-fb-text-muted" />
               )}
             </div>
+            <span className="text-fb-text font-semibold text-xs text-center leading-tight line-clamp-2">
+              {awayTeam}
+            </span>
           </div>
         </div>
 
