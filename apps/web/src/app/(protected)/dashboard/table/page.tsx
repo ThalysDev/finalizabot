@@ -11,7 +11,7 @@ import { batchEnrichPlayers } from "@/lib/etl/enricher";
 import { DEFAULT_LINE } from "@/lib/etl/config";
 import { statusFromCV } from "@/lib/helpers";
 import prisma from "@/lib/db/prisma";
-import { calcCV, calcHits, mean } from "@finalizabot/shared";
+import { calcCV, calcHits, mean } from "@finalizabot/shared/calc";
 
 export const metadata: Metadata = {
   title: "Tabela Avançada - FinalizaBOT",
@@ -34,10 +34,15 @@ async function fetchTableData(): Promise<{
   ]);
 
   // Try ETL enrichment first
-  const enriched = await batchEnrichPlayers(
-    dbPlayers.map((p) => ({ sofascoreId: p.sofascoreId })),
-    line,
-  );
+  let enriched = new Map<string, import("@/lib/etl/enricher").EtlEnrichResult>();
+  try {
+    enriched = await batchEnrichPlayers(
+      dbPlayers.map((p) => ({ sofascoreId: p.sofascoreId })),
+      line,
+    );
+  } catch {
+    // ETL unreachable — will use Prisma fallback below
+  }
 
   // Batch fetch odds for all players in one query
   const analyses = await prisma.marketAnalysis.findMany({
