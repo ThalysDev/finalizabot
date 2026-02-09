@@ -18,6 +18,8 @@
     "sync:full": "npm -w @finalizabot/etl run sync:full",
     "sync:images": "npm -w @finalizabot/etl run sync:images",
     "lint": "npm -w @finalizabot/web run lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:generate": "npm -w @finalizabot/shared run generate",
     "db:push": "npm -w @finalizabot/shared run db:push",
     "db:migrate": "npm -w @finalizabot/shared run db:migrate",
@@ -27,5 +29,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.18"
   }
 }

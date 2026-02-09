@@ -25,38 +25,62 @@ function playerImageUrl(sofascoreId: string): string {
 }
 
 /* ============================================================================
+   Constants
+   ============================================================================ */
+
+/** Advisory lock ID — must be unique across the database */
+const BRIDGE_LOCK_ID = 987654321;
+
+/* ============================================================================
    Main bridge function
    ============================================================================ */
 
 export async function runBridge(): Promise<void> {
   logger.info("[Bridge] Iniciando sincronização ETL → Public...");
 
-  // 1. Sync matches (ETL → Public)
-  const matchCount = await syncMatches();
-  logger.info(`[Bridge] ${matchCount} partidas sincronizadas`);
+  // Acquire advisory lock to prevent concurrent syncs
+  const [lockResult] = await prisma.$queryRawUnsafe<{ acquired: boolean }[]>(
+    `SELECT pg_try_advisory_lock(${BRIDGE_LOCK_ID}) as acquired`,
+  );
 
-  // 2. Sync players (ETL → Public)
-  const playerCount = await syncPlayers();
-  logger.info(`[Bridge] ${playerCount} jogadores sincronizados`);
-
-  // 3. Sync player match stats
-  const statsCount = await syncPlayerMatchStats();
-  logger.info(`[Bridge] ${statsCount} estatísticas sincronizadas`);
-
-  // 4. Generate market analysis from stats
-  const analysisCount = await generateMarketAnalysis();
-  logger.info(`[Bridge] ${analysisCount} análises de mercado geradas`);
-
-  // 5. Download and cache images
-  try {
-    await syncAllImages();
-  } catch (err) {
-    logger.warn(
-      `[Bridge] Image sync failed (non-fatal): ${err instanceof Error ? err.message : err}`,
-    );
+  if (!lockResult?.acquired) {
+    logger.warn("[Bridge] Outra instância já está rodando — abortando.");
+    return;
   }
 
-  logger.info("[Bridge] Sincronização concluída!");
+  try {
+    // 1. Sync matches (ETL → Public)
+    const matchCount = await syncMatches();
+    logger.info(`[Bridge] ${matchCount} partidas sincronizadas`);
+
+    // 2. Sync players (ETL → Public)
+    const playerCount = await syncPlayers();
+    logger.info(`[Bridge] ${playerCount} jogadores sincronizados`);
+
+    // 3. Sync player match stats
+    const statsCount = await syncPlayerMatchStats();
+    logger.info(`[Bridge] ${statsCount} estatísticas sincronizadas`);
+
+    // 4. Generate market analysis from stats
+    const analysisCount = await generateMarketAnalysis();
+    logger.info(`[Bridge] ${analysisCount} análises de mercado geradas`);
+
+    // 5. Download and cache images
+    try {
+      await syncAllImages();
+    } catch (err) {
+      logger.warn(
+        `[Bridge] Image sync failed (non-fatal): ${err instanceof Error ? err.message : err}`,
+      );
+    }
+
+    logger.info("[Bridge] Sincronização concluída!");
+  } finally {
+    await prisma.$queryRawUnsafe(
+      `SELECT pg_advisory_unlock(${BRIDGE_LOCK_ID})`,
+    );
+    logger.info("[Bridge] Advisory lock released.");
+  }
 }
 
 /* ============================================================================
@@ -182,14 +206,20 @@ async function syncPlayers(): Promise<number> {
     },
   });
 
+  if (etlPlayers.length === 0) return 0;
+
+  // Batch upserts in chunks of 50 via $transaction
+  const BATCH_SIZE = 50;
   let count = 0;
-  for (const ep of etlPlayers) {
-    try {
-      // Don't overwrite a real name with a numeric ID
+
+  for (let i = 0; i < etlPlayers.length; i += BATCH_SIZE) {
+    const batch = etlPlayers.slice(i, i + BATCH_SIZE);
+
+    const ops = batch.map((ep) => {
       const isNumericName = /^\d+$/.test(ep.name);
       const safeName = isNumericName ? "Unknown" : ep.name;
 
-      await prisma.player.upsert({
+      return prisma.player.upsert({
         where: { sofascoreId: ep.id },
         create: {
           sofascoreId: ep.id,
@@ -203,7 +233,6 @@ async function syncPlayers(): Promise<number> {
             (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
         },
         update: {
-          // Only update name if the incoming value is a real name (not a numeric ID)
           ...(isNumericName ? {} : { name: ep.name }),
           position: ep.position ?? "Unknown",
           imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),
@@ -213,13 +242,19 @@ async function syncPlayers(): Promise<number> {
             (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
         },
       });
-      count++;
+    });
+
+    try {
+      await prisma.$transaction(ops);
+      count += batch.length;
     } catch (err) {
       logger.warn(
-        `[Bridge] Erro ao sync player ${ep.id} (${ep.name}): ${err instanceof Error ? err.message : err}`,
+        `[Bridge] Batch player sync failed (batch ${Math.floor(i / BATCH_SIZE) + 1}): ${err instanceof Error ? err.message : err}`,
       );
+      // Fall through — next batch still attempted
     }
   }
+
   return count;
 }
 

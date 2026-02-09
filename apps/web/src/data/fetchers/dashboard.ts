@@ -22,15 +22,26 @@ export interface DashboardPageData {
 }
 
 export async function fetchDashboardData(): Promise<DashboardPageData> {
-  // Calcula o range "hoje" usando o timezone do Brasil (BRT = UTC-3)
+  // Calcula o range "hoje" usando o timezone do Brasil (America/Sao_Paulo)
   const now = new Date();
-  const brt = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-  const todayStr = brt.toISOString().slice(0, 10);
+  const formatter = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const todayStr = formatter.format(now); // YYYY-MM-DD
   const dayStart = new Date(`${todayStr}T00:00:00-03:00`);
   const dayEnd = new Date(`${todayStr}T23:59:59-03:00`);
   const tomorrow = new Date(dayStart);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+  const tomorrowFormatter = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const tomorrowStr = tomorrowFormatter.format(tomorrow);
   const tomorrowStart = new Date(`${tomorrowStr}T00:00:00-03:00`);
   const tomorrowEnd = new Date(`${tomorrowStr}T23:59:59-03:00`);
   const rangeStart = dayStart;

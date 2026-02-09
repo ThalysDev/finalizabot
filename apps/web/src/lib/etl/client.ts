@@ -19,6 +19,7 @@ import type {
 } from "./types";
 import {
   getEtlBaseUrl,
+  getEtlApiKey,
   ETL_TIMEOUT_MS,
   ETL_MAX_RETRIES,
   ETL_RETRY_BACKOFF_MS,
@@ -122,9 +123,13 @@ async function etlFetch<T>(
     const timer = setTimeout(() => controller.abort(), timeout);
 
     try {
+      const apiKey = getEtlApiKey();
+      const headers: Record<string, string> = { Accept: "application/json" };
+      if (apiKey) headers["x-api-key"] = apiKey;
+
       const res = await fetch(url, {
         signal: controller.signal,
-        headers: { Accept: "application/json" },
+        headers,
         next: { revalidate: options?.revalidate ?? 60 },
       });
 

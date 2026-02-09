@@ -5,8 +5,12 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
-  "/api/(.*)",
   "/match/(.*)",
+  // Only specific API routes that must be public (images, health, sync-status)
+  "/api/health",
+  "/api/image-proxy",
+  "/api/images/(.*)",
+  "/api/sync-status",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {

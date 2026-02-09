@@ -15,6 +15,11 @@ export function getEtlBaseUrl(): string {
   return url.replace(/\/+$/, "");
 }
 
+/** API key for authenticating with the ETL Fastify server */
+export function getEtlApiKey(): string {
+  return process.env.SOFASCORE_ETL_API_KEY ?? "";
+}
+
 /* ============================================================================
    TIMEOUTS & RETRY
    ============================================================================ */

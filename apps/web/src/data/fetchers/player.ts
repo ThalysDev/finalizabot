@@ -7,6 +7,7 @@
  * ⚠️  Só importar em Server Components / Route Handlers.
  */
 
+import { calcCV } from "@finalizabot/shared";
 import { etlPlayerLastMatches, etlPlayerShots } from "@/lib/etl/client";
 import {
   lastMatchesToShotHistory,
@@ -162,15 +163,7 @@ export async function fetchPlayerPageData(
         localStats.reduce((a, s) => a + s.shotsOnTarget, 0) / localStats.length;
       const minutes =
         localStats.reduce((a, s) => a + s.minutesPlayed, 0) / localStats.length;
-      const cvVal =
-        shots.length >= 2
-          ? (() => {
-              const variance =
-                shots.reduce((a, s) => a + Math.pow(s - avg, 2), 0) /
-                shots.length;
-              return avg > 0 ? Math.sqrt(variance) / avg : null;
-            })()
-          : null;
+      const cvVal = calcCV(shots);
 
       const buildWindowFromLocal = (window: number) => {
         const sliced = shots.slice(0, window);
@@ -195,9 +188,7 @@ export async function fetchPlayerPageData(
           .slice(0, window)
           .map((s) => s.minutesPlayed);
         const wAvg = sliced.reduce((a, b) => a + b, 0) / sliced.length;
-        const wVariance =
-          sliced.reduce((a, s) => a + Math.pow(s - wAvg, 2), 0) / sliced.length;
-        const wCv = wAvg > 0 ? Math.sqrt(wVariance) / wAvg : null;
+        const wCv = calcCV(sliced);
         const hitCount = (l: number) => sliced.filter((s) => s >= l).length;
         const buildLHI = (l: number) => {
           const h = hitCount(l);

@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { validateSearchQuery } from "@/lib/validation";
 
 export async function GET(req: NextRequest) {
-  try {
-    const q = req.nextUrl.searchParams.get("q")?.trim();
+  // Rate limit: 30 req/min per IP
+  const ip = getClientIp(req);
+  const rl = checkRateLimit(`search:${ip}`, { limit: 30, windowSec: 60 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+    );
+  }
 
-    if (!q || q.length < 2) {
+  try {
+    const q = validateSearchQuery(req.nextUrl.searchParams.get("q"));
+
+    if (!q) {
       return NextResponse.json({ results: [] });
     }
 

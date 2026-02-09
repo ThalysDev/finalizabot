@@ -8,7 +8,24 @@ const rawPort = process.env.PORT?.trim();
 const PORT = rawPort ? Math.max(0, Math.min(65535, Number(rawPort)) || 3000) : 3000;
 const prisma = getPrisma();
 
+const ETL_API_KEY = process.env.SOFASCORE_ETL_API_KEY?.trim() ?? '';
+
 const server = Fastify({ logger: false });
+
+// --- API key middleware (skip /health for uptime monitors) ---
+server.addHook('onRequest', async (request, reply) => {
+  if (request.url === '/health') return;
+
+  if (!ETL_API_KEY) {
+    logger.warn('SOFASCORE_ETL_API_KEY not set — all requests allowed (dev mode)');
+    return;
+  }
+
+  const provided = request.headers['x-api-key'];
+  if (provided !== ETL_API_KEY) {
+    await reply.status(401).send({ error: 'Unauthorized — invalid or missing API key' });
+  }
+});
 
 server.get('/health', async (_, reply) => {
   await reply.send({ status: 'ok' });

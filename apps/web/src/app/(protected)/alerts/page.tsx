@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   description: "Oportunidades de valor detectadas em tempo real",
 };
 
+/** Revalidate every 2 minutes — alerts don't need to be real-time */
+export const revalidate = 120;
+
 async function fetchAlerts(): Promise<AlertData[]> {
   // First try MarketAnalysis records
   const analyses = await prisma.marketAnalysis.findMany({
@@ -54,8 +57,14 @@ async function fetchAlerts(): Promise<AlertData[]> {
 
     const line = DEFAULT_LINE;
 
-    for (const p of players) {
-      const res = await etlPlayerLastMatches(p.sofascoreId, 10);
+    // Parallelize ETL calls instead of sequential for...of
+    const etlResults = await Promise.all(
+      players.map((p) => etlPlayerLastMatches(p.sofascoreId, 10)),
+    );
+
+    for (let i = 0; i < players.length; i++) {
+      const p = players[i]!;
+      const res = etlResults[i]!;
       if (res.error || !res.data || res.data.items.length === 0) continue;
 
       const stats = computePlayerStats(res.data.items, line);

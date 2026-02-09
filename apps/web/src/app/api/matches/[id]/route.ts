@@ -1,13 +1,29 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { etlMatchShots } from "@/lib/etl/client";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { validateId } from "@/lib/validation";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  // Rate limit: 60 req/min per IP
+  const ip = getClientIp(request);
+  const rl = checkRateLimit(`match:${ip}`, { limit: 60, windowSec: 60 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+    );
+  }
+
   try {
-    const { id } = await params;
+    const { id: rawId } = await params;
+    const id = validateId(rawId);
+    if (!id) {
+      return NextResponse.json({ error: "Invalid match ID" }, { status: 400 });
+    }
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get("limit");
     const offset = searchParams.get("offset");

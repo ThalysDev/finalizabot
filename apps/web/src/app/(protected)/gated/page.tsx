@@ -3,13 +3,6 @@ import Link from "next/link";
 import { Lock, Filter, Download, BarChart3, Inbox } from "lucide-react";
 import { GatedOverlay } from "@/components/subscription/PricingCard";
 import prisma from "@/lib/db/prisma";
-import { etlPlayerLastMatches, etlPlayerShots } from "@/lib/etl/client";
-import {
-  computePlayerStats,
-  detectPlayerTeamId,
-  resolvePlayerTeam,
-} from "@/lib/etl/transformers";
-import { DEFAULT_LINE } from "@/lib/etl/config";
 import type { GatedPlayerRow } from "@/data/types";
 
 export const metadata: Metadata = {
@@ -29,43 +22,25 @@ async function fetchGatedPlayers(): Promise<GatedPlayerRow[]> {
     },
   });
 
-  const rows = await Promise.all(
-    dbPlayers.map(async (p): Promise<GatedPlayerRow | null> => {
-      const totalGoals = p.matchStats.reduce((s, m) => s + m.goals, 0);
-      const totalAssists = p.matchStats.reduce((s, m) => s + m.assists, 0);
+  // For gated (free) users, we only show basic stats.
+  // PRO columns (xG, xA, CV) are masked with placeholders — no real data is sent to client.
+  return dbPlayers.map((p): GatedPlayerRow => {
+    const totalGoals = p.matchStats.reduce((s, m) => s + m.goals, 0);
+    const totalAssists = p.matchStats.reduce((s, m) => s + m.assists, 0);
 
-      const [lastMatchesRes, shotsRes] = await Promise.all([
-        etlPlayerLastMatches(p.sofascoreId, 10),
-        etlPlayerShots(p.sofascoreId, { limit: 5 }),
-      ]);
-      const stats = lastMatchesRes.data
-        ? computePlayerStats(lastMatchesRes.data.items, DEFAULT_LINE)
-        : null;
-
-      // Resolve team correctly
-      const playerTeamId = shotsRes.data
-        ? detectPlayerTeamId(shotsRes.data.items)
-        : undefined;
-      const latestItem = lastMatchesRes.data?.items[0];
-      const teamName = latestItem
-        ? resolvePlayerTeam(latestItem, playerTeamId)
-        : "—";
-
-      return {
-        name: p.name,
-        team: teamName,
-        pos: p.position,
-        matches: p.matchStats.length,
-        goals: totalGoals,
-        assists: totalAssists,
-        xg: stats ? stats.avgShots.toFixed(1) : "—",
-        xa: "—",
-        cv: stats?.cv != null ? stats.cv.toFixed(2) : "—",
-      };
-    }),
-  );
-
-  return rows.filter((r): r is GatedPlayerRow => r !== null);
+    return {
+      name: p.name,
+      team: p.teamName ?? "—",
+      pos: p.position,
+      matches: p.matchStats.length,
+      goals: totalGoals,
+      assists: totalAssists,
+      // PRO fields — redacted server-side
+      xg: "—",
+      xa: "—",
+      cv: "—",
+    };
+  });
 }
 
 const headers = [
@@ -173,13 +148,13 @@ export default async function GatedDashboardPage() {
                       {p.assists}
                     </td>
                     <td className="p-4 text-center border-l border-fb-border bg-fb-primary/5 blur-[3px] select-none opacity-50">
-                      {p.xg}
+                      ••••
                     </td>
                     <td className="p-4 text-center border-l border-fb-border bg-fb-primary/5 blur-[3px] select-none opacity-50">
-                      {p.xa}
+                      ••••
                     </td>
                     <td className="p-4 text-center border-l border-fb-border bg-fb-primary/5 blur-[3px] select-none opacity-50">
-                      {p.cv}
+                      ••••
                     </td>
                   </tr>
                 ))}

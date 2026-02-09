@@ -6,6 +6,7 @@
  * ⚠️  Só importar em Server Components / Route Handlers.
  */
 
+import { calcCV } from "@finalizabot/shared";
 import { etlPlayerLastMatches, etlPlayerShots } from "@/lib/etl/client";
 import {
   computePlayerStats,
@@ -291,9 +292,7 @@ export async function fetchMatchPageData(
         const totalOnTarget = shotsOnTarget.reduce((a, b) => a + b, 0);
         const avgOnTarget = totalOnTarget / shotsOnTarget.length;
         const overLine = shots.map((s) => s >= line);
-        const variance =
-          shots.reduce((a, s) => a + Math.pow(s - avg, 2), 0) / shots.length;
-        const cv = avg > 0 ? Math.sqrt(variance) / avg : null;
+        const cv = calcCV(shots);
 
         // Resolve team name from latest match stats
         const latestStat = dbStats[0];
@@ -382,9 +381,7 @@ async function enrichFromPrisma(
     const avgOnTarget =
       shotsOnTarget.reduce((a, b) => a + b, 0) / shotsOnTarget.length;
     const overLine = shots.map((s) => s >= line);
-    const variance =
-      shots.reduce((a, s) => a + Math.pow(s - avg, 2), 0) / shots.length;
-    const cv = avg > 0 ? Math.sqrt(variance) / avg : null;
+    const cv = calcCV(shots);
     const teamName = resolvePlayerTeamFromStats(dbStats[0], p.teamName ?? null);
 
     return {
