@@ -104,6 +104,7 @@ export async function fetchMatchPageData(
       probability: number;
       avatarUrl?: string;
       teamBadgeUrl?: string;
+      teamName?: string | null;
     }
   >();
 
@@ -118,6 +119,7 @@ export async function fetchMatchPageData(
         probability: ma.probability,
         avatarUrl: cachedImageUrl(ma.player.imageId) ?? proxySofascoreUrl(ma.player.imageUrl) ?? undefined,
         teamBadgeUrl: cachedImageUrl(ma.player.teamImageId) ?? proxySofascoreUrl(ma.player.teamImageUrl) ?? undefined,
+        teamName: ma.player.teamName ?? null,
       });
     }
   }
@@ -134,6 +136,7 @@ export async function fetchMatchPageData(
         probability: 0,
         avatarUrl: cachedImageUrl(ps.player.imageId) ?? proxySofascoreUrl(ps.player.imageUrl) ?? undefined,
         teamBadgeUrl: cachedImageUrl(ps.player.teamImageId) ?? proxySofascoreUrl(ps.player.teamImageUrl) ?? undefined,
+        teamName: ps.player.teamName ?? null,
       });
     }
   }
@@ -156,6 +159,7 @@ export async function fetchMatchPageData(
         probability: 0,
         avatarUrl: cachedImageUrl(p.imageId) ?? proxySofascoreUrl(p.imageUrl) ?? undefined,
         teamBadgeUrl: cachedImageUrl(p.teamImageId) ?? proxySofascoreUrl(p.teamImageUrl) ?? undefined,
+        teamName: p.teamName ?? null,
       });
     }
   }
@@ -194,7 +198,7 @@ export async function fetchMatchPageData(
             const latestItem = lastMatchesRes.data.items[0];
             const teamName = latestItem
               ? resolvePlayerTeam(latestItem, playerTeamId)
-              : "—";
+              : p.teamName ?? "—";
 
             return {
               id: p.id,
@@ -266,7 +270,7 @@ export async function fetchMatchPageData(
         const latestStat = dbStats[0];
         const teamName = resolvePlayerTeamFromStats(
           latestStat,
-          p.name,
+          p.teamName ?? null,
         );
 
         return {
@@ -323,7 +327,16 @@ export async function fetchMatchPageData(
 
 /** Prisma-only enrichment for a single player (used in ETL path fallback) */
 async function enrichFromPrisma(
-  p: { id: string; name: string; position: string; avatarUrl?: string; teamBadgeUrl?: string; odds: number; probability: number },
+  p: {
+    id: string;
+    name: string;
+    position: string;
+    avatarUrl?: string;
+    teamBadgeUrl?: string;
+    teamName?: string | null;
+    odds: number;
+    probability: number;
+  },
   line: number,
 ): Promise<PlayerCardData> {
   const dbStats = await prisma.playerMatchStats.findMany({
@@ -341,7 +354,7 @@ async function enrichFromPrisma(
     const overLine = shots.map((s) => s >= line);
     const variance = shots.reduce((a, s) => a + Math.pow(s - avg, 2), 0) / shots.length;
     const cv = avg > 0 ? Math.sqrt(variance) / avg : null;
-    const teamName = resolvePlayerTeamFromStats(dbStats[0], p.name);
+    const teamName = resolvePlayerTeamFromStats(dbStats[0], p.teamName ?? null);
 
     return {
       id: p.id,
@@ -384,10 +397,17 @@ async function enrichFromPrisma(
 /** Resolve player team name from PlayerMatchStats join data */
 function resolvePlayerTeamFromStats(
   stat: { match?: { homeTeam: string; awayTeam: string } | null },
-  playerName: string,
+  playerTeamName: string | null,
 ): string {
   if (!stat.match) return "—";
-  // Use shortest team name as heuristic (the player's team is usually there)
+  if (playerTeamName) {
+    const team = playerTeamName.toLowerCase();
+    const home = stat.match.homeTeam.toLowerCase();
+    const away = stat.match.awayTeam.toLowerCase();
+    if (home.includes(team)) return stat.match.homeTeam;
+    if (away.includes(team)) return stat.match.awayTeam;
+  }
+  // Fallback heuristic: keep original shortest name rule
   return stat.match.homeTeam.length <= stat.match.awayTeam.length
     ? stat.match.homeTeam
     : stat.match.awayTeam;

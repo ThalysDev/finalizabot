@@ -33,8 +33,9 @@ export function resolvePlayerTeam(
   item: EtlLastMatchItem,
   playerTeamId?: string,
 ): string {
-  if (!playerTeamId) return item.homeTeamName;
-  return playerTeamId === item.homeTeamId
+  const teamId = playerTeamId ?? item.playerTeamId ?? undefined;
+  if (!teamId) return item.homeTeamName;
+  return teamId === item.homeTeamId
     ? item.homeTeamName
     : item.awayTeamName;
 }
@@ -48,8 +49,9 @@ export function resolveOpponent(
   item: EtlLastMatchItem,
   playerTeamId?: string,
 ): string {
-  if (!playerTeamId) return item.awayTeamName;
-  return playerTeamId === item.homeTeamId
+  const teamId = playerTeamId ?? item.playerTeamId ?? undefined;
+  if (!teamId) return item.awayTeamName;
+  return teamId === item.homeTeamId
     ? item.awayTeamName
     : item.homeTeamName;
 }
@@ -90,11 +92,14 @@ function buildMatchResult(
   if (m.homeScore == null || m.awayScore == null) {
     return { result: "—", badgeBg: "bg-slate-700", badgeText: "text-slate-300" };
   }
-
-  const isHome = playerTeamId ? playerTeamId === m.homeTeamId : true;
+  const teamId = playerTeamId ?? m.playerTeamId ?? undefined;
+  const score = `${m.homeScore}-${m.awayScore}`;
+  if (!teamId) {
+    return { result: `— ${score}`, badgeBg: "bg-slate-700", badgeText: "text-slate-300" };
+  }
+  const isHome = teamId === m.homeTeamId;
   const playerGoals = isHome ? m.homeScore : m.awayScore;
   const opponentGoals = isHome ? m.awayScore : m.homeScore;
-  const score = `${m.homeScore}-${m.awayScore}`;
 
   if (playerGoals > opponentGoals) {
     return { result: `V ${score}`, badgeBg: "bg-green-500/10", badgeText: "text-green-400" };

@@ -27,6 +27,7 @@ export interface EtlLastMatchItem {
   shotCount: number;
   shotsOnTarget: number;
   minutesPlayed: number | null;
+  playerTeamId: string | null;
   homeScore: number | null;
   awayScore: number | null;
 }

@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { LastSyncBadge } from "@/components/layout/LastSyncBadge";
 
 const navLinks = [
   { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
@@ -125,12 +126,17 @@ export function DarkHeader() {
 
       {/* Right: Search + Auth */}
       <div className="flex items-center gap-4">
+        <div className="hidden lg:flex">
+          <LastSyncBadge />
+        </div>
         {/* Search */}
         <div ref={searchRef} className="hidden md:block relative">
           <div className="flex items-center gap-2 bg-fb-surface rounded-xl px-3 py-2 min-w-[200px] border border-fb-border/50 transition-all duration-200 focus-within:border-fb-primary/30 focus-within:ring-1 focus-within:ring-fb-primary/20 focus-within:shadow-lg focus-within:shadow-fb-primary/5">
             <Search className="size-4 text-fb-text-muted" />
             <input
               type="text"
+              name="player-search"
+              autoComplete="off"
               placeholder="Buscar jogador..."
               aria-label="Buscar jogador"
               value={searchQuery}
@@ -230,6 +236,8 @@ export function DarkHeader() {
             <Search className="size-4 text-fb-text-muted" />
             <input
               type="text"
+              name="player-search-mobile"
+              autoComplete="off"
               placeholder="Buscar jogador..."
               aria-label="Buscar jogador"
               value={searchQuery}

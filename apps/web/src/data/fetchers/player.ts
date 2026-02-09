@@ -95,7 +95,7 @@ export async function fetchPlayerPageData(
   // Detecta o teamId do jogador via shots
   const playerTeamId = shotsRes.data
     ? detectPlayerTeamId(shotsRes.data.items)
-    : undefined;
+    : lastMatchesRes.data?.items[0]?.playerTeamId ?? undefined;
   const etlTeamBadge = playerTeamId
     ? proxySofascoreUrl(`https://api.sofascore.com/api/v1/team/${playerTeamId}/image`)
     : undefined;

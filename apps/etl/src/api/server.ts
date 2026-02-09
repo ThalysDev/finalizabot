@@ -177,6 +177,7 @@ server.get<{
         shotCount: counts.total,
         shotsOnTarget: counts.onTarget,
         minutesPlayed: mp.minutesPlayed,
+        playerTeamId: mp.teamId,
         homeScore: mp.match.homeScore ?? null,
         awayScore: mp.match.awayScore ?? null,
       };
@@ -215,6 +216,7 @@ server.get<{
     shotCount: number;
     shotsOnTarget: number;
     minutesPlayed: number | null;
+    playerTeamId: string;
     homeScore: number | null;
     awayScore: number | null;
   }> = [];
@@ -235,6 +237,7 @@ server.get<{
       shotCount: matchShots.length,
       shotsOnTarget: onTarget,
       minutesPlayed: null,
+      playerTeamId: s.teamId,
       homeScore: s.match.homeScore ?? null,
       awayScore: s.match.awayScore ?? null,
     });

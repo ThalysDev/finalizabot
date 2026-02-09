@@ -156,12 +156,13 @@ async function syncPlayers(): Promise<number> {
     try {
       // Don't overwrite a real name with a numeric ID
       const isNumericName = /^\d+$/.test(ep.name);
+      const safeName = isNumericName ? "Unknown" : ep.name;
 
       await prisma.player.upsert({
         where: { sofascoreId: ep.id },
         create: {
           sofascoreId: ep.id,
-          name: ep.name,
+          name: safeName,
           position: ep.position ?? 'Unknown',
           sofascoreUrl: `https://www.sofascore.com/player/${ep.slug ?? ep.id}/${ep.id}`,
           imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),

@@ -300,8 +300,9 @@ export async function discoverFinishedMatchIdsLastNDays(
   const idSet = new Set(tournamentIds);
   const allIds = new Set<string>();
 
-  /* Only check the last 3 days (scheduled-events is per-day, N days would be too many calls) */
-  const lookbackDays = Math.min(n, 3);
+  /* Limit lookback window with env override to avoid excessive calls */
+  const maxLookback = parseInt(process.env.SYNC_HISTORY_LOOKBACK_DAYS ?? "21", 10) || 21;
+  const lookbackDays = Math.min(n, maxLookback);
   for (let offset = 0; offset < lookbackDays; offset++) {
     const d = new Date(Date.now() - offset * 24 * 60 * 60 * 1000);
     const dateStr = d.toLocaleDateString("en-CA", { timeZone: tz });

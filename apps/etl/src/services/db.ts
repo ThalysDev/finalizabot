@@ -48,6 +48,7 @@ export interface PlayerData {
 export async function upsertPlayer(data: PlayerData): Promise<void> {
   // Don't overwrite a good name with a numeric ID
   const isNumericName = /^\d+$/.test(data.name);
+  const safeName = isNumericName ? "Unknown" : data.name;
 
   const updateData: Record<string, unknown> = {
     slug: data.slug ?? null,
@@ -65,7 +66,7 @@ export async function upsertPlayer(data: PlayerData): Promise<void> {
     where: { id: data.id },
     create: {
       id: data.id,
-      name: data.name,
+      name: safeName,
       slug: data.slug ?? null,
       position: data.position ?? null,
       imageUrl: data.imageUrl ?? null,
