@@ -33,10 +33,21 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const playerName = await getPlayerName(id);
+  const description = `Análise de finalizações de ${playerName}`;
 
   return {
     title: `${playerName} — FinalizaBOT`,
-    description: `Análise de finalizações de ${playerName}`,
+    description,
+    openGraph: {
+      title: `${playerName} — FinalizaBOT`,
+      description,
+      type: "profile",
+    },
+    twitter: {
+      card: "summary",
+      title: `${playerName} — FinalizaBOT`,
+      description,
+    },
   };
 }
 

@@ -2,13 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Inbox } from "lucide-react";
 import prisma from "@/lib/db/prisma";
-import { etlPlayerLastMatches, etlPlayerShots } from "@/lib/etl/client";
-import {
-  computePlayerStats,
-  detectPlayerTeamId,
-  resolvePlayerTeam,
-} from "@/lib/etl/transformers";
 import { DEFAULT_LINE } from "@/lib/etl/config";
+import { batchEnrichPlayers } from "@/lib/etl/enricher";
 import { ProTable } from "@/components/pro/ProTable";
 import { isPro } from "@/lib/auth/subscription";
 import type { ProPlayerRow } from "@/data/types";
@@ -34,27 +29,16 @@ async function fetchProPlayers(): Promise<ProPlayerRow[]> {
     },
   });
 
-  const rows = await Promise.all(
-    dbPlayers.map(async (p, i): Promise<ProPlayerRow | null> => {
+  const enriched = await batchEnrichPlayers(
+    dbPlayers.map((p) => ({ sofascoreId: p.sofascoreId })),
+    DEFAULT_LINE,
+  );
+
+  const rows: ProPlayerRow[] = dbPlayers
+    .map((p, i) => {
       const totalGoals = p.matchStats.reduce((s, m) => s + m.goals, 0);
       const totalAssists = p.matchStats.reduce((s, m) => s + m.assists, 0);
-
-      const [lastMatchesRes, shotsRes] = await Promise.all([
-        etlPlayerLastMatches(p.sofascoreId, 10),
-        etlPlayerShots(p.sofascoreId, { limit: 5 }),
-      ]);
-      const stats = lastMatchesRes.data
-        ? computePlayerStats(lastMatchesRes.data.items, DEFAULT_LINE)
-        : null;
-
-      // Resolve team correctly
-      const playerTeamId = shotsRes.data
-        ? detectPlayerTeamId(shotsRes.data.items)
-        : undefined;
-      const latestItem = lastMatchesRes.data?.items[0];
-      const teamName = latestItem
-        ? resolvePlayerTeam(latestItem, playerTeamId)
-        : "—";
+      const e = enriched.get(String(p.sofascoreId));
 
       const ev = p.marketAnalyses[0]
         ? Math.round(
@@ -66,19 +50,18 @@ async function fetchProPlayers(): Promise<ProPlayerRow[]> {
       return {
         rank: i + 1,
         name: p.name,
-        team: teamName,
+        team: e?.teamName ?? "—",
         pos: p.position,
         matches: p.matchStats.length,
         goals: totalGoals,
         assists: totalAssists,
-        xg: stats ? Number(stats.avgShots.toFixed(1)) : 0,
+        xg: e?.stats ? Number(e.stats.avgShots.toFixed(1)) : 0,
         ev,
         value: "—",
       };
-    }),
-  );
+    });
 
-  return rows.filter((r): r is ProPlayerRow => r !== null);
+  return rows;
 }
 
 export default async function ProDashboardPage() {

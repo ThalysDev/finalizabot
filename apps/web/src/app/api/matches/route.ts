@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
       { headers: { "Cache-Control": "s-maxage=120, stale-while-revalidate=60" } },
     );
   } catch (error) {
-    console.error("Error fetching matches:", error);
+    logger.error("[/api/matches] list failed", error);
     return NextResponse.json(
       { error: "Failed to fetch matches" },
       { status: 500 },

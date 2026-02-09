@@ -1,3 +1,5 @@
+import { logger } from "@/lib/logger";
+
 /**
  * Image serving endpoint — reads cached images from the database.
  *
@@ -42,7 +44,7 @@ export async function GET(
       },
     });
   } catch (err) {
-    console.error("[/api/images] Error:", err);
+    logger.error("[/api/images] fetch failed", err);
     return new NextResponse(null, { status: 500 });
   }
 }

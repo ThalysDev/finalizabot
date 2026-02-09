@@ -7,12 +7,7 @@
  */
 
 import { calcCV } from "@finalizabot/shared";
-import { etlPlayerLastMatches, etlPlayerShots } from "@/lib/etl/client";
-import {
-  computePlayerStats,
-  detectPlayerTeamId,
-  resolvePlayerTeam,
-} from "@/lib/etl/transformers";
+import { batchEnrichPlayers } from "@/lib/etl/enricher";
 import { DEFAULT_LINE, getEtlBaseUrl } from "@/lib/etl/config";
 import type { PlayerCardData } from "@/data/types";
 import {
@@ -207,59 +202,53 @@ export async function fetchMatchPageData(
   let enriched: (PlayerCardData | null)[];
 
   if (etlConfigured) {
-    // ── ETL path (original) ──────────────────────────────────────
-    enriched = await Promise.all(
-      playerEntries.map(async (p): Promise<PlayerCardData | null> => {
-        try {
-          const [lastMatchesRes, shotsRes] = await Promise.all([
-            etlPlayerLastMatches(p.sofascoreId, 10),
-            etlPlayerShots(p.sofascoreId, { limit: 5 }),
-          ]);
-
-          if (
-            !lastMatchesRes.error &&
-            lastMatchesRes.data &&
-            lastMatchesRes.data.items.length > 0
-          ) {
-            const etlPlayerImage =
-              proxySofascoreUrl(lastMatchesRes.data.player?.imageUrl) ??
-              undefined;
-            const stats = computePlayerStats(lastMatchesRes.data.items, line);
-            const playerTeamId = shotsRes.data
-              ? detectPlayerTeamId(shotsRes.data.items)
-              : undefined;
-            const latestItem = lastMatchesRes.data.items[0];
-            const teamName = latestItem
-              ? resolvePlayerTeam(latestItem, playerTeamId)
-              : (p.teamName ?? "—");
-
-            return {
-              id: p.id,
-              name: p.name,
-              team: teamName,
-              position: p.position,
-              avatarUrl: p.avatarUrl ?? etlPlayerImage ?? undefined,
-              teamBadgeUrl: p.teamBadgeUrl,
-              line,
-              odds: p.odds,
-              impliedProbability: Math.round(p.probability * 100),
-              avgShots: stats.avgShots,
-              avgShotsOnTarget: stats.avgShotsOnTarget,
-              last5: stats.last5Over,
-              cv: stats.cv != null ? Number(stats.cv.toFixed(2)) : null,
-              status: statusFromCV(stats.cv),
-              sparkline: stats.sparkline,
-            };
-          }
-          // ETL returned no items — fall through to Prisma
-        } catch {
-          /* ignore ETL errors */
-        }
-
-        // Prisma fallback for this player
-        return enrichFromPrisma(p, line);
-      }),
+    // ── ETL path (batched with concurrency control) ──────────────
+    const etlResults = await batchEnrichPlayers(
+      playerEntries.map((p) => ({ sofascoreId: p.sofascoreId })),
+      line,
     );
+
+    // Players that need Prisma fallback (no ETL stats)
+    const needsFallback: typeof playerEntries = [];
+
+    enriched = playerEntries.map((p): PlayerCardData | null => {
+      const e = etlResults.get(p.sofascoreId);
+      if (e?.stats) {
+        return {
+          id: p.id,
+          name: p.name,
+          team: e.teamName || p.teamName || "—",
+          position: p.position,
+          avatarUrl: p.avatarUrl,
+          teamBadgeUrl: p.teamBadgeUrl,
+          line,
+          odds: p.odds,
+          impliedProbability: Math.round(p.probability * 100),
+          avgShots: e.stats.avgShots,
+          avgShotsOnTarget: e.stats.avgShotsOnTarget,
+          last5: e.stats.last5Over,
+          cv: e.stats.cv != null ? Number(e.stats.cv.toFixed(2)) : null,
+          status: statusFromCV(e.stats.cv),
+          sparkline: e.stats.sparkline,
+        };
+      }
+      needsFallback.push(p);
+      return null; // will be filled by batch Prisma fallback
+    });
+
+    // Batch Prisma fallback for players without ETL data
+    if (needsFallback.length > 0) {
+      const fallbackCards = await batchEnrichFromPrisma(
+        needsFallback,
+        line,
+      );
+      let fi = 0;
+      for (let i = 0; i < enriched.length; i++) {
+        if (enriched[i] === null && fi < fallbackCards.length) {
+          enriched[i] = fallbackCards[fi++];
+        }
+      }
+    }
   } else {
     // ── Prisma-only path (batched, no ETL calls) ─────────────────
     const playerIds = playerEntries.map((p) => p.id);
@@ -353,9 +342,9 @@ export async function fetchMatchPageData(
    Helpers
    ============================================================================ */
 
-/** Prisma-only enrichment for a single player (used in ETL path fallback) */
-async function enrichFromPrisma(
-  p: {
+/** Batched Prisma enrichment for multiple players (replaces N single queries) */
+async function batchEnrichFromPrisma(
+  players: {
     id: string;
     name: string;
     position: string;
@@ -364,62 +353,76 @@ async function enrichFromPrisma(
     teamName?: string | null;
     odds: number;
     probability: number;
-  },
+  }[],
   line: number,
-): Promise<PlayerCardData> {
-  const dbStats = await prisma.playerMatchStats.findMany({
-    where: { playerId: p.id },
+): Promise<PlayerCardData[]> {
+  const playerIds = players.map((p) => p.id);
+  const allStats = await prisma.playerMatchStats.findMany({
+    where: { playerId: { in: playerIds } },
     orderBy: { match: { matchDate: "desc" } },
-    take: 10,
     include: { match: { select: { homeTeam: true, awayTeam: true } } },
   });
 
-  if (dbStats.length > 0) {
-    const shots = dbStats.map((s) => s.shots);
-    const shotsOnTarget = dbStats.map((s) => s.shotsOnTarget);
-    const avg = shots.reduce((a, b) => a + b, 0) / shots.length;
-    const avgOnTarget =
-      shotsOnTarget.reduce((a, b) => a + b, 0) / shotsOnTarget.length;
-    const overLine = shots.map((s) => s >= line);
-    const cv = calcCV(shots);
-    const teamName = resolvePlayerTeamFromStats(dbStats[0], p.teamName ?? null);
+  const statsByPlayer = new Map<string, (typeof allStats)[number][]>();
+  for (const s of allStats) {
+    const arr = statsByPlayer.get(s.playerId) ?? [];
+    arr.push(s);
+    statsByPlayer.set(s.playerId, arr);
+  }
+
+  return players.map((p) => {
+    const dbStats = (statsByPlayer.get(p.id) ?? []).slice(0, 10);
+
+    if (dbStats.length > 0) {
+      const shots = dbStats.map((s) => s.shots);
+      const shotsOnTarget = dbStats.map((s) => s.shotsOnTarget);
+      const avg = shots.reduce((a, b) => a + b, 0) / shots.length;
+      const avgOnTarget =
+        shotsOnTarget.reduce((a, b) => a + b, 0) / shotsOnTarget.length;
+      const overLine = shots.map((s) => s >= line);
+      const cv = calcCV(shots);
+      const teamName = resolvePlayerTeamFromStats(
+        dbStats[0],
+        p.teamName ?? null,
+      );
+
+      return {
+        id: p.id,
+        name: p.name,
+        team: teamName,
+        position: p.position,
+        avatarUrl: p.avatarUrl,
+        teamBadgeUrl: p.teamBadgeUrl,
+        line,
+        odds: p.odds,
+        impliedProbability: Math.round(p.probability * 100),
+        avgShots: Number(avg.toFixed(1)),
+        avgShotsOnTarget: Number(avgOnTarget.toFixed(1)),
+        last5: overLine.slice(0, 5),
+        cv: cv != null ? Number(cv.toFixed(2)) : null,
+        status: statusFromCV(cv),
+        sparkline: shots.slice(0, 8),
+      };
+    }
 
     return {
       id: p.id,
       name: p.name,
-      team: teamName,
+      team: "—",
       position: p.position,
       avatarUrl: p.avatarUrl,
       teamBadgeUrl: p.teamBadgeUrl,
       line,
       odds: p.odds,
       impliedProbability: Math.round(p.probability * 100),
-      avgShots: Number(avg.toFixed(1)),
-      avgShotsOnTarget: Number(avgOnTarget.toFixed(1)),
-      last5: overLine.slice(0, 5),
-      cv: cv != null ? Number(cv.toFixed(2)) : null,
-      status: statusFromCV(cv),
-      sparkline: shots.slice(0, 8),
+      avgShots: 0,
+      avgShotsOnTarget: 0,
+      last5: [],
+      cv: null,
+      status: "neutral",
+      sparkline: [],
     };
-  }
-
-  return {
-    id: p.id,
-    name: p.name,
-    team: "—",
-    position: p.position,
-    avatarUrl: p.avatarUrl,
-    teamBadgeUrl: p.teamBadgeUrl,
-    line,
-    odds: p.odds,
-    impliedProbability: Math.round(p.probability * 100),
-    avgShots: 0,
-    avgShotsOnTarget: 0,
-    last5: [],
-    cv: null,
-    status: "neutral",
-    sparkline: [],
-  };
+  });
 }
 
 /** Resolve player team name from PlayerMatchStats join data */

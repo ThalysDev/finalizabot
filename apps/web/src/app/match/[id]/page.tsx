@@ -8,11 +8,15 @@ import prisma from "@/lib/db/prisma";
 export const revalidate = 60; // ISR: regenerate every 60s
 
 const getMatchTitle = cache(async (id: string) => {
-  const match = await prisma.match.findUnique({
-    where: { id },
-    select: { homeTeam: true, awayTeam: true },
-  });
-  return match ? `${match.homeTeam} vs ${match.awayTeam}` : "Partida";
+  try {
+    const match = await prisma.match.findUnique({
+      where: { id },
+      select: { homeTeam: true, awayTeam: true },
+    });
+    return match ? `${match.homeTeam} vs ${match.awayTeam}` : "Partida";
+  } catch {
+    return "Partida";
+  }
 });
 
 const getMatchData = cache((id: string) => fetchMatchPageData(id));
@@ -24,9 +28,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const title = await getMatchTitle(id);
+  const description = `Análise de finalizações: ${title}`;
   return {
     title: `${title} — FinalizaBOT`,
-    description: `Análise de finalizações: ${title}`,
+    description,
+    openGraph: {
+      title: `${title} — FinalizaBOT`,
+      description,
+      type: "website",
+    },
+    twitter: {
+      card: "summary",
+      title: `${title} — FinalizaBOT`,
+      description,
+    },
   };
 }
 

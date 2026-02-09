@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateSearchQuery } from "@/lib/validation";
 
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
       { headers: { "Cache-Control": "s-maxage=30, stale-while-revalidate=15" } },
     );
   } catch (error) {
-    console.error("Error searching players:", error);
+    logger.error("[/api/search] query failed", error);
     return NextResponse.json(
       { error: "Search failed" },
       { status: 500 },

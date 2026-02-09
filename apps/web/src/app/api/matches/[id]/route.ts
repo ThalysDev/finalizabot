@@ -3,6 +3,7 @@ import prisma from "@/lib/db/prisma";
 import { etlMatchShots } from "@/lib/etl/client";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateId } from "@/lib/validation";
+import { logger } from "@/lib/logger";
 
 export async function GET(
   request: Request,
@@ -60,7 +61,7 @@ export async function GET(
       { headers: { "Cache-Control": "s-maxage=120, stale-while-revalidate=60" } },
     );
   } catch (error) {
-    console.error("Error fetching match:", error);
+    logger.error("[/api/matches/:id] fetch failed", error);
     return NextResponse.json(
       { error: "Failed to fetch match" },
       { status: 500 },

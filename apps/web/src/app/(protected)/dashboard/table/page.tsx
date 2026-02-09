@@ -7,12 +7,7 @@ import {
 } from "@/components/table/DataTable";
 import type { Column } from "@/components/table/DataTable";
 import type { AdvancedPlayerRow } from "@/data/types";
-import { etlPlayerLastMatches, etlPlayerShots } from "@/lib/etl/client";
-import {
-  computePlayerStats,
-  detectPlayerTeamId,
-  resolvePlayerTeam,
-} from "@/lib/etl/transformers";
+import { batchEnrichPlayers } from "@/lib/etl/enricher";
 import { DEFAULT_LINE } from "@/lib/etl/config";
 import { statusFromCV } from "@/lib/helpers";
 import prisma from "@/lib/db/prisma";
@@ -33,53 +28,39 @@ async function fetchTableData() {
     }),
   ]);
 
-  const enriched = await Promise.all(
-    dbPlayers.map(async (p): Promise<AdvancedPlayerRow | null> => {
-      const [lastMatchesRes, shotsRes] = await Promise.all([
-        etlPlayerLastMatches(p.sofascoreId, 10),
-        etlPlayerShots(p.sofascoreId, { limit: 5 }),
-      ]);
-      if (
-        lastMatchesRes.error ||
-        !lastMatchesRes.data ||
-        lastMatchesRes.data.items.length === 0
-      )
-        return null;
+  const enriched = await batchEnrichPlayers(
+    dbPlayers.map((p) => ({ sofascoreId: p.sofascoreId })),
+    line,
+  );
 
-      const stats = computePlayerStats(lastMatchesRes.data.items, line);
+  // Batch fetch odds for all players in one query instead of N queries
+  const analyses = await prisma.marketAnalysis.findMany({
+    where: { playerId: { in: dbPlayers.map((p) => p.id) } },
+    orderBy: { createdAt: "desc" },
+    distinct: ["playerId"],
+    select: { playerId: true, odds: true },
+  });
+  const oddsMap = new Map(analyses.map((a) => [a.playerId, a.odds]));
 
-      // Resolve team correctly
-      const playerTeamId = shotsRes.data
-        ? detectPlayerTeamId(shotsRes.data.items)
-        : undefined;
-      const latestItem = lastMatchesRes.data.items[0];
-      const teamName = latestItem
-        ? resolvePlayerTeam(latestItem, playerTeamId)
-        : "—";
-
-      // Fetch odds from MarketAnalysis
-      const analysis = await prisma.marketAnalysis.findFirst({
-        where: { playerId: p.id },
-        orderBy: { createdAt: "desc" },
-        select: { odds: true },
-      });
+  const players: AdvancedPlayerRow[] = dbPlayers
+    .map((p) => {
+      const e = enriched.get(String(p.sofascoreId));
+      if (!e?.stats) return null;
 
       return {
         player: p.name,
-        team: teamName,
+        team: e.teamName,
         line: line.toFixed(1),
-        odds: analysis?.odds ?? 0,
-        l5: stats.last5Over.filter(Boolean).length,
-        l10: stats.u10Hits,
-        cv: stats.cv != null ? Number(stats.cv.toFixed(2)) : 0,
-        avgShots: stats.avgShots,
-        avgMins: stats.avgMinutes,
-        status: statusFromCV(stats.cv),
+        odds: oddsMap.get(p.id) ?? 0,
+        l5: e.stats.last5Over.filter(Boolean).length,
+        l10: e.stats.u10Hits,
+        cv: e.stats.cv != null ? Number(e.stats.cv.toFixed(2)) : 0,
+        avgShots: e.stats.avgShots,
+        avgMins: e.stats.avgMinutes,
+        status: statusFromCV(e.stats.cv),
       };
-    }),
-  );
-
-  const players = enriched.filter((p): p is AdvancedPlayerRow => p !== null);
+    })
+    .filter((p): p is AdvancedPlayerRow => p !== null);
 
   const match = upcomingMatch
     ? {
