@@ -34,6 +34,9 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
       - name: Run ETL ingest
         run: npm run sync
         env:
