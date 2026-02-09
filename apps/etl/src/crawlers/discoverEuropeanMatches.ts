@@ -301,7 +301,7 @@ export async function discoverFinishedMatchIdsLastNDays(
   const allIds = new Set<string>();
 
   /* Limit lookback window with env override to avoid excessive calls */
-  const maxLookback = parseInt(process.env.SYNC_HISTORY_LOOKBACK_DAYS ?? "21", 10) || 21;
+  const maxLookback = parseInt(process.env.SYNC_HISTORY_LOOKBACK_DAYS ?? "60", 10) || 60;
   const lookbackDays = Math.min(n, maxLookback);
   for (let offset = 0; offset < lookbackDays; offset++) {
     const d = new Date(Date.now() - offset * 24 * 60 * 60 * 1000);

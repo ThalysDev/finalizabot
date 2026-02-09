@@ -142,7 +142,7 @@ server.get<{
     await reply.status(400).send({ error: 'playerId is required' });
     return;
   }
-  const limit = Math.min(Number(request.query.limit) || 10, 20);
+  const limit = Math.min(Number(request.query.limit) || 20, 30);
 
   const matchPlayers = await prisma.etlMatchPlayer.findMany({
     where: { playerId },

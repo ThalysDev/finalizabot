@@ -46,7 +46,7 @@ export const REVALIDATE_SHOTS = 120;
    ============================================================================ */
 
 /** Limite padrão de últimas partidas */
-export const DEFAULT_LAST_MATCHES_LIMIT = 10;
+export const DEFAULT_LAST_MATCHES_LIMIT = 20;
 
 /** Linhas de mercado padrão */
 export const DEFAULT_LINES = [0.5, 1.5, 2.5] as const;

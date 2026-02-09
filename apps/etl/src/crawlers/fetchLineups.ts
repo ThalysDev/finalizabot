@@ -72,9 +72,14 @@ function extractPlayersFromTeam(
       o.imageUrl ??
       o.photo;
     const imageUrl = typeof img === "string" && img.length > 0 ? img : null;
+    // SofaScore nests minutes inside statistics/stats sub-object
+    const statsObj = (o.statistics ?? o.stats) as Record<string, unknown> | undefined;
+    const playerStats = (playerObj?.statistics ?? playerObj?.stats) as Record<string, unknown> | undefined;
     const minutes =
       safeInt(o.minutesPlayed ?? o.playedMinutes ?? o.timePlayed) ??
-      safeInt(playerObj?.minutesPlayed ?? playerObj?.playedMinutes);
+      safeInt(statsObj?.minutesPlayed ?? statsObj?.playedMinutes) ??
+      safeInt(playerObj?.minutesPlayed ?? playerObj?.playedMinutes) ??
+      safeInt(playerStats?.minutesPlayed ?? playerStats?.playedMinutes);
     out.push({
       playerId,
       teamId,
