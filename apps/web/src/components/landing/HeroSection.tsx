@@ -1,7 +1,8 @@
+import Image from "next/image";
 import { Container } from "@/components/primitives";
 import { cn } from "@/lib/utils";
 import { AuthCTA } from "./AuthCTA";
-import { Activity, BarChart3, Shield, TrendingUp, Zap } from "lucide-react";
+import { Activity, BarChart3, TrendingUp, Zap } from "lucide-react";
 
 const HERO_TAGS = [
   { label: "U5/U10 instantâneo", icon: Zap },
@@ -35,7 +36,13 @@ function HeroSection({ playerCount, matchCount }: HeroSectionProps = {}) {
         <div className="relative flex flex-col items-center justify-center text-center">
           {/* Pill badge */}
           <span className="animate-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-fb-primary/20 bg-fb-primary/5 px-4 py-1.5 text-xs sm:text-sm text-fb-primary font-medium backdrop-blur-sm">
-            <Shield className="size-3.5" />
+            <Image
+              src="/logo.png"
+              alt=""
+              width={20}
+              height={20}
+              className="size-5 object-contain"
+            />
             FinalizaBOT • Props de finalizações
           </span>
 

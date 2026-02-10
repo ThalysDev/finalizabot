@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Container } from "@/components/primitives";
-import { Zap } from "lucide-react";
+import Image from "next/image";
 
 /**
  * Footer Component
@@ -32,10 +32,14 @@ export function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8 sm:mb-12">
           {/* Brand */}
           <div>
-            <h3 className="font-bold text-fb-text mb-3 flex items-center gap-2.5">
-              <div className="size-7 rounded-lg bg-fb-primary/15 border border-fb-primary/20 flex items-center justify-center">
-                <Zap className="size-4 text-fb-primary" />
-              </div>
+            <h3 className="font-bold text-fb-text mb-3 flex items-center gap-2">
+              <Image
+                src="/logo.png"
+                alt="FinalizaBOT"
+                width={28}
+                height={28}
+                className="size-7 object-contain"
+              />
               FinalizaBOT
             </h3>
             <p className="text-sm text-fb-text-secondary leading-relaxed">

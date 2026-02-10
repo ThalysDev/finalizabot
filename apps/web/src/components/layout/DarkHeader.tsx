@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import Image from "next/image";
 import {
   Activity,
   BarChart3,
@@ -89,11 +90,16 @@ export function DarkHeader() {
       <div className="flex items-center gap-6 md:gap-8">
         <Link
           href="/dashboard"
-          className="flex items-center gap-3 text-fb-text"
+          className="flex items-center gap-2 text-fb-text"
         >
-          <div className="size-8 rounded-lg bg-fb-primary/20 flex items-center justify-center text-fb-primary">
-            <Zap className="size-5" />
-          </div>
+          <Image
+            src="/logo.png"
+            alt="FinalizaBOT"
+            width={36}
+            height={36}
+            className="size-9 object-contain"
+            priority
+          />
           <h2 className="text-fb-text text-lg font-bold leading-tight tracking-tight">
             FinalizaBOT
           </h2>

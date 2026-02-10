@@ -1,4 +1,4 @@
-import { Zap } from "lucide-react";
+import Image from "next/image";
 
 /**
  * Loading state para página de partida (/match/[id]).
@@ -48,8 +48,14 @@ export default function MatchLoading() {
 
       {/* Center loading indicator */}
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-fb-surface border border-fb-border rounded-full px-4 py-2 shadow-xl">
-        <div className="size-5 rounded bg-fb-primary/20 flex items-center justify-center animate-pulse">
-          <Zap className="size-3 text-fb-primary" />
+        <div className="size-5 flex items-center justify-center animate-pulse">
+          <Image
+            src="/logo.png"
+            alt="FinalizaBOT"
+            width={20}
+            height={20}
+            className="size-5 object-contain"
+          />
         </div>
         <span className="text-xs text-fb-text-muted">Carregando partida…</span>
       </div>

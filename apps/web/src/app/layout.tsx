@@ -18,6 +18,16 @@ export const metadata: Metadata = {
   title: "FinalizaBOT - Análise de Finalizações",
   description:
     "Plataforma de análise de mercado de finalizações para apostas esportivas",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
+  openGraph: {
+    title: "FinalizaBOT - Análise de Finalizações",
+    description:
+      "Plataforma de análise de mercado de finalizações para apostas esportivas",
+    images: ["/logo.png"],
+  },
 };
 
 export default function RootLayout({

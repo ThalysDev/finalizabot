@@ -1,4 +1,4 @@
-import { Zap } from "lucide-react";
+import Image from "next/image";
 
 /**
  * Loading state para todas as rotas protegidas.
@@ -9,8 +9,14 @@ export default function ProtectedLoading() {
     <div className="flex h-[calc(100vh-57px)] items-center justify-center">
       <div className="flex flex-col items-center gap-4 animate-fade-up">
         {/* Logo animado */}
-        <div className="size-14 rounded-xl bg-fb-primary/20 flex items-center justify-center animate-pulse">
-          <Zap className="size-7 text-fb-primary" />
+        <div className="size-14 flex items-center justify-center animate-pulse">
+          <Image
+            src="/logo.png"
+            alt="FinalizaBOT"
+            width={56}
+            height={56}
+            className="size-14 object-contain"
+          />
         </div>
 
         {/* Skeleton bars */}

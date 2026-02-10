@@ -4,7 +4,8 @@ import Link from "next/link";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Container } from "@/components/primitives";
 import { LastSyncBadge } from "@/components/layout/LastSyncBadge";
-import { Zap, ArrowRight } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
 
 /**
  * Header Component
@@ -19,11 +20,16 @@ export function Header() {
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <div className="size-9 sm:size-10 rounded-xl bg-fb-primary/15 border border-fb-primary/20 flex items-center justify-center">
-              <Zap className="size-5 text-fb-primary" />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="FinalizaBOT"
+              width={40}
+              height={40}
+              className="size-10 object-contain"
+              priority
+            />
             <span className="text-base sm:text-xl font-bold text-fb-text tracking-tight">
               FinalizaBOT
             </span>
