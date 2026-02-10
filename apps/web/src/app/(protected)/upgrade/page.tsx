@@ -208,11 +208,13 @@ export default function UpgradePage() {
                 </span>
               </div>
               <button
-                onClick={() => alert("Pagamento será disponibilizado em breve! Você receberá uma notificação quando o checkout estiver ativo.")}
-                className="w-full bg-fb-primary hover:brightness-110 text-fb-primary-content font-bold text-base py-4 px-6 rounded-lg transition-all shadow-lg shadow-fb-primary/20 flex items-center justify-center gap-2 mt-4"
+                disabled
+                title="Pagamento será disponibilizado em breve! Você receberá uma notificação quando o checkout estiver ativo."
+                className="w-full bg-fb-primary/60 text-fb-primary-content font-bold text-base py-4 px-6 rounded-lg shadow-lg shadow-fb-primary/20 flex items-center justify-center gap-2 mt-4 cursor-not-allowed opacity-80"
               >
                 <Lock className="size-5" />
                 Upgrade para PRO
+                <span className="ml-1 text-[10px] font-normal bg-fb-primary-content/20 px-1.5 py-0.5 rounded">Em breve</span>
               </button>
               <div className="flex items-center justify-center gap-2 mt-4 text-xs text-fb-text-muted">
                 <ShieldCheck className="size-3.5" />

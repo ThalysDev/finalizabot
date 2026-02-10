@@ -39,22 +39,19 @@ export function AuthCTA({ variant = "inline" }: AuthCTAProps) {
       <SignedOut>
         <Link
           href="/sign-up"
-          className={variant === "hero" ? "w-full sm:w-auto" : ""}
+          className={`${variant === "hero" ? "w-full sm:w-auto " : ""}${primaryClasses} ${padding}`}
         >
-          <button
-            className={`${variant === "hero" ? "w-full sm:w-auto " : ""}${primaryClasses} ${padding}`}
-          >
-            Criar conta grátis
-            <ArrowRight className="size-4" />
-          </button>
+          Criar conta grátis
+          <ArrowRight className="size-4" />
         </Link>
 
         {variant === "hero" && (
-          <Link href="#demo" className="w-full sm:w-auto">
-            <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 text-base font-medium text-fb-text border border-fb-border hover:border-fb-primary/30 bg-fb-surface/60 backdrop-blur-sm rounded-xl hover:bg-fb-primary/5 transition-all duration-300">
-              <Play className="size-4" />
-              Ver exemplo
-            </button>
+          <Link
+            href="#demo"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 text-base font-medium text-fb-text border border-fb-border hover:border-fb-primary/30 bg-fb-surface/60 backdrop-blur-sm rounded-xl hover:bg-fb-primary/5 transition-all duration-300"
+          >
+            <Play className="size-4" />
+            Ver exemplo
           </Link>
         )}
       </SignedOut>
@@ -62,14 +59,10 @@ export function AuthCTA({ variant = "inline" }: AuthCTAProps) {
       <SignedIn>
         <Link
           href="/dashboard"
-          className={variant === "hero" ? "w-full sm:w-auto" : ""}
+          className={`${variant === "hero" ? "w-full sm:w-auto " : ""}${primaryClasses} ${padding}`}
         >
-          <button
-            className={`${variant === "hero" ? "w-full sm:w-auto " : ""}${primaryClasses} ${padding}`}
-          >
-            Ir para o painel
-            <ArrowRight className="size-4" />
-          </button>
+          Ir para o painel
+          <ArrowRight className="size-4" />
         </Link>
       </SignedIn>
     </>

@@ -2,15 +2,14 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import {
   ArrowLeft,
   SlidersHorizontal,
-  Shield,
   Users,
   TrendingUp,
   Clock,
 } from "lucide-react";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { formatLine } from "@/lib/helpers";
 import type { PlayerCardData } from "@/data/types";
@@ -125,17 +124,15 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
             {/* Home */}
             <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
               <div className="size-10 md:size-14 rounded-full bg-fb-surface-lighter flex items-center justify-center border border-fb-border/50 overflow-hidden shrink-0">
-                {match.homeBadgeUrl ? (
-                  <Image
-                    src={match.homeBadgeUrl}
-                    alt={match.homeTeam}
-                    width={40}
-                    height={40}
-                    className="size-8 md:size-10 object-contain"
-                  />
-                ) : (
-                  <Shield className="size-5 md:size-7 text-fb-text-muted" />
-                )}
+                <SafeImage
+                  src={match.homeBadgeUrl}
+                  alt={match.homeTeam}
+                  width={40}
+                  height={40}
+                  className="size-8 md:size-10 object-contain"
+                  fallbackType="team"
+                  fallbackClassName="size-5 md:size-7 text-fb-text-muted"
+                />
               </div>
               <div className="min-w-0">
                 <h2 className="text-fb-text font-bold text-sm md:text-lg truncate">
@@ -188,17 +185,15 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
                 </p>
               </div>
               <div className="size-10 md:size-14 rounded-full bg-fb-surface-lighter flex items-center justify-center border border-fb-border/50 overflow-hidden shrink-0">
-                {match.awayBadgeUrl ? (
-                  <Image
-                    src={match.awayBadgeUrl}
-                    alt={match.awayTeam}
-                    width={40}
-                    height={40}
-                    className="size-8 md:size-10 object-contain"
-                  />
-                ) : (
-                  <Shield className="size-5 md:size-7 text-fb-text-muted" />
-                )}
+                <SafeImage
+                  src={match.awayBadgeUrl}
+                  alt={match.awayTeam}
+                  width={40}
+                  height={40}
+                  className="size-8 md:size-10 object-contain"
+                  fallbackType="team"
+                  fallbackClassName="size-5 md:size-7 text-fb-text-muted"
+                />
               </div>
             </div>
           </div>
@@ -262,7 +257,7 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
                 onClick={() => setPosFilter(key)}
                 className={`px-2 md:px-3 py-1.5 rounded-md text-[11px] md:text-xs font-medium transition-colors whitespace-nowrap ${
                   posFilter === key
-                    ? "bg-fb-primary text-white"
+                    ? "bg-fb-primary text-fb-primary-content"
                     : "text-fb-text-secondary hover:text-fb-text hover:bg-fb-surface-lighter"
                 }`}
               >

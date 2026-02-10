@@ -623,3 +623,26 @@ select:focus-visible,
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* ============================================================================
+   TABLE SCROLL HINT — horizontal scroll shadow indicator
+   ============================================================================ */
+.table-scroll-hint {
+  position: relative;
+  overflow-x: auto;
+}
+.table-scroll-hint::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 32px;
+  background: linear-gradient(to right, transparent, var(--fb-bg));
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+.table-scroll-hint.scrolled-end::after {
+  opacity: 0;
+}

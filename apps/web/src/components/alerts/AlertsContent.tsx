@@ -8,6 +8,7 @@ import {
   Bell,
   BellOff,
   Inbox,
+  X,
 } from "lucide-react";
 import { AlertCard } from "@/components/alerts/AlertCard";
 import type { AlertData } from "@/data/types";
@@ -221,8 +222,9 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
                 <button
                   onClick={() => setMobileFiltersOpen(false)}
                   className="text-fb-text-muted hover:text-fb-text"
+                  aria-label="Fechar filtros"
                 >
-                  ✕
+                  <X className="size-5" />
                 </button>
               </div>
               {sidebar}

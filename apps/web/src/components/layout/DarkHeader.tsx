@@ -19,7 +19,7 @@ import { LastSyncBadge } from "@/components/layout/LastSyncBadge";
 const navLinks = [
   { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
   { href: "/dashboard/table", label: "Tabela Avançada", icon: BarChart3 },
-  { href: "/live", label: "Ao Vivo", icon: Activity },
+  { href: "/live", label: "Ao Vivo", icon: Activity, comingSoon: true },
   { href: "/alerts", label: "Alertas", icon: Bell },
   { href: "/pricing", label: "Planos", icon: Zap },
 ];
@@ -115,6 +115,9 @@ export function DarkHeader() {
                 }`}
               >
                 {link.label}
+                {"comingSoon" in link && link.comingSoon && (
+                  <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-fb-accent-gold" title="Em breve" />
+                )}
                 {isActive && (
                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-fb-primary" />
                 )}

@@ -78,8 +78,7 @@ export function buildTeamBadgeUrl(
   teamId?: string | null,
 ): string | undefined {
   if (!teamId || !/^\d+$/.test(teamId)) return undefined;
-  const raw = `https://api.sofascore.com/api/v1/team/${teamId}/image`;
-  return proxySofascoreUrl(raw);
+  return cachedImageUrl(teamId);
 }
 
 /* ============================================================================

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import { TrendingUp, TrendingDown, Minus, Snowflake } from "lucide-react";
+import { SafeImage } from "@/components/ui/SafeImage";
 import type { ValueStatus } from "@/data/types";
 
 /* ============================================================================
@@ -119,19 +119,15 @@ export function PlayerCard({
       {/* Header: avatar + info */}
       <div className="flex items-start gap-3 mb-3">
         <div className="size-12 rounded-full bg-linear-to-br from-fb-primary/20 to-fb-accent-green/10 flex items-center justify-center overflow-hidden shrink-0 border border-fb-primary/15 transition-transform duration-300 group-hover:scale-105">
-          {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt={name}
-              width={48}
-              height={48}
-              className="size-full object-cover"
-            />
-          ) : (
-            <span className="text-fb-primary text-lg font-bold">
-              {name.charAt(0)}
-            </span>
-          )}
+          <SafeImage
+            src={avatarUrl}
+            alt={name}
+            width={48}
+            height={48}
+            className="size-full object-cover"
+            fallbackType="player"
+            fallbackText={name}
+          />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-fb-text font-semibold text-sm truncate">
@@ -141,12 +137,13 @@ export function PlayerCard({
             <span>{position}</span>
             <span>•</span>
             {teamBadgeUrl && (
-              <Image
+              <SafeImage
                 src={teamBadgeUrl}
                 alt={team}
                 width={14}
                 height={14}
                 className="size-3.5 object-contain"
+                fallbackType="team"
               />
             )}
             <span className="truncate">{team}</span>

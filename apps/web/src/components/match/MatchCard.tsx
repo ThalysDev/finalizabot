@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { Shield, Clock, Users, ChevronRight } from "lucide-react";
+import { Clock, Users, ChevronRight } from "lucide-react";
+import { SafeImage } from "@/components/ui/SafeImage";
 import type { MatchCardData } from "@/data/types";
 
 /* ============================================================================
@@ -42,17 +42,14 @@ export function MatchCard({
           {/* Home team */}
           <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
             <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center shrink-0 border border-fb-border/40 overflow-hidden">
-              {homeBadgeUrl ? (
-                <Image
-                  src={homeBadgeUrl}
-                  alt={homeTeam}
-                  width={28}
-                  height={28}
-                  className="size-7 object-contain"
-                />
-              ) : (
-                <Shield className="size-5 text-fb-text-muted" />
-              )}
+              <SafeImage
+                src={homeBadgeUrl}
+                alt={homeTeam}
+                width={28}
+                height={28}
+                className="size-7 object-contain"
+                fallbackType="team"
+              />
             </div>
             <span className="text-fb-text font-semibold text-xs text-center leading-tight line-clamp-2">
               {homeTeam}
@@ -86,17 +83,14 @@ export function MatchCard({
           {/* Away team */}
           <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
             <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center shrink-0 border border-fb-border/40 overflow-hidden">
-              {awayBadgeUrl ? (
-                <Image
-                  src={awayBadgeUrl}
-                  alt={awayTeam}
-                  width={28}
-                  height={28}
-                  className="size-7 object-contain"
-                />
-              ) : (
-                <Shield className="size-5 text-fb-text-muted" />
-              )}
+              <SafeImage
+                src={awayBadgeUrl}
+                alt={awayTeam}
+                width={28}
+                height={28}
+                className="size-7 object-contain"
+                fallbackType="team"
+              />
             </div>
             <span className="text-fb-text font-semibold text-xs text-center leading-tight line-clamp-2">
               {awayTeam}

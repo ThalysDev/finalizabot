@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { TrendingUp, Target, Percent, ArrowRight } from "lucide-react";
+import { SafeImage } from "@/components/ui/SafeImage";
 
 export interface AlertCardProps {
   playerName: string;
@@ -44,19 +44,16 @@ export function AlertCard({
       {/* Player info */}
       <div className="flex items-center gap-3 mb-4">
         <div className="size-12 rounded-full bg-fb-surface flex items-center justify-center overflow-hidden shrink-0">
-          {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt={playerName}
-              width={48}
-              height={48}
-              className="size-full object-cover"
-            />
-          ) : (
-            <span className="text-fb-text-muted text-lg font-bold">
-              {playerName.charAt(0)}
-            </span>
-          )}
+          <SafeImage
+            src={avatarUrl}
+            alt={playerName}
+            width={48}
+            height={48}
+            className="size-full object-cover"
+            fallbackType="player"
+            fallbackText={playerName}
+            fallbackClassName="text-fb-text-muted text-lg font-bold flex items-center justify-center w-full h-full"
+          />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-fb-text font-semibold text-sm">{playerName}</h3>
@@ -141,9 +138,10 @@ export function AlertCard({
         </div>
         <button
           type="button"
+          disabled
+          title="Integração com casas de apostas em breve!"
           aria-label={`Ver aposta de ${playerName}`}
-          onClick={() => window.alert("Integração com casas de apostas em breve!")}
-          className="px-4 py-2 bg-fb-primary text-fb-primary-content text-xs font-bold rounded-lg hover:bg-fb-primary-dark transition-colors cursor-pointer"
+          className="px-4 py-2 bg-fb-primary/60 text-fb-primary-content text-xs font-bold rounded-lg cursor-not-allowed opacity-70"
         >
           Apostar
         </button>

@@ -20,22 +20,22 @@ export default function GlobalError({
 
   return (
     <html lang="pt-BR">
-      <body className="bg-[#0a0f1a] text-white">
+      <body className="bg-fb-bg text-fb-text">
         <div className="flex min-h-screen items-center justify-center p-4">
           <div className="max-w-md w-full text-center">
             <div className="mx-auto size-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-6">
               <AlertTriangle className="size-8 text-red-500" />
             </div>
 
-            <h1 className="text-white text-2xl font-bold mb-2">
+            <h1 className="text-fb-text text-2xl font-bold mb-2">
               Algo deu errado
             </h1>
-            <p className="text-white/60 text-sm mb-6 leading-relaxed">
+            <p className="text-fb-text-muted text-sm mb-6 leading-relaxed">
               Ocorreu um erro inesperado. Tente recarregar a página.
             </p>
 
             {error.digest && (
-              <p className="text-white/40 text-xs font-mono mb-6 bg-white/5 rounded-lg px-3 py-2">
+              <p className="text-fb-text-muted/60 text-xs font-mono mb-6 bg-fb-surface rounded-lg px-3 py-2">
                 ID: {error.digest}
               </p>
             )}
@@ -43,14 +43,14 @@ export default function GlobalError({
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 onClick={reset}
-                className="flex items-center gap-2 px-6 py-3 bg-[#13ec5b] text-[#0a0f1a] font-bold text-sm rounded-lg hover:brightness-110 transition-all"
+                className="flex items-center gap-2 px-6 py-3 bg-fb-primary text-fb-primary-content font-bold text-sm rounded-lg hover:brightness-110 transition-all"
               >
                 <RefreshCw className="size-4" />
                 Tentar novamente
               </button>
               <Link
                 href="/"
-                className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 text-white font-medium text-sm rounded-lg hover:bg-white/10 transition-colors"
+                className="flex items-center gap-2 px-6 py-3 bg-fb-surface border border-fb-border text-fb-text font-medium text-sm rounded-lg hover:bg-fb-surface-lighter transition-colors"
               >
                 <Home className="size-4" />
                 Voltar ao início

@@ -1,14 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import {
   Star,
   Bell,
-  Shield,
   TrendingUp,
   TrendingDown,
   Minus,
 } from "lucide-react";
+import { SafeImage } from "@/components/ui/SafeImage";
 import type { PlayerDetail } from "@/data/types";
 
 interface PlayerHeroCardProps {
@@ -52,32 +51,27 @@ export function PlayerHeroCard({ player }: PlayerHeroCardProps) {
         <div className="flex gap-5 items-center">
           <div className="relative shrink-0">
             <div className="size-28 md:size-32 rounded-full overflow-hidden border-4 border-fb-surface-darker bg-fb-surface">
-              {player.avatarUrl ? (
-                <Image
-                  src={player.avatarUrl}
-                  alt={player.name}
-                  width={128}
-                  height={128}
-                  className="size-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-fb-text-muted">
-                  {player.name.charAt(0)}
-                </div>
-              )}
+              <SafeImage
+                src={player.avatarUrl}
+                alt={player.name}
+                width={128}
+                height={128}
+                className="size-full object-cover"
+                fallbackType="player"
+                fallbackText={player.name}
+                fallbackClassName="w-full h-full flex items-center justify-center text-4xl font-bold text-fb-text-muted"
+              />
             </div>
             <div className="absolute -bottom-1 -right-1 bg-fb-card rounded-full p-1.5 border border-fb-border shadow-sm overflow-hidden">
-              {player.teamBadgeUrl ? (
-                <Image
-                  src={player.teamBadgeUrl}
-                  alt={player.team}
-                  width={20}
-                  height={20}
-                  className="size-5 object-contain"
-                />
-              ) : (
-                <Shield className="size-5 text-fb-primary" />
-              )}
+              <SafeImage
+                src={player.teamBadgeUrl}
+                alt={player.team}
+                width={20}
+                height={20}
+                className="size-5 object-contain"
+                fallbackType="team"
+                fallbackClassName="size-5 text-fb-primary"
+              />
             </div>
           </div>
 
@@ -99,12 +93,13 @@ export function PlayerHeroCard({ player }: PlayerHeroCardProps) {
                   <span className="w-1 h-1 bg-fb-text-muted rounded-full" />
                   <div className="flex items-center gap-1.5">
                     {player.teamBadgeUrl && (
-                      <Image
+                      <SafeImage
                         src={player.teamBadgeUrl}
                         alt={player.team}
                         width={16}
                         height={16}
                         className="size-4 object-contain"
+                        fallbackType="team"
                       />
                     )}
                     <span>{player.team}</span>
@@ -115,17 +110,17 @@ export function PlayerHeroCard({ player }: PlayerHeroCardProps) {
 
             <div className="flex items-center gap-3">
               <button
-                onClick={() =>
-                  alert("Funcionalidade de seguir jogador em breve!")
-                }
-                className="bg-fb-primary text-fb-primary-content font-bold py-2 px-5 rounded-lg text-sm transition-colors flex items-center gap-2 hover:brightness-110"
+                disabled
+                title="Funcionalidade de seguir jogador em breve!"
+                className="bg-fb-primary/60 text-fb-primary-content font-bold py-2 px-5 rounded-lg text-sm flex items-center gap-2 cursor-not-allowed opacity-70"
               >
                 <Star className="size-4" />
                 Seguir Jogador
               </button>
               <button
-                onClick={() => alert("Alertas de jogador em breve!")}
-                className="bg-fb-surface-darker hover:brightness-110 text-fb-text font-medium py-2 px-4 rounded-lg text-sm transition-colors border border-fb-border flex items-center gap-2"
+                disabled
+                title="Alertas de jogador em breve!"
+                className="bg-fb-surface-darker text-fb-text font-medium py-2 px-4 rounded-lg text-sm border border-fb-border flex items-center gap-2 cursor-not-allowed opacity-70"
               >
                 <Bell className="size-4" />
                 Alertas
