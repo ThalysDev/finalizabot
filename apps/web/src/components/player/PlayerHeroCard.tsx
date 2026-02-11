@@ -15,23 +15,13 @@ interface PlayerHeroCardProps {
 }
 
 export function PlayerHeroCard({ player }: PlayerHeroCardProps) {
-  // Safe access on trends
-  const trend0 = player.trends[0] ?? {
-    value: "—",
-    direction: "neutral" as const,
-  };
-  const trend1 = player.trends[1] ?? {
-    value: "—",
-    direction: "neutral" as const,
-  };
-  const trend2 = player.trends[2] ?? {
-    value: "—",
-    direction: "neutral" as const,
-  };
-  const trend3 = player.trends[3] ?? {
-    value: "—",
-    direction: "neutral" as const,
-  };
+  // Safe access on trends (guard when trends array is undefined/null)
+  const trends = player.trends ?? [];
+  const fallbackTrend = { value: "—", direction: "neutral" as const };
+  const trend0 = trends[0] ?? fallbackTrend;
+  const trend1 = trends[1] ?? fallbackTrend;
+  const trend2 = trends[2] ?? fallbackTrend;
+  const trend3 = trends[3] ?? fallbackTrend;
 
   const stats = [
     {
@@ -109,22 +99,16 @@ export function PlayerHeroCard({ player }: PlayerHeroCardProps) {
             </div>
 
             <div className="flex items-center gap-3">
-              <button
-                disabled
-                title="Funcionalidade de seguir jogador em breve!"
-                className="bg-fb-primary/60 text-fb-primary-content font-bold py-2 px-5 rounded-lg text-sm flex items-center gap-2 cursor-not-allowed opacity-70"
-              >
-                <Star className="size-4" />
+              <span className="inline-flex items-center gap-1.5 bg-fb-surface-darker text-fb-text-muted text-xs font-medium py-1.5 px-3 rounded-lg border border-fb-border">
+                <Star className="size-3.5" />
                 Seguir Jogador
-              </button>
-              <button
-                disabled
-                title="Alertas de jogador em breve!"
-                className="bg-fb-surface-darker text-fb-text font-medium py-2 px-4 rounded-lg text-sm border border-fb-border flex items-center gap-2 cursor-not-allowed opacity-70"
-              >
-                <Bell className="size-4" />
+                <span className="bg-fb-primary/15 text-fb-primary text-[10px] font-bold px-1.5 py-0.5 rounded">Em breve</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 bg-fb-surface-darker text-fb-text-muted text-xs font-medium py-1.5 px-3 rounded-lg border border-fb-border">
+                <Bell className="size-3.5" />
                 Alertas
-              </button>
+                <span className="bg-fb-primary/15 text-fb-primary text-[10px] font-bold px-1.5 py-0.5 rounded">Em breve</span>
+              </span>
             </div>
           </div>
         </div>

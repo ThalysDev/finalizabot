@@ -8,6 +8,8 @@ type FallbackType = "team" | "player";
 
 interface SafeImageProps {
   src: string | undefined | null;
+  /** Optional additional URLs to try before rendering the final fallback */
+  fallbackSrcs?: (string | undefined | null)[];
   alt: string;
   width: number;
   height: number;
@@ -22,9 +24,8 @@ interface SafeImageProps {
 /**
  * Resilient image wrapper around `next/image`.
  *
- * - If `src` is falsy, renders the appropriate fallback immediately.
- * - If the image fails to load (404, 502, network error), swaps to fallback
- *   via `onError` handler — no broken image icons.
+ * - If `src` is falsy, tries each `fallbackSrcs` URL in order.
+ * - If all URLs fail to load, renders the appropriate fallback.
  *
  * Fallback types:
  * - `"team"` → Shield icon (for team badges)
@@ -32,6 +33,7 @@ interface SafeImageProps {
  */
 export function SafeImage({
   src,
+  fallbackSrcs,
   alt,
   width,
   height,
@@ -40,14 +42,21 @@ export function SafeImage({
   fallbackText,
   fallbackClassName,
 }: SafeImageProps) {
-  const [failed, setFailed] = useState(false);
+  // Build source chain: primary → fallback URLs
+  const sources = [src, ...(fallbackSrcs ?? [])].filter(
+    (s): s is string => !!s,
+  );
+
+  const [srcIndex, setSrcIndex] = useState(0);
 
   const handleError = useCallback(() => {
-    setFailed(true);
+    setSrcIndex((prev) => prev + 1);
   }, []);
 
-  // Render fallback when src is missing or image failed to load
-  if (!src || failed) {
+  const currentSrc = sources[srcIndex];
+
+  // Render fallback when all sources exhausted
+  if (!currentSrc) {
     if (fallbackType === "player") {
       const initial = (fallbackText ?? alt ?? "?").charAt(0).toUpperCase();
       return (
@@ -73,12 +82,13 @@ export function SafeImage({
 
   return (
     <Image
-      src={src}
+      src={currentSrc}
       alt={alt}
       width={width}
       height={height}
       className={className}
       onError={handleError}
+      unoptimized={currentSrc.startsWith("/api/")}
     />
   );
 }

@@ -28,6 +28,7 @@ import type {
 import type { PlayerStatsFromEtl } from "@/lib/etl/transformers";
 import prisma from "@/lib/db/prisma";
 import { proxySofascoreUrl, cachedImageUrl } from "@/lib/helpers";
+import { formatDate, formatTime } from "@/lib/format/date";
 
 /* ============================================================================
    fetchPlayerDetail
@@ -380,14 +381,8 @@ export async function fetchPlayerPageData(
     nextMatchData = {
       opponent,
       opponentShort: opponent.slice(0, 3).toUpperCase(),
-      date: nextMatch.matchDate.toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "short",
-      }),
-      time: nextMatch.matchDate.toLocaleTimeString("pt-BR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      date: formatDate(nextMatch.matchDate, "short"),
+      time: formatTime(nextMatch.matchDate),
       competition: nextMatch.competition,
     };
   }
@@ -588,20 +583,30 @@ function buildPlayerDetail(
   };
 }
 
-function buildExternalLinks(sofascoreId: string): ExternalLinkItem[] {
+function buildExternalLinks(
+  sofascoreId: string,
+  sofascoreUrl?: string,
+): ExternalLinkItem[] {
+  // Use stored sofascoreUrl (has slug) or fall back to generic URL
+  const href = sofascoreUrl
+    ? sofascoreUrl.startsWith("http")
+      ? sofascoreUrl
+      : `https://www.sofascore.com${sofascoreUrl}`
+    : `https://www.sofascore.com/football/player/-/${sofascoreId}`;
+
   return [
     {
       label: "SofaScore",
       iconName: "ExternalLink",
       color: "text-blue-400",
       bg: "bg-blue-500/10",
-      href: `https://www.sofascore.com/player/${sofascoreId}`,
+      href,
     },
   ];
 }
 
 function formatShortDate(date: Date): string {
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  return formatDate(date, "short");
 }
 
 function resolveOpponentFromMatch(

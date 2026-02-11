@@ -56,6 +56,7 @@ const LINK_ICONS: Record<string, typeof BarChart3> = {
   BarChart3,
   Database,
   DollarSign,
+  ExternalLink,
 };
 
 /* ============================================================================
@@ -126,7 +127,11 @@ function WindowStatsSection({
   lineIndicator?: LineHitIndicator;
 }) {
   const midLabel = lineLabel ?? "Over 1.5";
-  const midIndicator = lineIndicator ?? stats.over15;
+  const midIndicator = lineIndicator ?? stats?.over15 ?? {
+    hits: 0,
+    total: 0,
+    percent: 0,
+  };
 
   return (
     <div className="bg-fb-card rounded-xl p-5 border border-fb-border">
@@ -178,21 +183,21 @@ function WindowStatsSection({
       <div className="grid grid-cols-3 gap-2">
         <LineHitBadge
           label="Over 0.5"
-          hits={stats.over05.hits}
-          total={stats.over05.total}
-          percent={stats.over05.percent}
+          hits={stats?.over05?.hits ?? 0}
+          total={stats?.over05?.total ?? 0}
+          percent={stats?.over05?.percent ?? 0}
         />
         <LineHitBadge
           label={midLabel}
-          hits={midIndicator.hits}
-          total={midIndicator.total}
-          percent={midIndicator.percent}
+          hits={midIndicator?.hits ?? 0}
+          total={midIndicator?.total ?? 0}
+          percent={midIndicator?.percent ?? 0}
         />
         <LineHitBadge
           label="Over 2.5"
-          hits={stats.over25.hits}
-          total={stats.over25.total}
-          percent={stats.over25.percent}
+          hits={stats?.over25?.hits ?? 0}
+          total={stats?.over25?.total ?? 0}
+          percent={stats?.over25?.percent ?? 0}
         />
       </div>
     </div>
@@ -458,6 +463,8 @@ export function PlayerDetailView({
                   <a
                     key={link.label}
                     href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex items-center justify-between p-3 rounded-lg bg-fb-surface-darker hover:brightness-110 transition-colors group"
                   >
                     <div className="flex items-center gap-3">

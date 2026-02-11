@@ -12,6 +12,7 @@ import { DEFAULT_LINE } from "@/lib/etl/config";
 import { statusFromCV } from "@/lib/helpers";
 import prisma from "@/lib/db/prisma";
 import { calcCV, calcHits, mean } from "@finalizabot/shared/calc";
+import { formatDateTime } from "@/lib/format/date";
 
 export const metadata: Metadata = {
   title: "Tabela Avançada - FinalizaBOT",
@@ -106,12 +107,17 @@ async function fetchTableData(): Promise<{
         const pStats = statsByPlayer.get(p.id);
         if (!pStats || pStats.shots.length < 2) return null;
 
-        const cv = calcCV(pStats.shots);
-        const l5Shots = pStats.shots.slice(0, 5);
+        // Sanitise: remove NaN/undefined values before calculations
+        const cleanShots = pStats.shots.filter((s) => Number.isFinite(s));
+        const cleanMinutes = pStats.minutes.filter((m) => Number.isFinite(m));
+        if (cleanShots.length < 2) return null;
+
+        const cv = calcCV(cleanShots);
+        const l5Shots = cleanShots.slice(0, 5);
         const l5Hits = l5Shots.filter((s) => s >= line).length;
-        const l10Hits = calcHits(pStats.shots, line, Math.min(pStats.shots.length, 10));
-        const avgShots = mean(pStats.shots);
-        const avgMins = pStats.minutes.length > 0 ? Math.round(mean(pStats.minutes)) : 0;
+        const l10Hits = calcHits(cleanShots, line, Math.min(cleanShots.length, 10));
+        const avgShots = mean(cleanShots);
+        const avgMins = cleanMinutes.length > 0 ? Math.round(mean(cleanMinutes)) : 0;
 
         return {
           player: p.name,
@@ -134,13 +140,7 @@ async function fetchTableData(): Promise<{
         homeTeam: upcomingMatch.homeTeam,
         awayTeam: upcomingMatch.awayTeam,
         competition: upcomingMatch.competition,
-        matchDate: upcomingMatch.matchDate.toLocaleDateString("pt-BR", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
+        matchDate: formatDateTime(upcomingMatch.matchDate),
       }
     : null;
 

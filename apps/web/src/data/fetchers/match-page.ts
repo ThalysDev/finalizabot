@@ -17,6 +17,7 @@ import {
   cachedImageUrl,
 } from "@/lib/helpers";
 import prisma from "@/lib/db/prisma";
+import { formatDate, formatTime } from "@/lib/format/date";
 
 /* ============================================================================
    Types
@@ -71,15 +72,8 @@ export async function fetchMatchPageData(
     homeTeam: dbMatch.homeTeam,
     awayTeam: dbMatch.awayTeam,
     competition: dbMatch.competition,
-    matchDate: dbMatch.matchDate.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }),
-    matchTime: dbMatch.matchDate.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
+    matchDate: formatDate(dbMatch.matchDate, "long"),
+    matchTime: formatTime(dbMatch.matchDate),
     status: dbMatch.status,
     homeScore: dbMatch.homeScore ?? null,
     awayScore: dbMatch.awayScore ?? null,

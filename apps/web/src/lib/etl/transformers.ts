@@ -18,10 +18,11 @@ function teamAbbr(name: string): string {
   return name.slice(0, 3).toUpperCase();
 }
 
-/** Formata ISO date → "DD Mmm" em pt-BR */
+import { formatDate } from "@/lib/format/date";
+
+/** Formata ISO date → "DD Mmm" em pt-BR (fuso America/Sao_Paulo) */
 function shortDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  return formatDate(iso, "short");
 }
 
 /**

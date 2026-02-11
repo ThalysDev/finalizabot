@@ -9,6 +9,7 @@
 
 import type { MatchCardData } from "@/data/types";
 import { buildTeamBadgeUrl, proxySofascoreUrl, cachedImageUrl } from "@/lib/helpers";
+import { formatDate, formatTime } from "@/lib/format/date";
 import prisma from "@/lib/db/prisma";
 
 /* ============================================================================
@@ -114,17 +115,10 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
     homeTeam: m.homeTeam,
     awayTeam: m.awayTeam,
     competition: m.competition,
-    matchDate: m.matchDate.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }),
+    matchDate: formatDate(m.matchDate, "long"),
     matchDateIso: m.matchDate.toISOString(),
     dayKey: resolveDayKey(m.matchDate, dayStart, tomorrowStart),
-    matchTime: m.matchDate.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
+    matchTime: formatTime(m.matchDate),
     status: m.status,
     homeScore: m.homeScore ?? null,
     awayScore: m.awayScore ?? null,

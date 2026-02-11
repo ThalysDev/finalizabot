@@ -1,5 +1,5 @@
 import type { MatchHistoryRow } from "@/data/types";
-import { ArrowUpRight, Target } from "lucide-react";
+import { Target } from "lucide-react";
 
 interface MatchHistoryTableProps {
   matchHistory: MatchHistoryRow[];
@@ -39,15 +39,9 @@ export function MatchHistoryTable({
             </p>
           )}
         </div>
-        <button
-          type="button"
-          className="text-sm text-fb-text-muted font-medium flex items-center gap-1 cursor-not-allowed shrink-0"
-          aria-disabled="true"
-          title="Registro completo em breve"
-        >
-          Ver Registro Completo
-          <ArrowUpRight className="size-3.5" aria-hidden="true" />
-        </button>
+        <span className="text-xs text-fb-text-muted font-medium flex items-center gap-1 shrink-0">
+          {matchHistory.length} jogos analisados
+        </span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm text-fb-text-secondary">

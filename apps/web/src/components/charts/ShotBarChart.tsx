@@ -1,9 +1,21 @@
 /* ============================================================================
    SHOT BAR CHART — Finalizações por jogo (últimos N jogos)
-   Matches Stitch mockup: full-height bg bar, hover tooltips, smooth grow
+   Built with Recharts for tooltips, responsiveness & accessibility.
    ============================================================================ */
 
-import { useId } from "react";
+"use client";
+
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ReferenceLine,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
+import { Target } from "lucide-react";
 
 export interface ShotBarChartProps {
   data: { label: string; shots: number; sot?: number; line: number }[];
@@ -11,79 +23,112 @@ export interface ShotBarChartProps {
   dataKey?: "shots" | "sot";
 }
 
+/* ---------- Custom tooltip ---------- */
+function ChartTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  if (!d) return null;
+  return (
+    <div className="bg-fb-bg border border-fb-border rounded-lg px-3 py-2 shadow-lg text-xs">
+      <p className="text-fb-text font-bold mb-1">vs {label}</p>
+      <p className="text-fb-text-secondary">
+        Chutes: <span className="text-fb-text font-semibold">{d.shots}</span>
+      </p>
+      {d.sot != null && (
+        <p className="text-fb-text-secondary">
+          No Alvo:{" "}
+          <span className="text-fb-text font-semibold">{d.sot}</span>
+        </p>
+      )}
+      <p className="text-fb-text-muted mt-0.5">Linha: {d.line}+</p>
+    </div>
+  );
+}
+
 export function ShotBarChart({
   data,
   maxHeight = 256,
   dataKey = "shots",
 }: ShotBarChartProps) {
-  const values = data.map((d) => (dataKey === "sot" ? (d.sot ?? 0) : d.shots));
-  const maxVal = Math.max(...values, 1);
-  // Use the first entry's line as the threshold (they should all be the same)
-  const lineThreshold = data.length > 0 ? data[0].line : 0;
-  const linePct = lineThreshold > 0 ? (lineThreshold / maxVal) * 100 : 0;
+  // Empty state
+  if (!data || data.length === 0) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center text-center py-12 px-4"
+        style={{ minHeight: maxHeight }}
+      >
+        <div className="size-12 rounded-full bg-fb-surface flex items-center justify-center mb-3">
+          <Target className="size-6 text-fb-text-muted" />
+        </div>
+        <p className="text-fb-text-secondary text-sm font-medium">
+          Sem dados de finalizações
+        </p>
+        <p className="text-fb-text-muted text-xs mt-1">
+          Os dados aparecerão após as primeiras partidas analisadas.
+        </p>
+      </div>
+    );
+  }
+
+  const lineThreshold = data[0]?.line ?? 0;
 
   return (
-    <div
-      className="w-full"
-      role="img"
-      aria-label={`Gráfico de barras: ${dataKey === "sot" ? "chutes no alvo" : "finalizações"} por jogo, ${data.length} jogos`}
-    >
-      <div
-        className="flex items-end justify-between gap-2 sm:gap-4 w-full relative"
-        style={{ height: maxHeight }}
-      >
-        {/* Threshold line indicator */}
-        {linePct > 0 && linePct <= 100 && (
-          <div
-            className="absolute left-0 right-0 z-10 pointer-events-none flex items-center"
-            style={{ bottom: `${linePct}%` }}
-          >
-            <div className="w-full border-t-2 border-dashed border-yellow-400/60" />
-            <span className="absolute -right-1 -translate-y-1/2 bg-yellow-400/90 text-[9px] font-bold text-black px-1.5 py-0.5 rounded-sm whitespace-nowrap">
-              {lineThreshold}+
-            </span>
-          </div>
-        )}
-
-        {data.map((d, i) => {
-          const val = dataKey === "sot" ? (d.sot ?? 0) : d.shots;
-          const pct = (val / maxVal) * 100;
-          const labelSuffix = dataKey === "sot" ? "No Alvo" : "Chute";
-          const isOver = val >= d.line;
-
-          return (
-            <div
-              key={i}
-              className="flex flex-col items-center gap-2 flex-1 group"
-            >
-              {/* Full-height container with bg tint + bar inside */}
-              <div className="w-full bg-fb-primary/20 rounded-t-sm relative h-full flex items-end group-hover:bg-fb-primary/30 transition-colors">
-                <div
-                  className={`w-full rounded-t-sm relative animate-bar-grow ${isOver ? "bg-fb-primary" : "bg-fb-primary/60"}`}
-                  style={{
-                    height: `${pct}%`,
-                    animationDelay: `${i * 60}ms`,
-                  }}
-                >
-                  {/* Value label on top of bar */}
-                  <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-fb-text">
-                    {val}
-                  </span>
-                  {/* Hover tooltip */}
-                  <div className="opacity-0 group-hover:opacity-100 absolute -top-10 left-1/2 -translate-x-1/2 bg-fb-bg text-fb-text text-xs py-1 px-2 rounded whitespace-nowrap z-10 transition-opacity pointer-events-none border border-fb-border shadow-lg">
-                    {val} {labelSuffix}
-                    {val !== 1 ? "s" : ""} vs {d.label}
-                  </div>
-                </div>
-              </div>
-              {/* Label */}
-              <span className="text-[10px] sm:text-xs text-fb-text-muted font-medium truncate max-w-full">
-                {d.label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+    <div className="w-full" style={{ height: maxHeight }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={data}
+          margin={{ top: 20, right: 8, left: -20, bottom: 4 }}
+        >
+          <XAxis
+            dataKey="label"
+            tick={{ fill: "var(--fb-text-muted)", fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            tick={{ fill: "var(--fb-text-muted)", fontSize: 10 }}
+            axisLine={false}
+            tickLine={false}
+            allowDecimals={false}
+          />
+          <Tooltip
+            content={<ChartTooltip />}
+            cursor={{ fill: "rgba(255,255,255,0.03)" }}
+          />
+          {lineThreshold > 0 && (
+            <ReferenceLine
+              y={lineThreshold}
+              stroke="#facc15"
+              strokeDasharray="6 3"
+              strokeOpacity={0.7}
+              label={{
+                value: `${lineThreshold}+`,
+                position: "right",
+                fill: "#facc15",
+                fontSize: 10,
+                fontWeight: 700,
+              }}
+            />
+          )}
+          <Bar dataKey={dataKey} radius={[4, 4, 0, 0]} maxBarSize={40}>
+            {data.map((entry, i) => {
+              const val =
+                dataKey === "sot" ? (entry.sot ?? 0) : entry.shots;
+              const isOver = val >= entry.line;
+              return (
+                <Cell
+                  key={i}
+                  fill={
+                    isOver
+                      ? "var(--fb-primary)"
+                      : "var(--fb-primary-muted, rgba(19,236,91,0.35))"
+                  }
+                />
+              );
+            })}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
@@ -109,7 +154,18 @@ export function LineEvolutionChart({
   height = 192,
   color = "#13ec5b",
 }: LineEvolutionChartProps) {
-  if (data.length < 2) return null;
+  if (data.length < 2) {
+    return (
+      <div
+        className="flex items-center justify-center text-center"
+        style={{ height }}
+      >
+        <p className="text-fb-text-muted text-xs">
+          Dados insuficientes para gerar o gráfico de evolução.
+        </p>
+      </div>
+    );
+  }
 
   const chartWidth = 360;
   const chartHeight = height;
@@ -117,11 +173,13 @@ export function LineEvolutionChart({
   const maxVal = Math.max(...data.map((d) => d.value));
   const minVal = Math.min(...data.map((d) => d.value));
   const range = maxVal - minVal || 1;
-  const padding = 0.1 * chartHeight; // small vertical padding
+  const padding = 0.1 * chartHeight;
 
   const points = data.map((d, i) => ({
     x: (i / (data.length - 1)) * chartWidth,
-    y: padding + (1 - (d.value - minVal) / range) * (chartHeight - padding * 2),
+    y:
+      padding +
+      (1 - (d.value - minVal) / range) * (chartHeight - padding * 2),
   }));
 
   const lineD = points
@@ -130,11 +188,11 @@ export function LineEvolutionChart({
 
   const areaD = `${lineD} L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z`;
 
-  const gradientId = useId();
+  const gradientId = `line-grad-${Math.random().toString(36).slice(2, 8)}`;
 
   return (
     <div className="relative w-full" style={{ height }}>
-      {/* 4x4 Grid background (matches Stitch) */}
+      {/* 4x4 Grid background */}
       <div className="absolute inset-0 grid grid-cols-4 grid-rows-4">
         {Array.from({ length: 16 }).map((_, i) => {
           const row = Math.floor(i / 4);
@@ -164,10 +222,7 @@ export function LineEvolutionChart({
           </linearGradient>
         </defs>
 
-        {/* Gradient area under the line */}
         <path d={areaD} fill={`url(#${gradientId})`} stroke="none" />
-
-        {/* Main line */}
         <path
           d={lineD}
           fill="none"
@@ -177,7 +232,6 @@ export function LineEvolutionChart({
           strokeLinejoin="round"
         />
 
-        {/* Data point dots with dark fill + colored stroke (Stitch style) */}
         {points.map((p, i) => (
           <circle
             key={i}

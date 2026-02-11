@@ -78,7 +78,12 @@ export function buildTeamBadgeUrl(
   teamId?: string | null,
 ): string | undefined {
   if (!teamId || !/^\d+$/.test(teamId)) return undefined;
-  return cachedImageUrl(teamId);
+  // Primary: try cached image by SofaScore numeric ID
+  // Fallback: proxy through SofaScore CDN directly
+  return (
+    cachedImageUrl(teamId) ??
+    `/api/image-proxy?url=${encodeURIComponent(`https://api.sofascore.com/api/v1/team/${teamId}/image`)}`
+  );
 }
 
 /* ============================================================================
