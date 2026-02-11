@@ -101,6 +101,11 @@ export interface MatchCardData {
   playerCount: number;
   homeBadgeUrl?: string;
   awayBadgeUrl?: string;
+  // Raw data para fallback multi-nível
+  homeTeamImageUrl?: string | null;
+  homeTeamSofascoreId?: string | null;
+  awayTeamImageUrl?: string | null;
+  awayTeamSofascoreId?: string | null;
 }
 
 export interface MatchHistoryRow {

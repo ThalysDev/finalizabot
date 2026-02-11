@@ -126,14 +126,14 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
     minute: m.minute ?? null,
     isLive: m.status === "live",
     playerCount: Math.max(m._count.marketAnalyses, m._count.playerStats),
-    homeBadgeUrl:
-      cachedImageUrl(m.homeTeamImageId) ??
-      proxySofascoreUrl(m.homeTeamImageUrl) ??
-      buildTeamBadgeUrl(m.homeTeamSofascoreId),
-    awayBadgeUrl:
-      cachedImageUrl(m.awayTeamImageId) ??
-      proxySofascoreUrl(m.awayTeamImageUrl) ??
-      buildTeamBadgeUrl(m.awayTeamSofascoreId),
+    // Tier 1: Cached image (primary)
+    homeBadgeUrl: cachedImageUrl(m.homeTeamImageId),
+    awayBadgeUrl: cachedImageUrl(m.awayTeamImageId),
+    // Raw data para fallback multi-nível no componente
+    homeTeamImageUrl: m.homeTeamImageUrl,
+    homeTeamSofascoreId: m.homeTeamSofascoreId,
+    awayTeamImageUrl: m.awayTeamImageUrl,
+    awayTeamSofascoreId: m.awayTeamSofascoreId,
   }));
 
   const todayCount = matches.filter((m) => m.dayKey === "today").length;

@@ -33,6 +33,13 @@ const DOWNLOAD_HEADERS: Record<string, string> = {
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
 };
 
+// Configurações de concorrência
+const IMAGE_DOWNLOAD_CONCURRENCY = Math.max(
+  1,
+  parseInt(process.env.IMAGE_DOWNLOAD_CONCURRENCY ?? "5", 10),
+);
+logger.info(`[ImageDL] Concorrência configurada: ${IMAGE_DOWNLOAD_CONCURRENCY}`);
+
 /* ------------------------------------------------------------------ */
 /*  Binary download via curl                                           */
 /* ------------------------------------------------------------------ */
@@ -324,10 +331,16 @@ export async function syncAllImages(): Promise<void> {
   // 3. Download all images
   const allUrls = [...matchImageUrls, ...playerImageUrls];
   logger.info(
-    `[ImageDL] Total URLs to download: ${allUrls.length} (${matchImageUrls.length} match + ${playerImageUrls.length} player)`,
+    `[ImageDL] Starting image download`,
+    {
+      totalUrls: allUrls.length,
+      matchUrls: matchImageUrls.length,
+      playerUrls: playerImageUrls.length,
+      concurrency: IMAGE_DOWNLOAD_CONCURRENCY,
+    }
   );
 
-  const imageMap = await downloadImages(allUrls, 5);
+  const imageMap = await downloadImages(allUrls, IMAGE_DOWNLOAD_CONCURRENCY);
 
   // 4. Update Match records with image IDs
   let matchUpdates = 0;
@@ -385,6 +398,28 @@ export async function syncAllImages(): Promise<void> {
       });
       playerUpdates++;
     }
+  }
+
+  // Calcular taxa de sucesso
+  const successCount = imageMap.size;
+  const totalCount = allUrls.length;
+  const failureCount = totalCount - successCount;
+  const successRate = totalCount > 0 ? (successCount / totalCount) * 100 : 0;
+
+  logger.info(
+    `[ImageDL] Image download complete`,
+    {
+      total: totalCount,
+      success: successCount,
+      failed: failureCount,
+      successRate: `${successRate.toFixed(1)}%`,
+    }
+  );
+
+  if (successRate < 80) {
+    logger.warn(
+      `[ImageDL] ⚠️  Taxa de sucesso de imagens baixa (${successRate.toFixed(1)}%) - verificar proxies e network`
+    );
   }
 
   logger.info(

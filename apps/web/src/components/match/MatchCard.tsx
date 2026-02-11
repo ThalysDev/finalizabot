@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Clock, Users, ChevronRight } from "lucide-react";
 import { SafeImage } from "@/components/ui/SafeImage";
+import { proxySofascoreUrl, buildTeamBadgeUrl } from "@/lib/helpers";
 import type { MatchCardData } from "@/data/types";
 
 /* ============================================================================
@@ -22,8 +23,22 @@ export function MatchCard({
   playerCount,
   homeBadgeUrl,
   awayBadgeUrl,
+  homeTeamImageUrl,
+  homeTeamSofascoreId,
+  awayTeamImageUrl,
+  awayTeamSofascoreId,
 }: MatchCardData) {
   const hasScore = homeScore != null && awayScore != null;
+
+  // Construir fallback multi-nível (Tier 2 e Tier 3)
+  const homeFallbacks = [
+    proxySofascoreUrl(homeTeamImageUrl),
+    buildTeamBadgeUrl(homeTeamSofascoreId),
+  ];
+  const awayFallbacks = [
+    proxySofascoreUrl(awayTeamImageUrl),
+    buildTeamBadgeUrl(awayTeamSofascoreId),
+  ];
   return (
     <Link
       href={`/match/${id}`}
@@ -44,6 +59,7 @@ export function MatchCard({
             <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center shrink-0 border border-fb-border/40 overflow-hidden">
               <SafeImage
                 src={homeBadgeUrl}
+                fallbackSrcs={homeFallbacks}
                 alt={homeTeam}
                 width={28}
                 height={28}
@@ -85,6 +101,7 @@ export function MatchCard({
             <div className="size-10 rounded-full bg-fb-surface-lighter flex items-center justify-center shrink-0 border border-fb-border/40 overflow-hidden">
               <SafeImage
                 src={awayBadgeUrl}
+                fallbackSrcs={awayFallbacks}
                 alt={awayTeam}
                 width={28}
                 height={28}

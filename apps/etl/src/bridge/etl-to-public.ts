@@ -70,7 +70,9 @@ export async function runBridge(): Promise<void> {
       process.env.SKIP_IMAGE_SYNC === "1" ||
       process.env.SKIP_IMAGE_SYNC === "true";
     if (skipImages) {
-      logger.info("[Bridge] SKIP_IMAGE_SYNC enabled — skipping image sync");
+      logger.warn("[Bridge] ⚠️  SKIP_IMAGE_SYNC está ATIVADO — imagens NÃO serão baixadas!");
+      logger.warn("[Bridge] ⚠️  Escudos e fotos de jogadores podem não carregar no front-end!");
+      logger.warn("[Bridge] ⚠️  Recomendado apenas para desenvolvimento/testes rápidos.");
     } else {
       try {
         await syncAllImages();

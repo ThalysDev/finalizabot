@@ -12,7 +12,8 @@
       "Bash(test:*)",
       "Bash(npx prisma migrate dev:*)",
       "Bash($env:DATABASE_URL=\"postgresql://neondb_owner:npg_PYt4yzKJ0ZBA@ep-calm-truth-acw8ebln-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require\")",
-      "Bash($env:DATABASE_URL_UNPOOLED=\"postgresql://neondb_owner:npg_PYt4yzKJ0ZBA@ep-calm-truth-acw8ebln.sa-east-1.aws.neon.tech/neondb?sslmode=require\")"
+      "Bash($env:DATABASE_URL_UNPOOLED=\"postgresql://neondb_owner:npg_PYt4yzKJ0ZBA@ep-calm-truth-acw8ebln.sa-east-1.aws.neon.tech/neondb?sslmode=require\")",
+      "Bash(npx vercel ls:*)"
     ]
   }
 }
