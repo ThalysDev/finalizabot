@@ -379,6 +379,23 @@ export function PlayerDetailView({
               lineIndicator={last10LineIndicator}
             />
           )}
+
+          {/* Assistências - Em breve */}
+          <div className="bg-fb-card rounded-xl p-6 border border-fb-border">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-fb-text">Assistências</h3>
+              <span className="px-2.5 py-1 text-xs font-semibold bg-yellow-500/20 text-yellow-500 rounded-md">
+                Em breve
+              </span>
+            </div>
+            <div className="flex items-center justify-center py-8">
+              <p className="text-3xl font-bold text-fb-text-muted">—</p>
+            </div>
+            <p className="text-xs text-fb-text-muted text-center">
+              Dados de assistências em desenvolvimento
+            </p>
+          </div>
+
           {!last5Stats && !last10Stats && (
             <div className="bg-fb-card rounded-xl p-6 border border-fb-border text-center">
               <Target className="size-8 text-fb-text-muted mx-auto mb-3" />

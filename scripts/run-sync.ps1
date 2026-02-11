@@ -1,139 +1,75 @@
-# ============================================================
-# FinalizaBOT — Sync Pipeline (run-sync.ps1)
-# Direct execution — no Start-Process, no child processes.
-# Usage: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-sync.ps1
-# ============================================================
+# ============================================================================
+# FinalizaBOT - Script de Sincronização Local
+# ============================================================================
+# Este script executa a pipeline de sync completa (Ingest → Bridge → Images)
+# com opções configuráveis para desenvolvimento e produção.
+#
+# Uso:
+#   .\scripts\run-sync.ps1                    # Sync completo (modo padrão)
+#   .\scripts\run-sync.ps1 -FastMode          # Modo rápido (dev)
+#   .\scripts\run-sync.ps1 -SkipImages        # Pula download de imagens
+#   .\scripts\run-sync.ps1 -FastMode -SkipImages  # Combinado
+#
+# ============================================================================
 
-$ErrorActionPreference = "Continue"
+param(
+    [switch]$SkipImages = $false,
+    [switch]$FastMode = $false,
+    [switch]$Verbose = $false
+)
 
-# ── Paths ────────────────────────────────────────────────────
-$root = Split-Path $PSScriptRoot -Parent
-$logDir = Join-Path $root "logs"
-New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+Write-Host ""
+Write-Host "===========================================" -ForegroundColor Cyan
+Write-Host "FinalizaBOT - Pipeline de Sincronizacao" -ForegroundColor Cyan
+Write-Host "===========================================" -ForegroundColor Cyan
+Write-Host ""
 
-$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$logFile = Join-Path $logDir "sync-$stamp.log"
-
-Set-Location $root
-
-# ── Config ───────────────────────────────────────────────────
-$maxRetries       = 1          # 1 retry = 2 total attempts
-$retryDelaySec    = 30         # seconds between retries
-$safetyTimeoutMin = 90         # kill entire script after 90 min (safety net)
-
-# ── Helpers ──────────────────────────────────────────────────
-function Write-Log {
-  param(
-    [Parameter(Mandatory)] [string] $Message,
-    [string] $Level = "INFO"
-  )
-  $line = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] [$Level] $Message"
-  Write-Host $line
-  $line | Out-File -FilePath $logFile -Append -Encoding utf8
+# Configurar perfil de performance
+if ($FastMode) {
+    $env:SYNC_CONCURRENCY = "5"
+    $env:SYNC_DELAY_SCALE = "0.5"
+    $env:SYNC_PHASE2_DAYS = "7"
+    $env:SKIP_IMAGE_SYNC = "true"
+    Write-Host "[FAST MODE] Ativado" -ForegroundColor Yellow
+    Write-Host "  - Concorrencia: 5" -ForegroundColor DarkGray
+    Write-Host "  - Delays: 50%" -ForegroundColor DarkGray
+    Write-Host "  - Historico: 7 dias" -ForegroundColor DarkGray
+    Write-Host ""
 }
 
-function Send-TelegramAlert {
-  param(
-    [Parameter(Mandatory)] [string] $Message
-  )
-  $token  = $env:TELEGRAM_BOT_TOKEN
-  $chatId = $env:TELEGRAM_CHAT_ID
+# Criar diretório de logs
+$timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+$logFile = "logs/sync-$timestamp.log"
+New-Item -ItemType Directory -Force -Path "logs" | Out-Null
 
-  if ([string]::IsNullOrWhiteSpace($token) -or [string]::IsNullOrWhiteSpace($chatId)) {
-    Write-Log "Telegram skipped (no token/chatId)" "WARN"
-    return
-  }
+Write-Host "Logs: $logFile" -ForegroundColor DarkGray
+Write-Host ""
 
-  $uri  = "https://api.telegram.org/bot$token/sendMessage"
-  $body = @{ chat_id = $chatId; text = $Message; parse_mode = "HTML" }
+try {
+    Write-Host "[FASE 1] ETL Ingest..." -ForegroundColor Green
+    npm run sync 2>&1 | Tee-Object -FilePath $logFile -Append
+    if ($LASTEXITCODE -ne 0) { throw "Ingest falhou" }
 
-  try {
-    Invoke-RestMethod -Method Post -Uri $uri -Body $body -TimeoutSec 15 | Out-Null
-    Write-Log "Telegram alert sent"
-  } catch {
-    Write-Log "Telegram alert failed: $($_.Exception.Message)" "WARN"
-  }
-}
+    Write-Host ""
+    Write-Host "[FASE 2] Bridge sync..." -ForegroundColor Green
+    npm run sync:bridge 2>&1 | Tee-Object -FilePath $logFile -Append
+    if ($LASTEXITCODE -ne 0) { throw "Bridge falhou" }
 
-function Invoke-Step {
-  param(
-    [Parameter(Mandatory)] [string] $Name,
-    [Parameter(Mandatory)] [string] $Command
-  )
-
-  for ($attempt = 1; $attempt -le ($maxRetries + 1); $attempt++) {
-    Write-Log ">>> $Name  (attempt $attempt/$($maxRetries + 1))"
-
-    $sw = [System.Diagnostics.Stopwatch]::StartNew()
-
-    # Direct execution — inherits env vars, stdout streams in real-time
-    & cmd /c "$Command 2>&1" | Tee-Object -FilePath $logFile -Append
-
-    $exitCode = $LASTEXITCODE
-    $sw.Stop()
-    $elapsed = [math]::Round($sw.Elapsed.TotalSeconds, 1)
-
-    if ($exitCode -eq 0) {
-      Write-Log "<<< $Name completed in ${elapsed}s"
-      return $true
+    if (-not $SkipImages -and -not $FastMode) {
+        Write-Host ""
+        Write-Host "[FASE 3] Image sync..." -ForegroundColor Green
+        npm run sync:images 2>&1 | Tee-Object -FilePath $logFile -Append
     }
 
-    Write-Log "<<< $Name failed (exit $exitCode) after ${elapsed}s" "ERROR"
+    Write-Host ""
+    Write-Host "[SUCCESS] Sincronizacao concluida!" -ForegroundColor Green
+    Write-Host "Logs salvos em: $logFile" -ForegroundColor Cyan
+    Write-Host ""
 
-    if ($attempt -le $maxRetries) {
-      Write-Log "Retrying $Name in ${retryDelaySec}s..." "WARN"
-      Start-Sleep -Seconds $retryDelaySec
-    }
-  }
-
-  return $false
-}
-
-# ── Safety timeout (background watchdog) ─────────────────────
-$watchdogJob = Start-Job -ScriptBlock {
-  param($pid, $timeoutMin)
-  Start-Sleep -Seconds ($timeoutMin * 60)
-  try { Stop-Process -Id $pid -Force } catch {}
-} -ArgumentList $PID, $safetyTimeoutMin
-
-# ── Main pipeline ────────────────────────────────────────────
-$pipelineStart = Get-Date
-Write-Log "========== FinalizaBOT Sync Start =========="
-Write-Log "Log: $logFile"
-Write-Log "Safety timeout: ${safetyTimeoutMin} min"
-
-$failed = $false
-
-# Step 1 — ETL ingest
-if (-not (Invoke-Step "ETL ingest" "npm run sync")) {
-  Write-Log "ETL ingest failed after all attempts" "ERROR"
-  Send-TelegramAlert "<b>FinalizaBOT FALHOU</b>`nETL ingest falhou.`nLog: $logFile"
-  $failed = $true
-}
-
-# Step 2 — Bridge sync (only if ingest succeeded)
-if (-not $failed) {
-  if (-not (Invoke-Step "Bridge sync" "npm run sync:bridge")) {
-    Write-Log "Bridge sync failed after all attempts" "ERROR"
-    Send-TelegramAlert "<b>FinalizaBOT FALHOU</b>`nBridge sync falhou.`nLog: $logFile"
-    $failed = $true
-  }
-}
-
-# ── Summary ──────────────────────────────────────────────────
-$totalElapsed = [math]::Round(((Get-Date) - $pipelineStart).TotalMinutes, 1)
-
-if ($failed) {
-  Write-Log "========== Sync FAILED (${totalElapsed} min) =========="
-  # Stop watchdog
-  Stop-Job $watchdogJob -ErrorAction SilentlyContinue
-  Remove-Job $watchdogJob -Force -ErrorAction SilentlyContinue
-  exit 1
-} else {
-  Write-Log "========== Sync OK (${totalElapsed} min) =========="
-  Send-TelegramAlert "<b>FinalizaBOT OK</b>`nSync concluido em ${totalElapsed} min."
-  # Stop watchdog
-  Stop-Job $watchdogJob -ErrorAction SilentlyContinue
-  Remove-Job $watchdogJob -Force -ErrorAction SilentlyContinue
-  exit 0
+} catch {
+    Write-Host ""
+    Write-Host "[ERROR] Falha: $_" -ForegroundColor Red
+    Write-Host "Ver logs em: $logFile" -ForegroundColor Yellow
+    Write-Host ""
+    exit 1
 }

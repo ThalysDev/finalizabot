@@ -58,6 +58,14 @@ export function MatchHistoryTable({
               <th className="px-4 sm:px-6 py-4 text-right hidden md:table-cell">
                 xG
               </th>
+              <th className="px-4 sm:px-6 py-4 text-center hidden lg:table-cell">
+                <div className="flex items-center justify-center gap-1.5">
+                  <span>Rating</span>
+                  <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-yellow-500/20 text-yellow-500 rounded">
+                    Em breve
+                  </span>
+                </div>
+              </th>
               <th className="px-4 sm:px-6 py-4 text-center">
                 Linha {lineLabel}
               </th>
@@ -67,7 +75,7 @@ export function MatchHistoryTable({
             {matchHistory.length === 0 ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   className="px-6 py-10 text-center text-sm text-fb-text-muted"
                 >
                   Sem histórico disponível
@@ -135,6 +143,9 @@ export function MatchHistoryTable({
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right hidden md:table-cell">
                     {row.xg}
+                  </td>
+                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-center hidden lg:table-cell text-fb-text-muted">
+                    —
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-center">
                     <span

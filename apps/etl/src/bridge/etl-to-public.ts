@@ -534,22 +534,19 @@ async function generateMarketAnalysis(): Promise<number> {
 
   if (allPlayerIds.size === 0) return 0;
 
-  // ── Pre-load all recent stats for all players in ONE query ────
-  const allRecentStats = await prisma.playerMatchStats.findMany({
-    where: {
-      playerId: { in: [...allPlayerIds] },
-      match: { status: "finished" },
-    },
-    orderBy: { match: { matchDate: "desc" } },
-    select: { playerId: true, shots: true },
-  });
-
-  // Group by playerId, keep only last 10 per player
+  // ── Query last 10 stats per player with DB-level LIMIT (optimized) ────
   const statsByPlayer = new Map<string, number[]>();
-  for (const s of allRecentStats) {
-    const arr = statsByPlayer.get(s.playerId) ?? [];
-    if (arr.length < 10) arr.push(s.shots);
-    statsByPlayer.set(s.playerId, arr);
+  for (const playerId of allPlayerIds) {
+    const stats = await prisma.playerMatchStats.findMany({
+      where: {
+        playerId,
+        match: { status: "finished" },
+      },
+      orderBy: { match: { matchDate: "desc" } },
+      take: 10,
+      select: { shots: true },
+    });
+    statsByPlayer.set(playerId, stats.map(s => s.shots));
   }
 
   // ── Build analysis data in-memory, then batch upsert ───────────

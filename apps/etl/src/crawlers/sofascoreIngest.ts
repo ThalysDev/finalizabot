@@ -50,7 +50,7 @@ const STATUS_NOT_STARTED = 0;
 /** Concurrency limit for parallel processing. */
 const CONCURRENCY = Math.max(
   1,
-  parseInt(process.env.SYNC_CONCURRENCY ?? "3", 10) || 3,
+  parseInt(process.env.SYNC_CONCURRENCY ?? "5", 10) || 5,
 );
 
 function getShotmapUrl(matchId: string): string {
@@ -222,6 +222,7 @@ async function ingestMatchData(
   allowedMatchIds: Set<string>,
   matchTeams: Map<string, { homeTeamId: string; awayTeamId: string }>,
   matchStatuses: Map<string, number | null>,
+  teamCache: Map<string, { id: string; name: string; imageUrl: string | null }>,
   stats: PipelineStats,
 ): Promise<void> {
   let payload: unknown =
@@ -323,16 +324,21 @@ async function ingestMatchData(
     // Track status for shotmap decision
     matchStatuses.set(matchId, statusCode);
 
-    await upsertTeam({
-      id: homeId,
-      name: homeName,
-      imageUrl: teamImageUrl(homeTeam),
-    });
-    await upsertTeam({
-      id: awayId,
-      name: awayName,
-      imageUrl: teamImageUrl(awayTeam),
-    });
+    // Cache teams for batch upsert after Phase 1-A
+    if (!teamCache.has(homeId)) {
+      teamCache.set(homeId, {
+        id: homeId,
+        name: homeName,
+        imageUrl: teamImageUrl(homeTeam),
+      });
+    }
+    if (!teamCache.has(awayId)) {
+      teamCache.set(awayId, {
+        id: awayId,
+        name: awayName,
+        imageUrl: teamImageUrl(awayTeam),
+      });
+    }
 
     matchTeams.set(matchId, { homeTeamId: homeId, awayTeamId: awayId });
     await upsertMatch({
@@ -353,9 +359,13 @@ async function ingestMatchData(
 
     stats.matchesIngested++;
 
-    await randomDelay();
-    await fetchAndPersistLineups(matchId, homeId, awayId);
-    stats.lineupsIngested++;
+    // Skip lineups for not-started matches — they have no data yet
+    if (statusCode !== STATUS_NOT_STARTED) {
+      await fetchAndPersistLineups(matchId, homeId, awayId);
+      stats.lineupsIngested++;
+    } else {
+      logger.debug("Skipping lineups for not-started match", { matchId });
+    }
   } catch (err) {
     stats.errors++;
     logger.warn("Match handler error", {
@@ -476,6 +486,7 @@ export async function runSofaScoreIngest(): Promise<void> {
     { homeTeamId: string; awayTeamId: string }
   >();
   const matchStatuses = new Map<string, number | null>();
+  const teamCache = new Map<string, { id: string; name: string; imageUrl: string | null }>();
 
   try {
     /* ---- Phase 1-A: match metadata + lineups ---- */
@@ -492,6 +503,7 @@ export async function runSofaScoreIngest(): Promise<void> {
         allowedMatchIds,
         matchTeams,
         matchStatuses,
+        teamCache,
         stats,
       );
     });
@@ -502,6 +514,14 @@ export async function runSofaScoreIngest(): Promise<void> {
       filtered: stats.matchesFiltered,
       errors: stats.errors,
     });
+
+    // Batch upsert unique teams
+    if (teamCache.size > 0) {
+      logger.info("Upserting unique teams", { count: teamCache.size });
+      await Promise.all(
+        Array.from(teamCache.values()).map(team => upsertTeam(team))
+      );
+    }
 
     if (allowedMatchIds.size === 0) {
       logger.warn("No matches passed tournament filter");
@@ -541,7 +561,7 @@ export async function runSofaScoreIngest(): Promise<void> {
 
       const tPhase1B = Date.now();
       await mapConcurrent(shotmapIds, CONCURRENCY, async (matchId) => {
-        await randomDelay();
+        // Delay already handled in Phase 1-A before match fetch
         const teams = matchTeams.get(matchId);
         const count = await ingestShotmap(
           matchId,
@@ -593,6 +613,7 @@ export async function runSofaScoreIngest(): Promise<void> {
           allowedMatchIds,
           matchTeams,
           matchStatuses,
+          teamCache,
           stats,
         );
       });

@@ -163,7 +163,8 @@ export async function fetchPlayerPageData(
         where: {
           playerId: dbPlayer.id,
           match: {
-            matchDate: { lte: cutoffDate },
+            matchDate: { lt: now },     // Exclude current/future matches
+            status: "finished",          // Only finished matches
           },
         },
         orderBy: { match: { matchDate: "desc" } },
@@ -341,9 +342,15 @@ export async function fetchPlayerPageData(
     };
   }
 
-  const items = lastMatchesRes.data.items.filter(
-    (item) => new Date(item.startTime) <= cutoffDate,
-  );
+  // Filter: only past matches (exclude current/future), sort by matchDate
+  const items = lastMatchesRes.data.items
+    .filter((item) => {
+      const matchDate = new Date(item.startTime);
+      // Only include matches that happened before now (exclude current/future)
+      return matchDate < now;
+    })
+    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+
   const recentItems = items.slice(0, 10);
 
   if (recentItems.length === 0) {
