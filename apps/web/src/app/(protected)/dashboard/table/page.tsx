@@ -24,15 +24,23 @@ async function fetchTableData(): Promise<{
   match: { homeTeam: string; awayTeam: string; competition: string; matchDate: string } | null;
   etlDown: boolean;
 }> {
+  try {
   const line = DEFAULT_LINE;
 
-  const [dbPlayers, upcomingMatch] = await Promise.all([
-    prisma.player.findMany({ take: 50, orderBy: { updatedAt: "desc" } }),
-    prisma.match.findFirst({
-      where: { status: "scheduled", matchDate: { gte: new Date() } },
-      orderBy: { matchDate: "asc" },
-    }),
-  ]);
+  let dbPlayers: Awaited<ReturnType<typeof prisma.player.findMany>>;
+  let upcomingMatch: Awaited<ReturnType<typeof prisma.match.findFirst>>;
+  try {
+    [dbPlayers, upcomingMatch] = await Promise.all([
+      prisma.player.findMany({ take: 50, orderBy: { updatedAt: "desc" } }),
+      prisma.match.findFirst({
+        where: { status: "scheduled", matchDate: { gte: new Date() } },
+        orderBy: { matchDate: "asc" },
+      }),
+    ]);
+  } catch {
+    // DB unreachable — return empty
+    return { players: [], match: null, etlDown: true };
+  }
 
   // Try ETL enrichment first
   let enriched = new Map<string, import("@/lib/etl/enricher").EtlEnrichResult>();
@@ -46,13 +54,18 @@ async function fetchTableData(): Promise<{
   }
 
   // Batch fetch odds for all players in one query
-  const analyses = await prisma.marketAnalysis.findMany({
-    where: { playerId: { in: dbPlayers.map((p) => p.id) } },
-    orderBy: { createdAt: "desc" },
-    distinct: ["playerId"],
-    select: { playerId: true, odds: true },
-  });
-  const oddsMap = new Map(analyses.map((a) => [a.playerId, a.odds]));
+  let oddsMap = new Map<string, number>();
+  try {
+    const analyses = await prisma.marketAnalysis.findMany({
+      where: { playerId: { in: dbPlayers.map((p) => p.id) } },
+      orderBy: { createdAt: "desc" },
+      distinct: ["playerId"],
+      select: { playerId: true, odds: true },
+    });
+    oddsMap = new Map(analyses.map((a) => [a.playerId, a.odds]));
+  } catch {
+    // odds unavailable — continue with empty map
+  }
 
   // Check if ETL returned any useful data
   const hasEtlData = Array.from(enriched.values()).some((e) => e.stats !== null);
@@ -85,11 +98,16 @@ async function fetchTableData(): Promise<{
     // Fallback: compute stats from Prisma PlayerMatchStats
     etlDown = true;
 
-    const allStats = await prisma.playerMatchStats.findMany({
-      where: { playerId: { in: dbPlayers.map((p) => p.id) } },
-      orderBy: { match: { matchDate: "desc" } },
-      select: { playerId: true, shots: true, minutesPlayed: true },
-    });
+    let allStats: { playerId: string; shots: number; minutesPlayed: number }[] = [];
+    try {
+      allStats = await prisma.playerMatchStats.findMany({
+        where: { playerId: { in: dbPlayers.map((p) => p.id) } },
+        orderBy: { match: { matchDate: "desc" } },
+        select: { playerId: true, shots: true, minutesPlayed: true },
+      });
+    } catch {
+      // stats unavailable — will produce empty players
+    }
 
     // Group by player, keep last 10
     const statsByPlayer = new Map<string, { shots: number[]; minutes: number[] }>();
@@ -145,6 +163,10 @@ async function fetchTableData(): Promise<{
     : null;
 
   return { players, match, etlDown };
+  } catch (err) {
+    console.error("[fetchTableData] unexpected error:", err);
+    return { players: [], match: null, etlDown: true };
+  }
 }
 
 const columns: Column<AdvancedPlayerRow>[] = [

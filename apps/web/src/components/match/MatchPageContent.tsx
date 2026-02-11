@@ -53,16 +53,15 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
     // Position filter
     if (posFilter !== "all") {
       const posMap: Record<string, string[]> = {
-        forward: ["Atacante", "Forward", "F", "FW", "Ponta", "Centroavante"],
-        midfielder: ["Meia", "Midfielder", "M", "MF", "Meio-campo"],
-        defender: ["Zagueiro", "Defender", "D", "DF", "Lateral"],
+        forward: ["atacante", "forward", "fw", "ponta", "centroavante", "ponta-direita", "ponta-esquerda", "segundo atacante"],
+        midfielder: ["meia", "midfielder", "mf", "meio-campo", "meio-campista", "volante", "meia-atacante", "armador"],
+        defender: ["zagueiro", "defender", "df", "lateral", "lateral-direito", "lateral-esquerdo", "ala", "líbero"],
       };
       const accepted = posMap[posFilter] ?? [];
-      result = result.filter((p) =>
-        accepted.some((a) =>
-          p.position.toLowerCase().includes(a.toLowerCase()),
-        ),
-      );
+      result = result.filter((p) => {
+        const pos = p.position.toLowerCase().trim();
+        return accepted.some((a) => pos === a || pos.includes(a));
+      });
     }
 
     // Sort
@@ -81,6 +80,11 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
   }, [players, posFilter, sortBy, metric]);
 
   const positionCounts = useMemo(() => {
+    const posGroups: Record<string, string[]> = {
+      forward: ["atacante", "forward", "fw", "ponta", "centroavante", "ponta-direita", "ponta-esquerda", "segundo atacante"],
+      midfielder: ["meia", "midfielder", "mf", "meio-campo", "meio-campista", "volante", "meia-atacante", "armador"],
+      defender: ["zagueiro", "defender", "df", "lateral", "lateral-direito", "lateral-esquerdo", "ala", "líbero"],
+    };
     const counts = {
       all: players.length,
       forward: 0,
@@ -88,16 +92,12 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
       defender: 0,
     };
     for (const p of players) {
-      const pos = p.position.toLowerCase();
-      if (
-        ["atacante", "forward", "ponta", "centroavante"].some((a) =>
-          pos.includes(a),
-        )
-      )
+      const pos = p.position.toLowerCase().trim();
+      if (posGroups.forward.some((a) => pos === a || pos.includes(a)))
         counts.forward++;
-      else if (["meia", "midfielder", "meio"].some((a) => pos.includes(a)))
+      else if (posGroups.midfielder.some((a) => pos === a || pos.includes(a)))
         counts.midfielder++;
-      else if (["zagueiro", "defender", "lateral"].some((a) => pos.includes(a)))
+      else if (posGroups.defender.some((a) => pos === a || pos.includes(a)))
         counts.defender++;
     }
     return counts;
@@ -339,9 +339,22 @@ function resolveBadgeFromMatch(
   homeBadgeUrl?: string,
   awayBadgeUrl?: string,
 ): string | undefined {
-  const teamKey = team.toLowerCase();
-  if (teamKey.includes(homeKey)) return homeBadgeUrl;
-  if (teamKey.includes(awayKey)) return awayBadgeUrl;
+  const teamKey = team.toLowerCase().trim();
+
+  // Exact match first
+  if (teamKey === homeKey) return homeBadgeUrl;
+  if (teamKey === awayKey) return awayBadgeUrl;
+
+  // Bidirectional includes — prefer longer match to avoid "Real" matching before "Real Betis"
+  const homeMatch = teamKey.includes(homeKey) || homeKey.includes(teamKey);
+  const awayMatch = teamKey.includes(awayKey) || awayKey.includes(teamKey);
+
+  if (homeMatch && awayMatch) {
+    // Both match — pick the longer key (more specific)
+    return homeKey.length >= awayKey.length ? homeBadgeUrl : awayBadgeUrl;
+  }
+  if (homeMatch) return homeBadgeUrl;
+  if (awayMatch) return awayBadgeUrl;
   return undefined;
 }
 

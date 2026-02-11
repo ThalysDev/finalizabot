@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Inbox } from "lucide-react";
 import prisma from "@/lib/db/prisma";
-import { DEFAULT_LINE } from "@/lib/etl/config";
+import { DEFAULT_LINE, getEtlBaseUrl } from "@/lib/etl/config";
 import { batchEnrichPlayers } from "@/lib/etl/enricher";
 import { ProTable } from "@/components/pro/ProTable";
 import { isPro } from "@/lib/auth/subscription";
 import type { ProPlayerRow } from "@/data/types";
+import type { EtlEnrichResult } from "@/lib/etl/enricher";
 
 export const metadata: Metadata = {
   title: "Tabela PRO - FinalizaBOT",
@@ -14,25 +15,38 @@ export const metadata: Metadata = {
 };
 
 async function fetchProPlayers(): Promise<ProPlayerRow[]> {
-  const dbPlayers = await prisma.player.findMany({
-    take: 50,
-    orderBy: { updatedAt: "desc" },
-    include: {
-      matchStats: {
-        orderBy: { createdAt: "desc" },
-        take: 20,
+  let dbPlayers;
+  try {
+    dbPlayers = await prisma.player.findMany({
+      take: 50,
+      orderBy: { updatedAt: "desc" },
+      include: {
+        matchStats: {
+          orderBy: { createdAt: "desc" },
+          take: 20,
+        },
+        marketAnalyses: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
       },
-      marketAnalyses: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-      },
-    },
-  });
+    });
+  } catch (err) {
+    console.error("[fetchProPlayers] DB error:", err);
+    return [];
+  }
 
-  const enriched = await batchEnrichPlayers(
-    dbPlayers.map((p) => ({ sofascoreId: p.sofascoreId })),
-    DEFAULT_LINE,
-  );
+  let enriched = new Map<string, EtlEnrichResult>();
+  if (getEtlBaseUrl()) {
+    try {
+      enriched = await batchEnrichPlayers(
+        dbPlayers.map((p) => ({ sofascoreId: p.sofascoreId })),
+        DEFAULT_LINE,
+      );
+    } catch {
+      // ETL unreachable — continue without enrichment
+    }
+  }
 
   const rows: ProPlayerRow[] = dbPlayers
     .map((p, i) => {

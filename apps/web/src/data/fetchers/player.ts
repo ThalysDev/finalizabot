@@ -52,9 +52,21 @@ export async function fetchPlayerPageData(
   playerId: string,
   line = DEFAULT_LINE,
 ): Promise<PlayerPageData> {
-  const dbPlayer = await prisma.player.findUnique({
-    where: { id: playerId },
-  });
+  let dbPlayer;
+  try {
+    dbPlayer = await prisma.player.findUnique({
+      where: { id: playerId },
+    });
+  } catch (err) {
+    console.error("[fetchPlayerPageData] DB error:", err);
+    return {
+      player: null,
+      shotHistory: [],
+      matchHistory: [],
+      stats: null,
+      externalLinks: [],
+    };
+  }
 
   if (!dbPlayer) {
     return {
@@ -68,51 +80,63 @@ export async function fetchPlayerPageData(
 
   const now = new Date();
   const playerTeam = dbPlayer.teamName ?? "";
-  const nextMatch = await prisma.match.findFirst({
-    where: {
-      status: "scheduled",
-      matchDate: { gte: now },
-      ...(playerTeam
-        ? {
-            OR: [
-              {
-                homeTeam: {
-                  contains: playerTeam,
-                  mode: "insensitive" as const,
+  let nextMatch: { homeTeam: string; awayTeam: string; competition: string; matchDate: Date } | null = null;
+  try {
+    nextMatch = await prisma.match.findFirst({
+      where: {
+        status: "scheduled",
+        matchDate: { gte: now },
+        ...(playerTeam
+          ? {
+              OR: [
+                {
+                  homeTeam: {
+                    contains: playerTeam,
+                    mode: "insensitive" as const,
+                  },
                 },
-              },
-              {
-                awayTeam: {
-                  contains: playerTeam,
-                  mode: "insensitive" as const,
+                {
+                  awayTeam: {
+                    contains: playerTeam,
+                    mode: "insensitive" as const,
+                  },
                 },
-              },
-            ],
-          }
-        : {}),
-    },
-    orderBy: { matchDate: "asc" },
-    select: {
-      homeTeam: true,
-      awayTeam: true,
-      competition: true,
-      matchDate: true,
-    },
-  });
+              ],
+            }
+          : {}),
+      },
+      orderBy: { matchDate: "asc" },
+      select: {
+        homeTeam: true,
+        awayTeam: true,
+        competition: true,
+        matchDate: true,
+      },
+    });
+  } catch {
+    // nextMatch unavailable — continue without it
+  }
   const cutoffDate = nextMatch?.matchDate ?? now;
 
   // Busca ETL (somente se configurado)
   const etlConfigured = !!getEtlBaseUrl();
 
-  const [lastMatchesRes, shotsRes] = etlConfigured
-    ? await Promise.all([
-        etlPlayerLastMatches(dbPlayer.sofascoreId, 10),
-        etlPlayerShots(dbPlayer.sofascoreId, { limit: 100 }),
-      ])
-    : [
-        { data: null, error: "ETL not configured" } as const,
-        { data: null, error: "ETL not configured" } as const,
-      ];
+  let lastMatchesRes: Awaited<ReturnType<typeof etlPlayerLastMatches>>;
+  let shotsRes: Awaited<ReturnType<typeof etlPlayerShots>>;
+  try {
+    [lastMatchesRes, shotsRes] = etlConfigured
+      ? await Promise.all([
+          etlPlayerLastMatches(dbPlayer.sofascoreId, 10),
+          etlPlayerShots(dbPlayer.sofascoreId, { limit: 100 }),
+        ])
+      : [
+          { data: null, error: "ETL not configured" } as Awaited<ReturnType<typeof etlPlayerLastMatches>>,
+          { data: null, error: "ETL not configured" } as Awaited<ReturnType<typeof etlPlayerShots>>,
+        ];
+  } catch {
+    lastMatchesRes = { data: null, error: "ETL request failed" } as Awaited<ReturnType<typeof etlPlayerLastMatches>>;
+    shotsRes = { data: null, error: "ETL request failed" } as Awaited<ReturnType<typeof etlPlayerShots>>;
+  }
 
   const etlPlayerImage =
     proxySofascoreUrl(lastMatchesRes.data?.player?.imageUrl) ?? undefined;
@@ -134,27 +158,36 @@ export async function fetchPlayerPageData(
   // Se ETL falhar, tenta fallback para PlayerMatchStats do Prisma
   if (lastMatchesRes.error || !lastMatchesRes.data) {
     // Fallback: usar PlayerMatchStats locais
-    const localStats = await prisma.playerMatchStats.findMany({
-      where: {
-        playerId: dbPlayer.id,
-        match: {
-          matchDate: { lte: cutoffDate },
-        },
-      },
-      orderBy: { match: { matchDate: "desc" } },
-      take: 10,
-      include: {
-        match: {
-          select: {
-            matchDate: true,
-            homeTeam: true,
-            awayTeam: true,
-            homeScore: true,
-            awayScore: true,
+    const localStatsQuery = () =>
+      prisma.playerMatchStats.findMany({
+        where: {
+          playerId: dbPlayer.id,
+          match: {
+            matchDate: { lte: cutoffDate },
           },
         },
-      },
-    });
+        orderBy: { match: { matchDate: "desc" } },
+        take: 10,
+        include: {
+          match: {
+            select: {
+              matchDate: true,
+              homeTeam: true,
+              awayTeam: true,
+              homeScore: true,
+              awayScore: true,
+            },
+          },
+        },
+      });
+    type LocalStatsRow = Awaited<ReturnType<typeof localStatsQuery>>[number];
+
+    let localStats: LocalStatsRow[] = [];
+    try {
+      localStats = await localStatsQuery();
+    } catch {
+      // local stats unavailable
+    }
 
     if (localStats.length > 0) {
       const shots = localStats.map((s) => s.shots);
@@ -356,11 +389,16 @@ export async function fetchPlayerPageData(
     : undefined;
 
   // Fetch current odds from MarketAnalysis
-  const latestAnalysis = await prisma.marketAnalysis.findFirst({
-    where: { playerId: dbPlayer.id },
-    orderBy: { createdAt: "desc" },
-    select: { odds: true },
-  });
+  let latestAnalysis: { odds: number } | null = null;
+  try {
+    latestAnalysis = await prisma.marketAnalysis.findFirst({
+      where: { playerId: dbPlayer.id },
+      orderBy: { createdAt: "desc" },
+      select: { odds: true },
+    });
+  } catch {
+    // odds unavailable
+  }
 
   const resolvedTeam = teamName ?? "—";
   let nextMatchData:

@@ -25,6 +25,7 @@ export interface DashboardPageData {
 }
 
 export async function fetchDashboardData(): Promise<DashboardPageData> {
+  try {
   // Calcula o range "hoje" usando o timezone do Brasil (America/Sao_Paulo)
   const now = new Date();
   const formatter = new Intl.DateTimeFormat("sv-SE", {
@@ -138,6 +139,10 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
   const todayCount = matches.filter((m) => m.dayKey === "today").length;
   const tomorrowCount = matches.filter((m) => m.dayKey === "tomorrow").length;
   return { matches, todayCount, tomorrowCount, fallbackLabel };
+  } catch (err) {
+    console.error("[fetchDashboardData] error:", err);
+    return { matches: [], todayCount: 0, tomorrowCount: 0, fallbackLabel: "Erro ao carregar dados" };
+  }
 }
 
 function resolveDayKey(

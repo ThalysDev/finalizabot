@@ -51,17 +51,23 @@ export async function fetchMatchPageData(
   line = DEFAULT_LINE,
 ): Promise<MatchPageData> {
   // 1. Busca a partida com MarketAnalysis + Player
-  const dbMatch = await prisma.match.findUnique({
-    where: { id: matchId },
-    include: {
-      marketAnalyses: {
-        include: { player: true },
+  let dbMatch;
+  try {
+    dbMatch = await prisma.match.findUnique({
+      where: { id: matchId },
+      include: {
+        marketAnalyses: {
+          include: { player: true },
+        },
+        playerStats: {
+          include: { player: true },
+        },
       },
-      playerStats: {
-        include: { player: true },
-      },
-    },
-  });
+    });
+  } catch (err) {
+    console.error("[fetchMatchPageData] DB error:", err);
+    return { match: null, players: [] };
+  }
 
   if (!dbMatch) {
     return { match: null, players: [] };
@@ -153,35 +159,39 @@ export async function fetchMatchPageData(
   // Se não há jogadores via MarketAnalysis/PlayerStats, buscar players associados
   // ao match (pelo teamName que contém homeTeam ou awayTeam)
   if (playerMap.size === 0) {
-    const allPlayers = await prisma.player.findMany({
-      where: {
-        OR: [
-          { teamName: { contains: match.homeTeam, mode: "insensitive" } },
-          { teamName: { contains: match.awayTeam, mode: "insensitive" } },
-        ],
-      },
-      take: 50,
-      orderBy: { updatedAt: "desc" },
-    });
-
-    for (const p of allPlayers) {
-      playerMap.set(p.id, {
-        id: p.id,
-        name: p.name,
-        position: p.position,
-        sofascoreId: p.sofascoreId,
-        odds: 0,
-        probability: 0,
-        avatarUrl:
-          cachedImageUrl(p.imageId) ??
-          proxySofascoreUrl(p.imageUrl) ??
-          undefined,
-        teamBadgeUrl:
-          cachedImageUrl(p.teamImageId) ??
-          proxySofascoreUrl(p.teamImageUrl) ??
-          undefined,
-        teamName: p.teamName ?? null,
+    try {
+      const allPlayers = await prisma.player.findMany({
+        where: {
+          OR: [
+            { teamName: { contains: match.homeTeam, mode: "insensitive" } },
+            { teamName: { contains: match.awayTeam, mode: "insensitive" } },
+          ],
+        },
+        take: 50,
+        orderBy: { updatedAt: "desc" },
       });
+
+      for (const p of allPlayers) {
+        playerMap.set(p.id, {
+          id: p.id,
+          name: p.name,
+          position: p.position,
+          sofascoreId: p.sofascoreId,
+          odds: 0,
+          probability: 0,
+          avatarUrl:
+            cachedImageUrl(p.imageId) ??
+            proxySofascoreUrl(p.imageUrl) ??
+            undefined,
+          teamBadgeUrl:
+            cachedImageUrl(p.teamImageId) ??
+            proxySofascoreUrl(p.teamImageUrl) ??
+            undefined,
+          teamName: p.teamName ?? null,
+        });
+      }
+    } catch {
+      // Fallback player query failed — continue with empty
     }
   }
 
@@ -197,10 +207,15 @@ export async function fetchMatchPageData(
 
   if (etlConfigured) {
     // ── ETL path (batched with concurrency control) ──────────────
-    const etlResults = await batchEnrichPlayers(
-      playerEntries.map((p) => ({ sofascoreId: p.sofascoreId })),
-      line,
-    );
+    let etlResults = new Map<string, import("@/lib/etl/enricher").EtlEnrichResult>();
+    try {
+      etlResults = await batchEnrichPlayers(
+        playerEntries.map((p) => ({ sofascoreId: p.sofascoreId })),
+        line,
+      );
+    } catch {
+      // ETL unreachable — fall through to Prisma fallback for all
+    }
 
     // Players that need Prisma fallback (no ETL stats)
     const needsFallback: typeof playerEntries = [];
@@ -232,29 +247,43 @@ export async function fetchMatchPageData(
 
     // Batch Prisma fallback for players without ETL data
     if (needsFallback.length > 0) {
-      const fallbackCards = await batchEnrichFromPrisma(
-        needsFallback,
-        line,
-      );
-      let fi = 0;
-      for (let i = 0; i < enriched.length; i++) {
-        if (enriched[i] === null && fi < fallbackCards.length) {
-          enriched[i] = fallbackCards[fi++];
+      try {
+        const fallbackCards = await batchEnrichFromPrisma(
+          needsFallback,
+          line,
+        );
+        let fi = 0;
+        for (let i = 0; i < enriched.length; i++) {
+          if (enriched[i] === null && fi < fallbackCards.length) {
+            enriched[i] = fallbackCards[fi++];
+          }
         }
+      } catch {
+        // Prisma fallback failed — nulls remain, filtered out below
       }
     }
   } else {
     // ── Prisma-only path (batched, no ETL calls) ─────────────────
     const playerIds = playerEntries.map((p) => p.id);
-    const allStats = await prisma.playerMatchStats.findMany({
-      where: { playerId: { in: playerIds } },
-      orderBy: { match: { matchDate: "desc" } },
-      include: {
-        match: {
-          select: { homeTeam: true, awayTeam: true, matchDate: true },
+
+    const statsQuery = () =>
+      prisma.playerMatchStats.findMany({
+        where: { playerId: { in: playerIds } },
+        orderBy: { match: { matchDate: "desc" } },
+        include: {
+          match: {
+            select: { homeTeam: true, awayTeam: true, matchDate: true },
+          },
         },
-      },
-    });
+      });
+    type StatsRow = Awaited<ReturnType<typeof statsQuery>>[number];
+
+    let allStats: StatsRow[] = [];
+    try {
+      allStats = await statsQuery();
+    } catch {
+      // stats unavailable — will produce basic player cards
+    }
 
     // Group stats by playerId
     const statsByPlayer = new Map<string, (typeof allStats)[number][]>();
@@ -351,11 +380,21 @@ async function batchEnrichFromPrisma(
   line: number,
 ): Promise<PlayerCardData[]> {
   const playerIds = players.map((p) => p.id);
-  const allStats = await prisma.playerMatchStats.findMany({
-    where: { playerId: { in: playerIds } },
-    orderBy: { match: { matchDate: "desc" } },
-    include: { match: { select: { homeTeam: true, awayTeam: true } } },
-  });
+
+  const enrichQuery = () =>
+    prisma.playerMatchStats.findMany({
+      where: { playerId: { in: playerIds } },
+      orderBy: { match: { matchDate: "desc" } },
+      include: { match: { select: { homeTeam: true, awayTeam: true } } },
+    });
+  type EnrichRow = Awaited<ReturnType<typeof enrichQuery>>[number];
+
+  let allStats: EnrichRow[] = [];
+  try {
+    allStats = await enrichQuery();
+  } catch {
+    // DB error — return basic cards without stats
+  }
 
   const statsByPlayer = new Map<string, (typeof allStats)[number][]>();
   for (const s of allStats) {

@@ -147,7 +147,7 @@ function WindowStatsSection({
             Méd. Chutes
           </p>
           <p className="text-lg font-bold text-fb-text">
-            {stats.avgShots.toFixed(1)}
+            {stats.avgShots != null ? stats.avgShots.toFixed(1) : "—"}
           </p>
         </div>
         <div className="bg-fb-surface-darker rounded-lg p-3 text-center">
@@ -155,7 +155,7 @@ function WindowStatsSection({
             Méd. Min
           </p>
           <p className="text-lg font-bold text-fb-text">
-            {stats.avgMinutes}&apos;
+            {stats.avgMinutes != null ? `${stats.avgMinutes}'` : "—"}
           </p>
         </div>
         <div className="bg-fb-surface-darker rounded-lg p-3 text-center">
@@ -378,6 +378,18 @@ export function PlayerDetailView({
               lineLabel={lineLabel}
               lineIndicator={last10LineIndicator}
             />
+          )}
+          {!last5Stats && !last10Stats && (
+            <div className="bg-fb-card rounded-xl p-6 border border-fb-border text-center">
+              <Target className="size-8 text-fb-text-muted mx-auto mb-3" />
+              <h3 className="text-base font-bold text-fb-text mb-1">
+                Dados estatísticos indisponíveis
+              </h3>
+              <p className="text-sm text-fb-text-muted">
+                Não há dados suficientes para gerar estatísticas por janela.
+                Execute o sync para atualizar.
+              </p>
+            </div>
           )}
 
           {/* Line evolution chart */}
