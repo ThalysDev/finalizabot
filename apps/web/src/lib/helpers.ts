@@ -77,7 +77,8 @@ export function cachedImageUrl(
 export function buildTeamBadgeUrl(
   teamId?: string | null,
 ): string | undefined {
-  if (!teamId || !/^\d+$/.test(teamId)) return undefined;
+  // Aceitar qualquer string não-vazia (IDs alfanuméricos também)
+  if (!teamId || teamId.trim() === '') return undefined;
   // Primary: try cached image by SofaScore numeric ID
   // Fallback: proxy through SofaScore CDN directly
   return (

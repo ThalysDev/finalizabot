@@ -13,6 +13,7 @@ import {
   DollarSign,
   Target,
 } from "lucide-react";
+import { calcCV } from "@finalizabot/shared/calc";
 import { PlayerHeroCard } from "./PlayerHeroCard";
 import { MatchHistoryTable } from "./MatchHistoryTable";
 
@@ -120,11 +121,15 @@ function WindowStatsSection({
   stats,
   lineLabel,
   lineIndicator,
+  dynamicCV,
+  formattedLine,
 }: {
   title: string;
   stats: WindowStats;
   lineLabel?: string;
   lineIndicator?: LineHitIndicator;
+  dynamicCV?: number | null;
+  formattedLine?: string;
 }) {
   const midLabel = lineLabel ?? "Over 1.5";
   const midIndicator = lineIndicator ?? stats?.over15 ?? {
@@ -132,6 +137,7 @@ function WindowStatsSection({
     total: 0,
     percent: 0,
   };
+  const cvValue = dynamicCV !== undefined ? dynamicCV : stats.cv;
 
   return (
     <div className="bg-fb-card rounded-xl p-5 border border-fb-border">
@@ -164,15 +170,21 @@ function WindowStatsSection({
           </p>
           <p
             className={`text-lg font-bold ${
-              stats.cv != null && stats.cv <= 0.3
+              cvValue != null && cvValue <= 0.3
                 ? "text-fb-accent-green"
-                : stats.cv != null && stats.cv <= 0.5
+                : cvValue != null && cvValue <= 0.5
                   ? "text-fb-accent-gold"
                   : "text-fb-accent-red"
             }`}
+            title={formattedLine ? `CV calculado apenas com jogos que bateram ${formattedLine}+` : undefined}
           >
-            {stats.cv != null ? stats.cv.toFixed(2) : "N/A"}
+            {cvValue != null ? cvValue.toFixed(2) : "—"}
           </p>
+          {formattedLine && (
+            <p className="text-[8px] text-fb-text-muted mt-0.5">
+              (jogos ≥{formattedLine})
+            </p>
+          )}
         </div>
       </div>
 
@@ -244,6 +256,30 @@ export function PlayerDetailView({
     () => buildLineIndicator(shotValues.slice(-10), line),
     [shotValues, line],
   );
+
+  // CV dinâmico: calcula apenas com jogos que bateram a linha selecionada
+  const dynamicCV = useMemo(() => {
+    if (!shotValues || shotValues.length < 2) return null;
+    // Filtrar apenas chutes que bateram a linha
+    const shotsAboveLine = shotValues.filter(s => s >= line);
+    if (shotsAboveLine.length < 2) return null;
+    // Calcular CV apenas dos jogos bem-sucedidos
+    return calcCV(shotsAboveLine);
+  }, [shotValues, line]);
+
+  const dynamicCVL5 = useMemo(() => {
+    if (!shotValues || shotValues.length < 5) return null;
+    const last5 = shotValues.slice(-5);
+    const above = last5.filter(s => s >= line);
+    return above.length >= 2 ? calcCV(above) : null;
+  }, [shotValues, line]);
+
+  const dynamicCVL10 = useMemo(() => {
+    if (!shotValues || shotValues.length < 10) return null;
+    const last10 = shotValues.slice(-10);
+    const above = last10.filter(s => s >= line);
+    return above.length >= 2 ? calcCV(above) : null;
+  }, [shotValues, line]);
 
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-[1400px] mx-auto">
@@ -369,6 +405,8 @@ export function PlayerDetailView({
               stats={last5Stats}
               lineLabel={lineLabel}
               lineIndicator={last5LineIndicator}
+              dynamicCV={dynamicCVL5}
+              formattedLine={formattedLine}
             />
           )}
           {last10Stats && (
@@ -377,6 +415,8 @@ export function PlayerDetailView({
               stats={last10Stats}
               lineLabel={lineLabel}
               lineIndicator={last10LineIndicator}
+              dynamicCV={dynamicCVL10}
+              formattedLine={formattedLine}
             />
           )}
 

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(scripts/run-sync.ps1 << 'EOFSCRIPT'\n# ============================================================================\n# FinalizaBOT - Script de Sincronização Local\n# ============================================================================\n# Este script executa a pipeline de sync completa \\(Ingest → Bridge → Images\\)\n# com opções configuráveis para desenvolvimento e produção.\n#\n# Uso:\n#   .\\\\scripts\\\\run-sync.ps1                    # Sync completo \\(modo padrão\\)\n#   .\\\\scripts\\\\run-sync.ps1 -FastMode          # Modo rápido \\(dev\\)\n#   .\\\\scripts\\\\run-sync.ps1 -SkipImages        # Pula download de imagens\n#   .\\\\scripts\\\\run-sync.ps1 -FastMode -SkipImages  # Combinado\n#\n# ============================================================================\n\nparam\\(\n    [switch]$SkipImages = $false,\n    [switch]$FastMode = $false,\n    [switch]$Verbose = $false\n\\)\n\nWrite-Host \"\"\nWrite-Host \"🚀 FinalizaBOT - Pipeline de Sincronização\" -ForegroundColor Cyan\nWrite-Host \"=\" -ForegroundColor Cyan\n\n# Configurar perfil de performance\nif \\($FastMode\\) {\n    $env:SYNC_CONCURRENCY = \"5\"\n    $env:SYNC_DELAY_SCALE = \"0.5\"\n    $env:SYNC_PHASE2_DAYS = \"7\"\n    $env:SKIP_IMAGE_SYNC = \"true\"\n    Write-Host \"⚡ Modo Rápido Ativado\" -ForegroundColor Yellow\n}\n\n# Criar diretório de logs\n$timestamp = Get-Date -Format \"yyyy-MM-dd_HH-mm-ss\"\n$logFile = \"logs/sync-$timestamp.log\"\nNew-Item -ItemType Directory -Force -Path \"logs\" | Out-Null\n\ntry {\n    Write-Host \"`n📥 Fase 1: ETL Ingest...\" -ForegroundColor Green\n    npm run sync 2>&1 | Tee-Object -FilePath $logFile -Append\n    if \\($LASTEXITCODE -ne 0\\) { throw \"Ingest falhou\" }\n\n    Write-Host \"`n🌉 Fase 2: Bridge sync...\" -ForegroundColor Green\n    npm run sync:bridge 2>&1 | Tee-Object -FilePath $logFile -Append\n    if \\($LASTEXITCODE -ne 0\\) { throw \"Bridge falhou\" }\n\n    if \\(-not $SkipImages -and -not $FastMode\\) {\n        Write-Host \"`n🖼️ Fase 3: Image sync...\" -ForegroundColor Green\n        npm run sync:images 2>&1 | Tee-Object -FilePath $logFile -Append\n    }\n\n    Write-Host \"`n✅ Sincronização concluída com sucesso!\" -ForegroundColor Green\n    Write-Host \"📄 Logs salvos em: $logFile\" -ForegroundColor Cyan\n\n} catch {\n    Write-Host \"`n❌ Erro: $_\" -ForegroundColor Red\n    Write-Host \"📄 Ver logs em: $logFile\" -ForegroundColor Yellow\n    exit 1\n}\nEOFSCRIPT)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh run list:*)",
+      "Bash(git remote:*)",
+      "Bash(ls:*)",
+      "Bash(npm run db:migrate:*)",
+      "Bash(test:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash($env:DATABASE_URL=\"postgresql://neondb_owner:npg_PYt4yzKJ0ZBA@ep-calm-truth-acw8ebln-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require\")",
+      "Bash($env:DATABASE_URL_UNPOOLED=\"postgresql://neondb_owner:npg_PYt4yzKJ0ZBA@ep-calm-truth-acw8ebln.sa-east-1.aws.neon.tech/neondb?sslmode=require\")"
+    ]
+  }
+}

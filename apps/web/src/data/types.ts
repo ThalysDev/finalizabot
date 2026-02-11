@@ -215,6 +215,7 @@ export interface GatedPlayerRow {
    ============================================================================ */
 export interface AdvancedPlayerRow {
   player: string;
+  position: string;
   team: string;
   teamBadge?: string;
   line: string;

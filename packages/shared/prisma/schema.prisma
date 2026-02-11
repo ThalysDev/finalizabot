@@ -25,6 +25,12 @@ model ImageCache {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Relações inversas (FK de Match e Player para ImageCache)
+  matchesHomeImage   Match[]  @relation("MatchHomeImage")
+  matchesAwayImage   Match[]  @relation("MatchAwayImage")
+  playerImages       Player[] @relation("PlayerImage")
+  playerTeamImages   Player[] @relation("PlayerTeamImage")
+
   @@index([sourceUrl])
   @@schema("public")
 }
@@ -43,11 +49,16 @@ model Player {
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
 
+  // Relações
+  imageCache     ImageCache?         @relation("PlayerImage", fields: [imageId], references: [id])
+  teamImageCache ImageCache?         @relation("PlayerTeamImage", fields: [teamImageId], references: [id])
   matchStats     PlayerMatchStats[]
   marketAnalyses MarketAnalysis[]
   favoritedBy    UserFavorite[]
 
   @@index([teamName])
+  @@index([imageId])
+  @@index([teamImageId])
   @@schema("public")
 }
 
@@ -71,11 +82,16 @@ model Match {
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 
-  playerStats    PlayerMatchStats[]
-  marketAnalyses MarketAnalysis[]
+  // Relações
+  homeTeamImageCache ImageCache?         @relation("MatchHomeImage", fields: [homeTeamImageId], references: [id])
+  awayTeamImageCache ImageCache?         @relation("MatchAwayImage", fields: [awayTeamImageId], references: [id])
+  playerStats        PlayerMatchStats[]
+  marketAnalyses     MarketAnalysis[]
 
   @@index([matchDate])
   @@index([status, matchDate])
+  @@index([homeTeamImageId])
+  @@index([awayTeamImageId])
   @@schema("public")
 }
 

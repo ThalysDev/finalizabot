@@ -161,10 +161,13 @@ export function DashboardContent({
                 {/* Competition header */}
                 <div className="flex items-center gap-2 mb-3">
                   <Trophy className="size-4 text-fb-primary" />
-                  <h2 className="text-fb-text font-semibold text-sm">
+                  <h2
+                    className="text-fb-text font-semibold text-sm truncate max-w-[200px] sm:max-w-xs"
+                    title={comp}
+                  >
                     {comp}
                   </h2>
-                  <span className="text-fb-text-muted text-xs">
+                  <span className="text-fb-text-muted text-xs whitespace-nowrap">
                     ({compMatches.length} partida
                     {compMatches.length !== 1 ? "s" : ""})
                   </span>

@@ -123,15 +123,19 @@ export async function fetchPlayerPageData(
 
   let lastMatchesRes: Awaited<ReturnType<typeof etlPlayerLastMatches>>;
   let shotsRes: Awaited<ReturnType<typeof etlPlayerShots>>;
+
+  // Validar sofascoreId antes de chamar ETL
+  const hasSofascoreId = dbPlayer.sofascoreId && dbPlayer.sofascoreId.trim() !== '';
+
   try {
-    [lastMatchesRes, shotsRes] = etlConfigured
+    [lastMatchesRes, shotsRes] = etlConfigured && hasSofascoreId
       ? await Promise.all([
           etlPlayerLastMatches(dbPlayer.sofascoreId, 10),
           etlPlayerShots(dbPlayer.sofascoreId, { limit: 100 }),
         ])
       : [
-          { data: null, error: "ETL not configured" } as Awaited<ReturnType<typeof etlPlayerLastMatches>>,
-          { data: null, error: "ETL not configured" } as Awaited<ReturnType<typeof etlPlayerShots>>,
+          { data: null, error: hasSofascoreId ? "ETL not configured" : "Player missing sofascoreId" } as Awaited<ReturnType<typeof etlPlayerLastMatches>>,
+          { data: null, error: hasSofascoreId ? "ETL not configured" : "Player missing sofascoreId" } as Awaited<ReturnType<typeof etlPlayerShots>>,
         ];
   } catch {
     lastMatchesRes = { data: null, error: "ETL request failed" } as Awaited<ReturnType<typeof etlPlayerLastMatches>>;
@@ -342,16 +346,26 @@ export async function fetchPlayerPageData(
     };
   }
 
-  // Filter: only past matches (exclude current/future), sort by matchDate
+  // Include today's matches + last 10 historical
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);  // Start of today
+
   const items = lastMatchesRes.data.items
-    .filter((item) => {
-      const matchDate = new Date(item.startTime);
-      // Only include matches that happened before now (exclude current/future)
-      return matchDate < now;
-    })
     .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
 
-  const recentItems = items.slice(0, 10);
+  // Separate today's matches from historical
+  const todayMatches = items.filter(item => {
+    const matchDate = new Date(item.startTime);
+    return matchDate >= today;  // All matches from today (past, present, future)
+  });
+
+  const pastMatches = items.filter(item => {
+    const matchDate = new Date(item.startTime);
+    return matchDate < today;  // Historical matches (before today)
+  }).slice(0, 10);  // Last 10 historical
+
+  // Combine: today's matches + last 10 historical (max 15 total)
+  const recentItems = [...todayMatches, ...pastMatches].slice(0, 15);
 
   if (recentItems.length === 0) {
     return {

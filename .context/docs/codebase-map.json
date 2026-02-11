@@ -1,0 +1,1512 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-02-11T04:10:05.775Z",
+  "stack": {
+    "primaryLanguage": "typescript",
+    "languages": [
+      "javascript",
+      "typescript"
+    ],
+    "frameworks": [],
+    "buildTools": [
+      "docker-compose"
+    ],
+    "testFrameworks": [
+      "vitest"
+    ],
+    "packageManager": "npm",
+    "isMonorepo": false,
+    "hasDocker": true,
+    "hasCI": true
+  },
+  "structure": {
+    "totalFiles": 367,
+    "topDirectories": [
+      {
+        "name": "apps",
+        "fileCount": 311
+      },
+      {
+        "name": "docker-compose.yml",
+        "fileCount": 1
+      },
+      {
+        "name": "logs",
+        "fileCount": 11
+      },
+      {
+        "name": "package-lock.json",
+        "fileCount": 1
+      },
+      {
+        "name": "package.json",
+        "fileCount": 1
+      },
+      {
+        "name": "packages",
+        "fileCount": 37
+      },
+      {
+        "name": "README.md",
+        "fileCount": 1
+      },
+      {
+        "name": "scripts",
+        "fileCount": 1
+      },
+      {
+        "name": "tsconfig.base.json",
+        "fileCount": 1
+      },
+      {
+        "name": "vercel.json",
+        "fileCount": 1
+      },
+      {
+        "name": "vitest.config.ts",
+        "fileCount": 1
+      }
+    ],
+    "languageDistribution": [
+      {
+        "extension": ".ts",
+        "count": 155
+      },
+      {
+        "extension": ".tsx",
+        "count": 70
+      },
+      {
+        "extension": ".map",
+        "count": 48
+      },
+      {
+        "extension": ".js",
+        "count": 24
+      },
+      {
+        "extension": ".md",
+        "count": 23
+      },
+      {
+        "extension": ".json",
+        "count": 14
+      },
+      {
+        "extension": ".log",
+        "count": 11
+      },
+      {
+        "extension": ".svg",
+        "count": 5
+      },
+      {
+        "extension": ".tsbuildinfo",
+        "count": 3
+      },
+      {
+        "extension": ".ps1",
+        "count": 2
+      }
+    ]
+  },
+  "architecture": {
+    "layers": [
+      {
+        "name": "Config",
+        "description": "Configuration and constants",
+        "directories": [
+          ".",
+          "apps\\web",
+          "apps\\etl\\src\\config"
+        ],
+        "symbolCount": 2,
+        "dependsOn": []
+      },
+      {
+        "name": "Utils",
+        "description": "Shared utilities and helpers",
+        "directories": [
+          "packages\\shared",
+          "packages\\shared\\__tests__",
+          "packages\\shared\\src",
+          "packages\\shared\\prisma",
+          "apps\\etl\\__tests__",
+          "packages\\shared\\src\\types",
+          "packages\\shared\\src\\db",
+          "packages\\shared\\src\\calc",
+          "apps\\web\\src\\lib",
+          "apps\\etl\\src\\lib",
+          "apps\\web\\src\\lib\\format",
+          "apps\\web\\src\\lib\\etl",
+          "apps\\web\\src\\lib\\db",
+          "apps\\web\\src\\lib\\calc",
+          "apps\\web\\src\\lib\\auth"
+        ],
+        "symbolCount": 92,
+        "dependsOn": []
+      },
+      {
+        "name": "Controllers",
+        "description": "Request handling and routing",
+        "directories": [
+          "apps\\web\\__tests__",
+          "apps\\etl\\src\\api",
+          "apps\\web\\src\\app\\api\\sync-status",
+          "apps\\web\\src\\app\\api\\search",
+          "apps\\web\\src\\app\\api\\matches",
+          "apps\\web\\src\\app\\api\\image-proxy",
+          "apps\\web\\src\\app\\api\\health",
+          "apps\\web\\src\\app\\api\\players\\[id]",
+          "apps\\web\\src\\app\\api\\matches\\[id]",
+          "apps\\web\\src\\app\\api\\images\\[id]"
+        ],
+        "symbolCount": 10,
+        "dependsOn": [
+          "Utils"
+        ]
+      },
+      {
+        "name": "Repositories",
+        "description": "Data access and persistence",
+        "directories": [
+          "apps\\web\\src\\data",
+          "apps\\web\\src\\data\\fetchers",
+          "apps\\web\\src\\components\\table"
+        ],
+        "symbolCount": 49,
+        "dependsOn": []
+      },
+      {
+        "name": "Services",
+        "description": "Business logic and orchestration",
+        "directories": [
+          "apps\\etl\\src\\services"
+        ],
+        "symbolCount": 17,
+        "dependsOn": []
+      },
+      {
+        "name": "Components",
+        "description": "UI components and views",
+        "directories": [
+          "apps\\web\\src\\components\\primitives",
+          "apps\\web\\src\\components\\landing",
+          "apps\\web\\src\\components",
+          "apps\\web\\src\\app",
+          "apps\\web\\src\\components\\ui",
+          "apps\\web\\src\\components\\subscription",
+          "apps\\web\\src\\components\\pro",
+          "apps\\web\\src\\components\\player",
+          "apps\\web\\src\\components\\mobile",
+          "apps\\web\\src\\components\\match",
+          "apps\\web\\src\\components\\layout",
+          "apps\\web\\src\\components\\filters",
+          "apps\\web\\src\\components\\dashboard",
+          "apps\\web\\src\\components\\charts",
+          "apps\\web\\src\\components\\alerts",
+          "apps\\web\\src\\app\\(public)",
+          "apps\\web\\src\\app\\match\\[id]",
+          "apps\\web\\src\\app\\(protected)\\upgrade",
+          "apps\\web\\src\\app\\(protected)\\pro",
+          "apps\\web\\src\\app\\(protected)\\pricing",
+          "apps\\web\\src\\app\\(protected)\\live",
+          "apps\\web\\src\\app\\(protected)\\gated",
+          "apps\\web\\src\\app\\(protected)\\dashboard",
+          "apps\\web\\src\\app\\(protected)\\alerts",
+          "apps\\web\\src\\app\\(auth)\\sign-up",
+          "apps\\web\\src\\app\\(auth)\\sign-in",
+          "apps\\web\\src\\app\\(protected)\\player\\[id]",
+          "apps\\web\\src\\app\\(protected)\\dashboard\\table"
+        ],
+        "symbolCount": 64,
+        "dependsOn": []
+      }
+    ],
+    "patterns": [],
+    "entryPoints": [
+      "packages\\shared\\src\\index.ts",
+      "apps\\etl\\src\\index.ts",
+      "packages\\shared\\src\\types\\index.ts",
+      "apps\\etl\\src\\api\\server.ts",
+      "apps\\web\\src\\lib\\etl\\index.ts",
+      "apps\\web\\src\\data\\fetchers\\index.ts",
+      "apps\\web\\src\\components\\primitives\\index.ts",
+      "apps\\web\\src\\components\\landing\\index.ts"
+    ]
+  },
+  "symbols": {
+    "classes": [],
+    "interfaces": [
+      {
+        "name": "AdvancedPlayerRow",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 216,
+        "exported": true
+      },
+      {
+        "name": "AlertCardProps",
+        "kind": "interface",
+        "file": "apps\\web\\src\\components\\alerts\\AlertCard.tsx",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "AlertData",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 137,
+        "exported": true
+      },
+      {
+        "name": "Column",
+        "kind": "interface",
+        "file": "apps\\web\\src\\components\\table\\DataTable.tsx",
+        "line": 17,
+        "exported": true
+      },
+      {
+        "name": "ComparisonRow",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 239,
+        "exported": true
+      },
+      {
+        "name": "ContainerProps",
+        "kind": "interface",
+        "file": "apps\\web\\src\\components\\primitives\\Container.tsx",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "CurlFetchResult",
+        "kind": "interface",
+        "file": "apps\\etl\\src\\crawlers\\curlFetch.ts",
+        "line": 53,
+        "exported": true
+      },
+      {
+        "name": "DashboardPageData",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\fetchers\\dashboard.ts",
+        "line": 19,
+        "exported": true
+      },
+      {
+        "name": "DataTableProps",
+        "kind": "interface",
+        "file": "apps\\web\\src\\components\\table\\DataTable.tsx",
+        "line": 27,
+        "exported": true
+      },
+      {
+        "name": "EtlEnrichInput",
+        "kind": "interface",
+        "file": "apps\\web\\src\\lib\\etl\\enricher.ts",
+        "line": 28,
+        "exported": true
+      },
+      {
+        "name": "EtlEnrichResult",
+        "kind": "interface",
+        "file": "apps\\web\\src\\lib\\etl\\enricher.ts",
+        "line": 34,
+        "exported": true
+      },
+      {
+        "name": "EtlErrorBody",
+        "kind": "interface",
+        "file": "packages\\shared\\src\\types\\etl.ts",
+        "line": 96,
+        "exported": true
+      },
+      {
+        "name": "EtlErrorBody",
+        "kind": "interface",
+        "file": "apps\\web\\src\\lib\\etl\\types.ts",
+        "line": 78,
+        "exported": true
+      },
+      {
+        "name": "EtlHealthResponse",
+        "kind": "interface",
+        "file": "packages\\shared\\src\\types\\etl.ts",
+        "line": 11,
+        "exported": true
+      },
+      {
+        "name": "EtlHealthResponse",
+        "kind": "interface",
+        "file": "apps\\web\\src\\lib\\etl\\types.ts",
+        "line": 11,
+        "exported": true
+      },
+      {
+        "name": "EtlLastMatchesResponse",
+        "kind": "interface",
+        "file": "packages\\shared\\src\\types\\etl.ts",
+        "line": 35,
+        "exported": true
+      },
+      {
+        "name": "EtlLastMatchesResponse",
+        "kind": "interface",
+        "file": "apps\\web\\src\\lib\\etl\\types.ts",
+        "line": 35,
+        "exported": true
+      },
+      {
+        "name": "EtlLastMatchItem",
+        "kind": "interface",
+        "file": "packages\\shared\\src\\types\\etl.ts",
+        "line": 18,
+        "exported": true
+      },
+      {
+        "name": "EtlLastMatchItem",
+        "kind": "interface",
+        "file": "apps\\web\\src\\lib\\etl\\types.ts",
+        "line": 18,
+        "exported": true
+      },
+      {
+        "name": "EtlPlayerResponse",
+        "kind": "interface",
+        "file": "packages\\shared\\src\\types\\etl.ts",
+        "line": 77,
+        "exported": true
+      },
+      {
+        "name": "EtlShotItem",
+        "kind": "interface",
+        "file": "packages\\shared\\src\\types\\etl.ts",
+        "line": 46,
+        "exported": true
+      },
+      {
+        "name": "EtlShotItem",
+        "kind": "interface",
+        "file": "apps\\web\\src\\lib\\etl\\types.ts",
+        "line": 46,
+        "exported": true
+      },
+      {
+        "name": "EtlShotsResponse",
+        "kind": "interface",
+        "file": "packages\\shared\\src\\types\\etl.ts",
+        "line": 62,
+        "exported": true
+      },
+      {
+        "name": "EtlShotsResponse",
+        "kind": "interface",
+        "file": "apps\\web\\src\\lib\\etl\\types.ts",
+        "line": 62,
+        "exported": true
+      },
+      {
+        "name": "EtlTeamResponse",
+        "kind": "interface",
+        "file": "packages\\shared\\src\\types\\etl.ts",
+        "line": 87,
+        "exported": true
+      },
+      {
+        "name": "ExternalLinkItem",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 256,
+        "exported": true
+      },
+      {
+        "name": "FilterSidebarProps",
+        "kind": "interface",
+        "file": "apps\\web\\src\\components\\filters\\FilterSidebar.tsx",
+        "line": 27,
+        "exported": true
+      },
+      {
+        "name": "FilterState",
+        "kind": "interface",
+        "file": "apps\\web\\src\\components\\filters\\FilterSidebar.tsx",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "GatedPlayerRow",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 201,
+        "exported": true
+      },
+      {
+        "name": "LeagueFilter",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 248,
+        "exported": true
+      },
+      {
+        "name": "LineEvolutionPoint",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 129,
+        "exported": true
+      },
+      {
+        "name": "LineHitIndicator",
+        "kind": "interface",
+        "file": "apps\\web\\src\\lib\\etl\\transformers.ts",
+        "line": 164,
+        "exported": true
+      },
+      {
+        "name": "LineHitIndicatorData",
+        "kind": "interface",
+        "file": "apps\\web\\src\\lib\\helpers.ts",
+        "line": 93,
+        "exported": true
+      },
+      {
+        "name": "LiveMatchEvent",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 156,
+        "exported": true
+      },
+      {
+        "name": "LivePlayerMarket",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 169,
+        "exported": true
+      },
+      {
+        "name": "MatchBannerProps",
+        "kind": "interface",
+        "file": "apps\\web\\src\\components\\match\\MatchBanner.tsx",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "MatchCardData",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 86,
+        "exported": true
+      },
+      {
+        "name": "MatchData",
+        "kind": "interface",
+        "file": "apps\\etl\\src\\services\\db.ts",
+        "line": 85,
+        "exported": true
+      },
+      {
+        "name": "MatchHistoryRow",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 106,
+        "exported": true
+      },
+      {
+        "name": "MatchInfo",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 71,
+        "exported": true
+      },
+      {
+        "name": "MatchPageData",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\fetchers\\match-page.ts",
+        "line": 26,
+        "exported": true
+      },
+      {
+        "name": "MatchPlayerData",
+        "kind": "interface",
+        "file": "apps\\etl\\src\\services\\db.ts",
+        "line": 130,
+        "exported": true
+      },
+      {
+        "name": "MatchShotsData",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\fetchers\\match.ts",
+        "line": 16,
+        "exported": true
+      },
+      {
+        "name": "NormalizedShot",
+        "kind": "interface",
+        "file": "packages\\shared\\src\\types\\shots.ts",
+        "line": 27,
+        "exported": true
+      },
+      {
+        "name": "NormalizedShot",
+        "kind": "interface",
+        "file": "apps\\etl\\src\\parsers\\normalize.ts",
+        "line": 23,
+        "exported": true
+      },
+      {
+        "name": "PlayerCardData",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 30,
+        "exported": true
+      },
+      {
+        "name": "PlayerCardProps",
+        "kind": "interface",
+        "file": "apps\\web\\src\\components\\player\\PlayerCard.tsx",
+        "line": 10,
+        "exported": true
+      },
+      {
+        "name": "PlayerData",
+        "kind": "interface",
+        "file": "apps\\etl\\src\\services\\db.ts",
+        "line": 39,
+        "exported": true
+      },
+      {
+        "name": "PlayerDetail",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 47,
+        "exported": true
+      },
+      {
+        "name": "PlayerPageData",
+        "kind": "interface",
+        "file": "apps\\web\\src\\data\\fetchers\\player.ts",
+        "line": 37,
+        "exported": true
+      }
+    ],
+    "functions": [
+      {
+        "name": "AlertsPage",
+        "kind": "function",
+        "file": "apps\\web\\src\\app\\(protected)\\alerts\\page.tsx",
+        "line": 64,
+        "exported": true
+      },
+      {
+        "name": "attachMatchPlayer",
+        "kind": "function",
+        "file": "apps\\etl\\src\\services\\db.ts",
+        "line": 137,
+        "exported": true
+      },
+      {
+        "name": "AuthLayout",
+        "kind": "function",
+        "file": "apps\\web\\src\\app\\(auth)\\layout.tsx",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "batchEnrichPlayers",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\etl\\enricher.ts",
+        "line": 52,
+        "exported": true
+      },
+      {
+        "name": "BenefitCard",
+        "kind": "function",
+        "file": "apps\\web\\src\\components\\landing\\BenefitCard.tsx",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "buildLineIndicator",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\helpers.ts",
+        "line": 100,
+        "exported": true
+      },
+      {
+        "name": "buildTeamBadgeUrl",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\helpers.ts",
+        "line": 77,
+        "exported": true
+      },
+      {
+        "name": "cachedImageUrl",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\helpers.ts",
+        "line": 66,
+        "exported": true
+      },
+      {
+        "name": "calcCV",
+        "kind": "function",
+        "file": "packages\\shared\\src\\calc\\market.ts",
+        "line": 35,
+        "exported": true
+      },
+      {
+        "name": "calcCV",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\calc\\market.ts",
+        "line": 35,
+        "exported": true
+      },
+      {
+        "name": "calcHits",
+        "kind": "function",
+        "file": "packages\\shared\\src\\calc\\market.ts",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "calcHits",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\calc\\market.ts",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "checkRateLimit",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\rate-limit.ts",
+        "line": 45,
+        "exported": true
+      },
+      {
+        "name": "cn",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\utils.ts",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "computePlayerStats",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\etl\\transformers.ts",
+        "line": 251,
+        "exported": true
+      },
+      {
+        "name": "curlFetchJson",
+        "kind": "function",
+        "file": "apps\\etl\\src\\crawlers\\curlFetch.ts",
+        "line": 63,
+        "exported": true
+      },
+      {
+        "name": "curlFetchJsonWithRetry",
+        "kind": "function",
+        "file": "apps\\etl\\src\\crawlers\\curlFetch.ts",
+        "line": 168,
+        "exported": true
+      },
+      {
+        "name": "DashboardError",
+        "kind": "function",
+        "file": "apps\\web\\src\\app\\(protected)\\dashboard\\error.tsx",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "DashboardPage",
+        "kind": "function",
+        "file": "apps\\web\\src\\app\\(protected)\\dashboard\\page.tsx",
+        "line": 16,
+        "exported": true
+      },
+      {
+        "name": "detectPlayerTeamId",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\etl\\transformers.ts",
+        "line": 299,
+        "exported": true
+      },
+      {
+        "name": "disconnectDb",
+        "kind": "function",
+        "file": "apps\\etl\\src\\services\\db.ts",
+        "line": 11,
+        "exported": true
+      },
+      {
+        "name": "discoverEuropeanMatchIds",
+        "kind": "function",
+        "file": "apps\\etl\\src\\crawlers\\discoverEuropeanMatches.ts",
+        "line": 370,
+        "exported": true
+      },
+      {
+        "name": "discoverFinishedMatchIdsLastNDays",
+        "kind": "function",
+        "file": "apps\\etl\\src\\crawlers\\discoverEuropeanMatches.ts",
+        "line": 310,
+        "exported": true
+      },
+      {
+        "name": "downloadAndCacheImage",
+        "kind": "function",
+        "file": "apps\\etl\\src\\services\\imageDownloader.ts",
+        "line": 167,
+        "exported": true
+      },
+      {
+        "name": "downloadImages",
+        "kind": "function",
+        "file": "apps\\etl\\src\\services\\imageDownloader.ts",
+        "line": 221,
+        "exported": true
+      },
+      {
+        "name": "etlHealth",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\etl\\client.ts",
+        "line": 179,
+        "exported": true
+      },
+      {
+        "name": "etlMatchShots",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\etl\\client.ts",
+        "line": 216,
+        "exported": true
+      },
+      {
+        "name": "etlPlayerLastMatches",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\etl\\client.ts",
+        "line": 187,
+        "exported": true
+      },
+      {
+        "name": "etlPlayerShots",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\etl\\client.ts",
+        "line": 199,
+        "exported": true
+      },
+      {
+        "name": "fetchAndPersistLineups",
+        "kind": "function",
+        "file": "apps\\etl\\src\\crawlers\\fetchLineups.ts",
+        "line": 134,
+        "exported": true
+      },
+      {
+        "name": "fetchDashboardData",
+        "kind": "function",
+        "file": "apps\\web\\src\\data\\fetchers\\dashboard.ts",
+        "line": 27,
+        "exported": true
+      },
+      {
+        "name": "fetchIncidentsViaBrowser",
+        "kind": "function",
+        "file": "apps\\etl\\src\\crawlers\\sofascoreBrowser.ts",
+        "line": 263,
+        "exported": true
+      },
+      {
+        "name": "fetchLineupsViaBrowser",
+        "kind": "function",
+        "file": "apps\\etl\\src\\crawlers\\sofascoreBrowser.ts",
+        "line": 297,
+        "exported": true
+      },
+      {
+        "name": "fetchMatchPageData",
+        "kind": "function",
+        "file": "apps\\web\\src\\data\\fetchers\\match-page.ts",
+        "line": 49,
+        "exported": true
+      },
+      {
+        "name": "fetchMatchShots",
+        "kind": "function",
+        "file": "apps\\web\\src\\data\\fetchers\\match.ts",
+        "line": 20,
+        "exported": true
+      },
+      {
+        "name": "fetchMatchViaBrowser",
+        "kind": "function",
+        "file": "apps\\etl\\src\\crawlers\\sofascoreBrowser.ts",
+        "line": 242,
+        "exported": true
+      },
+      {
+        "name": "fetchPlayerPageData",
+        "kind": "function",
+        "file": "apps\\web\\src\\data\\fetchers\\player.ts",
+        "line": 51,
+        "exported": true
+      },
+      {
+        "name": "fetchScheduledEventsViaBrowser",
+        "kind": "function",
+        "file": "apps\\etl\\src\\crawlers\\sofascoreBrowser.ts",
+        "line": 154,
+        "exported": true
+      },
+      {
+        "name": "fetchScheduleIdsFromHtml",
+        "kind": "function",
+        "file": "apps\\etl\\src\\crawlers\\sofascoreBrowser.ts",
+        "line": 175,
+        "exported": true
+      },
+      {
+        "name": "fetchShotmapViaBrowser",
+        "kind": "function",
+        "file": "apps\\etl\\src\\crawlers\\sofascoreBrowser.ts",
+        "line": 273,
+        "exported": true
+      },
+      {
+        "name": "FilterSidebar",
+        "kind": "function",
+        "file": "apps\\web\\src\\components\\filters\\FilterSidebar.tsx",
+        "line": 33,
+        "exported": true
+      },
+      {
+        "name": "Footer",
+        "kind": "function",
+        "file": "apps\\web\\src\\components\\layout\\Footer.tsx",
+        "line": 25,
+        "exported": true
+      },
+      {
+        "name": "formatDate",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\format\\date.ts",
+        "line": 17,
+        "exported": true
+      },
+      {
+        "name": "formatDateTime",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\format\\date.ts",
+        "line": 53,
+        "exported": true
+      },
+      {
+        "name": "formatLine",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\helpers.ts",
+        "line": 27,
+        "exported": true
+      },
+      {
+        "name": "formatTime",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\format\\date.ts",
+        "line": 42,
+        "exported": true
+      },
+      {
+        "name": "gateProData",
+        "kind": "function",
+        "file": "apps\\web\\src\\lib\\auth\\subscription.ts",
+        "line": 44,
+        "exported": true
+      },
+      {
+        "name": "generateMetadata",
+        "kind": "function",
+        "file": "apps\\web\\src\\app\\match\\[id]\\page.tsx",
+        "line": 24,
+        "exported": true
+      },
+      {
+        "name": "generateMetadata",
+        "kind": "function",
+        "file": "apps\\web\\src\\app\\(protected)\\player\\[id]\\page.tsx",
+        "line": 29,
+        "exported": true
+      },
+      {
+        "name": "GET",
+        "kind": "function",
+        "file": "apps\\web\\src\\app\\api\\sync-status\\route.ts",
+        "line": 5,
+        "exported": true
+      }
+    ],
+    "types": [
+      {
+        "name": "BodyPart",
+        "kind": "type",
+        "file": "packages\\shared\\src\\types\\shots.ts",
+        "line": 12,
+        "exported": true
+      },
+      {
+        "name": "BodyPart",
+        "kind": "type",
+        "file": "apps\\etl\\src\\parsers\\normalize.ts",
+        "line": 8,
+        "exported": true
+      },
+      {
+        "name": "Confidence",
+        "kind": "type",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 13,
+        "exported": true
+      },
+      {
+        "name": "EtlMatchShotsResponse",
+        "kind": "type",
+        "file": "packages\\shared\\src\\types\\etl.ts",
+        "line": 72,
+        "exported": true
+      },
+      {
+        "name": "EtlMatchShotsResponse",
+        "kind": "type",
+        "file": "apps\\web\\src\\lib\\etl\\types.ts",
+        "line": 73,
+        "exported": true
+      },
+      {
+        "name": "EtlResult",
+        "kind": "type",
+        "file": "apps\\web\\src\\lib\\etl\\client.ts",
+        "line": 37,
+        "exported": true
+      },
+      {
+        "name": "LocalStatsRow",
+        "kind": "type",
+        "file": "apps\\web\\src\\data\\fetchers\\player.ts",
+        "line": 183,
+        "exported": true
+      },
+      {
+        "name": "MatchResult",
+        "kind": "type",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 14,
+        "exported": true
+      },
+      {
+        "name": "Outcome",
+        "kind": "type",
+        "file": "packages\\shared\\src\\types\\shots.ts",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "Outcome",
+        "kind": "type",
+        "file": "apps\\etl\\src\\parsers\\normalize.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "Situation",
+        "kind": "type",
+        "file": "packages\\shared\\src\\types\\shots.ts",
+        "line": 19,
+        "exported": true
+      },
+      {
+        "name": "Situation",
+        "kind": "type",
+        "file": "apps\\etl\\src\\parsers\\normalize.ts",
+        "line": 15,
+        "exported": true
+      },
+      {
+        "name": "StatsRow",
+        "kind": "type",
+        "file": "apps\\web\\src\\data\\fetchers\\match-page.ts",
+        "line": 279,
+        "exported": true
+      },
+      {
+        "name": "TrendDirection",
+        "kind": "type",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 15,
+        "exported": true
+      },
+      {
+        "name": "UserTier",
+        "kind": "type",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 16,
+        "exported": true
+      },
+      {
+        "name": "ValueStatus",
+        "kind": "type",
+        "file": "apps\\web\\src\\data\\types.ts",
+        "line": 12,
+        "exported": true
+      },
+      {
+        "name": "ValueStatus",
+        "kind": "type",
+        "file": "apps\\web\\src\\components\\ui\\ValueBadge.tsx",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "CTAVariant",
+        "kind": "type",
+        "file": "apps\\web\\src\\components\\landing\\AuthCTA.tsx",
+        "line": 18,
+        "exported": false,
+        "description": "AuthCTA — Componente unificado de Call-to-Action com auth.\rSubstitui: HeroActions, CTAButtons, Benef..."
+      },
+      {
+        "name": "EnrichRow",
+        "kind": "type",
+        "file": "apps\\web\\src\\data\\fetchers\\match-page.ts",
+        "line": 390,
+        "exported": false
+      },
+      {
+        "name": "FallbackType",
+        "kind": "type",
+        "file": "apps\\web\\src\\components\\ui\\SafeImage.tsx",
+        "line": 7,
+        "exported": false
+      },
+      {
+        "name": "Level",
+        "kind": "type",
+        "file": "apps\\web\\src\\lib\\logger.ts",
+        "line": 7,
+        "exported": false
+      },
+      {
+        "name": "Level",
+        "kind": "type",
+        "file": "apps\\etl\\src\\lib\\logger.ts",
+        "line": 2,
+        "exported": false
+      }
+    ],
+    "enums": []
+  },
+  "publicAPI": [
+    {
+      "name": "AdvancedPlayerRow",
+      "kind": "interface",
+      "file": "apps\\web\\src\\data\\types.ts",
+      "line": 216,
+      "exported": true
+    },
+    {
+      "name": "AlertCardProps",
+      "kind": "interface",
+      "file": "apps\\web\\src\\components\\alerts\\AlertCard.tsx",
+      "line": 4,
+      "exported": true
+    },
+    {
+      "name": "AlertData",
+      "kind": "interface",
+      "file": "apps\\web\\src\\data\\types.ts",
+      "line": 137,
+      "exported": true
+    },
+    {
+      "name": "AlertsPage",
+      "kind": "function",
+      "file": "apps\\web\\src\\app\\(protected)\\alerts\\page.tsx",
+      "line": 64,
+      "exported": true
+    },
+    {
+      "name": "attachMatchPlayer",
+      "kind": "function",
+      "file": "apps\\etl\\src\\services\\db.ts",
+      "line": 137,
+      "exported": true
+    },
+    {
+      "name": "AuthLayout",
+      "kind": "function",
+      "file": "apps\\web\\src\\app\\(auth)\\layout.tsx",
+      "line": 1,
+      "exported": true
+    },
+    {
+      "name": "batchEnrichPlayers",
+      "kind": "function",
+      "file": "apps\\web\\src\\lib\\etl\\enricher.ts",
+      "line": 52,
+      "exported": true
+    },
+    {
+      "name": "BenefitCard",
+      "kind": "function",
+      "file": "apps\\web\\src\\components\\landing\\BenefitCard.tsx",
+      "line": 9,
+      "exported": true
+    },
+    {
+      "name": "BodyPart",
+      "kind": "type",
+      "file": "packages\\shared\\src\\types\\shots.ts",
+      "line": 12,
+      "exported": true
+    },
+    {
+      "name": "BodyPart",
+      "kind": "type",
+      "file": "apps\\etl\\src\\parsers\\normalize.ts",
+      "line": 8,
+      "exported": true
+    },
+    {
+      "name": "buildLineIndicator",
+      "kind": "function",
+      "file": "apps\\web\\src\\lib\\helpers.ts",
+      "line": 100,
+      "exported": true
+    },
+    {
+      "name": "buildTeamBadgeUrl",
+      "kind": "function",
+      "file": "apps\\web\\src\\lib\\helpers.ts",
+      "line": 77,
+      "exported": true
+    },
+    {
+      "name": "cachedImageUrl",
+      "kind": "function",
+      "file": "apps\\web\\src\\lib\\helpers.ts",
+      "line": 66,
+      "exported": true
+    },
+    {
+      "name": "calcCV",
+      "kind": "function",
+      "file": "packages\\shared\\src\\calc\\market.ts",
+      "line": 35,
+      "exported": true
+    },
+    {
+      "name": "calcCV",
+      "kind": "function",
+      "file": "apps\\web\\src\\lib\\calc\\market.ts",
+      "line": 35,
+      "exported": true
+    },
+    {
+      "name": "calcHits",
+      "kind": "function",
+      "file": "packages\\shared\\src\\calc\\market.ts",
+      "line": 7,
+      "exported": true
+    },
+    {
+      "name": "calcHits",
+      "kind": "function",
+      "file": "apps\\web\\src\\lib\\calc\\market.ts",
+      "line": 7,
+      "exported": true
+    },
+    {
+      "name": "checkRateLimit",
+      "kind": "function",
+      "file": "apps\\web\\src\\lib\\rate-limit.ts",
+      "line": 45,
+      "exported": true
+    },
+    {
+      "name": "cn",
+      "kind": "function",
+      "file": "apps\\web\\src\\lib\\utils.ts",
+      "line": 4,
+      "exported": true
+    },
+    {
+      "name": "Column",
+      "kind": "interface",
+      "file": "apps\\web\\src\\components\\table\\DataTable.tsx",
+      "line": 17,
+      "exported": true
+    },
+    {
+      "name": "ComparisonRow",
+      "kind": "interface",
+      "file": "apps\\web\\src\\data\\types.ts",
+      "line": 239,
+      "exported": true
+    },
+    {
+      "name": "computePlayerStats",
+      "kind": "function",
+      "file": "apps\\web\\src\\lib\\etl\\transformers.ts",
+      "line": 251,
+      "exported": true
+    },
+    {
+      "name": "Confidence",
+      "kind": "type",
+      "file": "apps\\web\\src\\data\\types.ts",
+      "line": 13,
+      "exported": true
+    },
+    {
+      "name": "ContainerProps",
+      "kind": "interface",
+      "file": "apps\\web\\src\\components\\primitives\\Container.tsx",
+      "line": 9,
+      "exported": true
+    },
+    {
+      "name": "curlFetchJson",
+      "kind": "function",
+      "file": "apps\\etl\\src\\crawlers\\curlFetch.ts",
+      "line": 63,
+      "exported": true
+    },
+    {
+      "name": "curlFetchJsonWithRetry",
+      "kind": "function",
+      "file": "apps\\etl\\src\\crawlers\\curlFetch.ts",
+      "line": 168,
+      "exported": true
+    },
+    {
+      "name": "CurlFetchResult",
+      "kind": "interface",
+      "file": "apps\\etl\\src\\crawlers\\curlFetch.ts",
+      "line": 53,
+      "exported": true
+    },
+    {
+      "name": "DashboardError",
+      "kind": "function",
+      "file": "apps\\web\\src\\app\\(protected)\\dashboard\\error.tsx",
+      "line": 5,
+      "exported": true
+    },
+    {
+      "name": "DashboardPage",
+      "kind": "function",
+      "file": "apps\\web\\src\\app\\(protected)\\dashboard\\page.tsx",
+      "line": 16,
+      "exported": true
+    },
+    {
+      "name": "DashboardPageData",
+      "kind": "interface",
+      "file": "apps\\web\\src\\data\\fetchers\\dashboard.ts",
+      "line": 19,
+      "exported": true
+    },
+    {
+      "name": "DataTableProps",
+      "kind": "interface",
+      "file": "apps\\web\\src\\components\\table\\DataTable.tsx",
+      "line": 27,
+      "exported": true
+    },
+    {
+      "name": "detectPlayerTeamId",
+      "kind": "function",
+      "file": "apps\\web\\src\\lib\\etl\\transformers.ts",
+      "line": 299,
+      "exported": true
+    },
+    {
+      "name": "disconnectDb",
+      "kind": "function",
+      "file": "apps\\etl\\src\\services\\db.ts",
+      "line": 11,
+      "exported": true
+    },
+    {
+      "name": "discoverEuropeanMatchIds",
+      "kind": "function",
+      "file": "apps\\etl\\src\\crawlers\\discoverEuropeanMatches.ts",
+      "line": 370,
+      "exported": true
+    },
+    {
+      "name": "discoverFinishedMatchIdsLastNDays",
+      "kind": "function",
+      "file": "apps\\etl\\src\\crawlers\\discoverEuropeanMatches.ts",
+      "line": 310,
+      "exported": true
+    },
+    {
+      "name": "downloadAndCacheImage",
+      "kind": "function",
+      "file": "apps\\etl\\src\\services\\imageDownloader.ts",
+      "line": 167,
+      "exported": true
+    },
+    {
+      "name": "downloadImages",
+      "kind": "function",
+      "file": "apps\\etl\\src\\services\\imageDownloader.ts",
+      "line": 221,
+      "exported": true
+    },
+    {
+      "name": "EtlEnrichInput",
+      "kind": "interface",
+      "file": "apps\\web\\src\\lib\\etl\\enricher.ts",
+      "line": 28,
+      "exported": true
+    },
+    {
+      "name": "EtlEnrichResult",
+      "kind": "interface",
+      "file": "apps\\web\\src\\lib\\etl\\enricher.ts",
+      "line": 34,
+      "exported": true
+    },
+    {
+      "name": "EtlErrorBody",
+      "kind": "interface",
+      "file": "packages\\shared\\src\\types\\etl.ts",
+      "line": 96,
+      "exported": true
+    },
+    {
+      "name": "EtlErrorBody",
+      "kind": "interface",
+      "file": "apps\\web\\src\\lib\\etl\\types.ts",
+      "line": 78,
+      "exported": true
+    },
+    {
+      "name": "etlHealth",
+      "kind": "function",
+      "file": "apps\\web\\src\\lib\\etl\\client.ts",
+      "line": 179,
+      "exported": true
+    },
+    {
+      "name": "EtlHealthResponse",
+      "kind": "interface",
+      "file": "packages\\shared\\src\\types\\etl.ts",
+      "line": 11,
+      "exported": true
+    },
+    {
+      "name": "EtlHealthResponse",
+      "kind": "interface",
+      "file": "apps\\web\\src\\lib\\etl\\types.ts",
+      "line": 11,
+      "exported": true
+    },
+    {
+      "name": "EtlLastMatchesResponse",
+      "kind": "interface",
+      "file": "packages\\shared\\src\\types\\etl.ts",
+      "line": 35,
+      "exported": true
+    },
+    {
+      "name": "EtlLastMatchesResponse",
+      "kind": "interface",
+      "file": "apps\\web\\src\\lib\\etl\\types.ts",
+      "line": 35,
+      "exported": true
+    },
+    {
+      "name": "EtlLastMatchItem",
+      "kind": "interface",
+      "file": "packages\\shared\\src\\types\\etl.ts",
+      "line": 18,
+      "exported": true
+    },
+    {
+      "name": "EtlLastMatchItem",
+      "kind": "interface",
+      "file": "apps\\web\\src\\lib\\etl\\types.ts",
+      "line": 18,
+      "exported": true
+    },
+    {
+      "name": "etlMatchShots",
+      "kind": "function",
+      "file": "apps\\web\\src\\lib\\etl\\client.ts",
+      "line": 216,
+      "exported": true
+    },
+    {
+      "name": "EtlMatchShotsResponse",
+      "kind": "type",
+      "file": "packages\\shared\\src\\types\\etl.ts",
+      "line": 72,
+      "exported": true
+    }
+  ],
+  "dependencies": {
+    "mostImported": [
+      {
+        "file": "C:\\Users\\Thalys\\finalizabot\\apps\\web\\src\\components\\landing\\AuthCTA.tsx",
+        "importedBy": 3
+      },
+      {
+        "file": "C:\\Users\\Thalys\\finalizabot\\apps\\web\\.next\\types\\routes.d.ts",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Thalys\\finalizabot\\packages\\shared\\src\\calc\\market.ts",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Thalys\\finalizabot\\apps\\web\\src\\lib\\rate-limit.ts",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Thalys\\finalizabot\\apps\\web\\src\\lib\\validation.ts",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Thalys\\finalizabot\\apps\\etl\\src\\parsers\\normalize.ts",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Thalys\\finalizabot\\apps\\web\\src\\lib\\etl\\types.ts",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Thalys\\finalizabot\\apps\\web\\src\\lib\\etl\\config.ts",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Thalys\\finalizabot\\apps\\web\\src\\app\\globals.css",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Thalys\\finalizabot\\apps\\web\\src\\components\\player\\PlayerHeroCard.tsx",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Thalys\\finalizabot\\apps\\web\\src\\components\\player\\MatchHistoryTable.tsx",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Thalys\\finalizabot\\apps\\web\\src\\components\\landing\\BenefitCard.tsx",
+        "importedBy": 1
+      }
+    ]
+  },
+  "stats": {
+    "totalSymbols": 348,
+    "exportedSymbols": 194,
+    "analysisTimeMs": 504
+  }
+}

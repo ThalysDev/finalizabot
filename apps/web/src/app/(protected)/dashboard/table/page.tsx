@@ -88,6 +88,7 @@ async function fetchTableData(): Promise<{
 
           return {
             player: p.name ?? "—",
+            position: p.position ?? "—",
             team: e.teamName ?? "—",
             line: line.toFixed(1),
             odds: oddsMap.get(p.id) ?? 0,
@@ -154,6 +155,7 @@ async function fetchTableData(): Promise<{
 
           return {
             player: p.name ?? "—",
+            position: p.position ?? "—",
             team: p.teamName ?? "—",
             line: line.toFixed(1),
             odds: oddsMap.get(p.id) ?? 0,
@@ -208,6 +210,17 @@ const columns: Column<AdvancedPlayerRow>[] = [
           <p className="text-fb-text-muted text-[11px]">{row.team}</p>
         </div>
       </div>
+    ),
+  },
+  {
+    key: "position",
+    label: "Posição",
+    align: "center",
+    sortable: true,
+    render: (row) => (
+      <span className="text-fb-text-muted text-xs uppercase font-medium">
+        {row.position}
+      </span>
     ),
   },
   {

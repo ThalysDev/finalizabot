@@ -8,6 +8,8 @@ import prisma from "@/lib/db/prisma";
  * Verifica saúde do FinalizaBOT: banco de dados e ETL API.
  */
 export async function GET() {
+  const exposeErrors = process.env.NODE_ENV !== "production";
+
   // Check database connectivity
   let dbStatus: "ok" | "unavailable" = "unavailable";
   let dbError: string | null = null;
@@ -26,9 +28,9 @@ export async function GET() {
     {
       status: allOk ? "healthy" : "degraded",
       db: dbStatus,
-      dbError,
+      dbError: exposeErrors ? dbError : null,
       etl: etl.data ? "ok" : "unavailable",
-      etlError: etl.error,
+      etlError: exposeErrors ? etl.error : null,
       timestamp: new Date().toISOString(),
     },
     { status: allOk ? 200 : 503 },

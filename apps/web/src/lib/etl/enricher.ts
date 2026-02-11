@@ -64,10 +64,32 @@ export async function batchEnrichPlayers(
 
     const chunkResults = await Promise.all(
       chunk.map(async (p): Promise<EtlEnrichResult> => {
-        const [lastMatchesRes, shotsRes] = await Promise.all([
+        const [lastMatchesOutcome, shotsOutcome] = await Promise.allSettled([
           etlPlayerLastMatches(p.sofascoreId, lastMatchesLimit),
           etlPlayerShots(p.sofascoreId, { limit: 5 }),
         ]);
+
+        const lastMatchesRes: EtlResult<EtlLastMatchesResponse> =
+          lastMatchesOutcome.status === "fulfilled"
+            ? lastMatchesOutcome.value
+            : {
+                data: null,
+                error:
+                  lastMatchesOutcome.reason instanceof Error
+                    ? lastMatchesOutcome.reason.message
+                    : "ETL last matches falhou",
+              };
+
+        const shotsRes: EtlResult<EtlShotsResponse> =
+          shotsOutcome.status === "fulfilled"
+            ? shotsOutcome.value
+            : {
+                data: null,
+                error:
+                  shotsOutcome.reason instanceof Error
+                    ? shotsOutcome.reason.message
+                    : "ETL shots falhou",
+              };
 
         let stats: ReturnType<typeof computePlayerStats> | null = null;
         let teamName = "—";
