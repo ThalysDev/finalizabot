@@ -77,21 +77,31 @@ async function fetchTableData(): Promise<{
     // Primary path: use ETL enrichment
     players = dbPlayers
       .map((p) => {
-        const e = enriched.get(String(p.sofascoreId));
-        if (!e?.stats) return null;
+        try {
+          const e = enriched.get(String(p.sofascoreId));
+          if (!e?.stats) return null;
 
-        return {
-          player: p.name,
-          team: e.teamName,
-          line: line.toFixed(1),
-          odds: oddsMap.get(p.id) ?? 0,
-          l5: e.stats.last5Over.filter(Boolean).length,
-          l10: e.stats.u10Hits,
-          cv: e.stats.cv != null ? Number(e.stats.cv.toFixed(2)) : 0,
-          avgShots: e.stats.avgShots,
-          avgMins: e.stats.avgMinutes,
-          status: statusFromCV(e.stats.cv),
-        };
+          // Defensive: ensure all values are valid numbers
+          const cv = e.stats.cv != null && Number.isFinite(e.stats.cv) ? Number(e.stats.cv.toFixed(2)) : 0;
+          const avgShots = e.stats.avgShots != null && Number.isFinite(e.stats.avgShots) ? Number(e.stats.avgShots.toFixed(1)) : 0;
+          const avgMins = e.stats.avgMinutes != null && Number.isFinite(e.stats.avgMinutes) ? Math.round(e.stats.avgMinutes) : 0;
+
+          return {
+            player: p.name ?? "—",
+            team: e.teamName ?? "—",
+            line: line.toFixed(1),
+            odds: oddsMap.get(p.id) ?? 0,
+            l5: e.stats.last5Over?.filter(Boolean).length ?? 0,
+            l10: e.stats.u10Hits ?? 0,
+            cv,
+            avgShots,
+            avgMins,
+            status: statusFromCV(cv),
+          };
+        } catch (err) {
+          console.error(`[fetchTableData ETL] error processing player ${p.id}:`, err);
+          return null;
+        }
       })
       .filter((p): p is AdvancedPlayerRow => p !== null);
   } else {
@@ -122,45 +132,59 @@ async function fetchTableData(): Promise<{
 
     players = dbPlayers
       .map((p) => {
-        const pStats = statsByPlayer.get(p.id);
-        if (!pStats || pStats.shots.length < 2) return null;
+        try {
+          const pStats = statsByPlayer.get(p.id);
+          if (!pStats || pStats.shots.length < 2) return null;
 
-        // Sanitise: remove NaN/undefined values before calculations
-        const cleanShots = pStats.shots.filter((s) => Number.isFinite(s));
-        const cleanMinutes = pStats.minutes.filter((m) => Number.isFinite(m));
-        if (cleanShots.length < 2) return null;
+          // Sanitise: remove NaN/undefined values before calculations
+          const cleanShots = pStats.shots.filter((s) => Number.isFinite(s));
+          const cleanMinutes = pStats.minutes.filter((m) => Number.isFinite(m));
+          if (cleanShots.length < 2) return null;
 
-        const cv = calcCV(cleanShots);
-        const l5Shots = cleanShots.slice(0, 5);
-        const l5Hits = l5Shots.filter((s) => s >= line).length;
-        const l10Hits = calcHits(cleanShots, line, Math.min(cleanShots.length, 10));
-        const avgShots = mean(cleanShots);
-        const avgMins = cleanMinutes.length > 0 ? Math.round(mean(cleanMinutes)) : 0;
+          const cv = calcCV(cleanShots);
+          const l5Shots = cleanShots.slice(0, 5);
+          const l5Hits = l5Shots.filter((s) => s >= line).length;
+          const l10Hits = calcHits(cleanShots, line, Math.min(cleanShots.length, 10));
+          const avgShotsVal = mean(cleanShots);
+          const avgMinsVal = cleanMinutes.length > 0 ? Math.round(mean(cleanMinutes)) : 0;
 
-        return {
-          player: p.name,
-          team: p.teamName ?? "—",
-          line: line.toFixed(1),
-          odds: oddsMap.get(p.id) ?? 0,
-          l5: l5Hits,
-          l10: l10Hits,
-          cv: cv != null ? Number(cv.toFixed(2)) : 0,
-          avgShots,
-          avgMins,
-          status: statusFromCV(cv),
-        };
+          // Final sanitisation before rendering
+          const finalCv = cv != null && Number.isFinite(cv) ? Number(cv.toFixed(2)) : 0;
+          const finalAvgShots = avgShotsVal != null && Number.isFinite(avgShotsVal) ? Number(avgShotsVal.toFixed(1)) : 0;
+
+          return {
+            player: p.name ?? "—",
+            team: p.teamName ?? "—",
+            line: line.toFixed(1),
+            odds: oddsMap.get(p.id) ?? 0,
+            l5: l5Hits,
+            l10: l10Hits,
+            cv: finalCv,
+            avgShots: finalAvgShots,
+            avgMins: avgMinsVal,
+            status: statusFromCV(finalCv),
+          };
+        } catch (err) {
+          console.error(`[fetchTableData Prisma] error processing player ${p.id}:`, err);
+          return null;
+        }
       })
       .filter((p): p is AdvancedPlayerRow => p !== null);
   }
 
-  const match = upcomingMatch
-    ? {
-        homeTeam: upcomingMatch.homeTeam,
-        awayTeam: upcomingMatch.awayTeam,
-        competition: upcomingMatch.competition,
-        matchDate: formatDateTime(upcomingMatch.matchDate),
-      }
-    : null;
+  let match: { homeTeam: string; awayTeam: string; competition: string; matchDate: string } | null = null;
+  try {
+    match = upcomingMatch
+      ? {
+          homeTeam: upcomingMatch.homeTeam ?? "—",
+          awayTeam: upcomingMatch.awayTeam ?? "—",
+          competition: upcomingMatch.competition ?? "—",
+          matchDate: formatDateTime(upcomingMatch.matchDate),
+        }
+      : null;
+  } catch (err) {
+    console.error("[fetchTableData] match formatting error:", err);
+  }
 
   return { players, match, etlDown };
   } catch (err) {
