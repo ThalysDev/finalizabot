@@ -7,9 +7,29 @@ import {
   fetchScheduledEventsViaBrowser,
 } from "./sofascoreBrowser.js";
 
+function getDelayRange(
+  minDefault: number,
+  maxDefault: number,
+  envPrefix: string,
+): { min: number; max: number } {
+  const minEnv = process.env[`${envPrefix}_MIN_MS`];
+  const maxEnv = process.env[`${envPrefix}_MAX_MS`];
+  const min = Math.max(0, parseInt(minEnv ?? "", 10) || minDefault);
+  const max = Math.max(min, parseInt(maxEnv ?? "", 10) || maxDefault);
+  return { min, max };
+}
+
 /** Randomised delay to avoid fixed-interval bot detection. */
 function delay(): Promise<void> {
-  const ms = 600 + Math.floor(Math.random() * 1400); // 600-2000 ms
+  const scale = Math.max(
+    0,
+    parseFloat(process.env.DISCOVERY_DELAY_SCALE ?? "1") || 1,
+  );
+  const { min, max } = getDelayRange(600, 2000, "DISCOVERY_DELAY");
+  const scaledMin = Math.floor(min * scale);
+  const scaledMax = Math.floor(max * scale);
+  const span = Math.max(0, scaledMax - scaledMin);
+  const ms = scaledMin + Math.floor(Math.random() * (span + 1));
   return new Promise((r) => setTimeout(r, ms));
 }
 
@@ -290,6 +310,7 @@ async function getFinishedMatchIdsLastNDays(
 export async function discoverFinishedMatchIdsLastNDays(
   days?: number,
 ): Promise<string[]> {
+  const t0 = Date.now();
   const n = days ?? (parseInt(process.env.SYNC_LAST_DAYS ?? "60", 10) || 60);
   const sinceMs = Date.now() - n * 24 * 60 * 60 * 1000;
   const tournamentIds = getSyncTournamentIds();
@@ -301,7 +322,8 @@ export async function discoverFinishedMatchIdsLastNDays(
   const allIds = new Set<string>();
 
   /* Limit lookback window with env override to avoid excessive calls */
-  const maxLookback = parseInt(process.env.SYNC_HISTORY_LOOKBACK_DAYS ?? "60", 10) || 60;
+  const maxLookback =
+    parseInt(process.env.SYNC_HISTORY_LOOKBACK_DAYS ?? "60", 10) || 60;
   const lookbackDays = Math.min(n, maxLookback);
   for (let offset = 0; offset < lookbackDays; offset++) {
     const d = new Date(Date.now() - offset * 24 * 60 * 60 * 1000);
@@ -315,7 +337,11 @@ export async function discoverFinishedMatchIdsLastNDays(
       const code = ev?.status?.code;
       if (code !== STATUS_FINISHED) continue;
       const uniqueId = ev?.tournament?.uniqueTournament?.id;
-      if (typeof uniqueId === "number" && idSet.size > 0 && !idSet.has(uniqueId))
+      if (
+        typeof uniqueId === "number" &&
+        idSet.size > 0 &&
+        !idSet.has(uniqueId)
+      )
         continue;
       const name = ev?.tournament?.name;
       if (name != null && !isAllowedTournament(name)) continue;
@@ -331,6 +357,7 @@ export async function discoverFinishedMatchIdsLastNDays(
     days: n,
     lookback: lookbackDays,
     count: allIds.size,
+    elapsedMs: Date.now() - t0,
   });
   return [...allIds];
 }

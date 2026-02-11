@@ -69,7 +69,9 @@ export async function curlFetchJson<T = unknown>(
   },
 ): Promise<CurlFetchResult<T>> {
   const headers = { ...DEFAULT_HEADERS, ...options?.headers };
-  const timeout = options?.timeout ?? 25;
+  const defaultTimeout =
+    parseInt(process.env.CURL_TIMEOUT_SECONDS ?? "", 10) || 25;
+  const timeout = options?.timeout ?? defaultTimeout;
   const proxyUrl = options?.proxyUrl;
 
   const args: string[] = [
@@ -133,9 +135,29 @@ export async function curlFetchJson<T = unknown>(
 /*  With automatic proxy rotation + retry                              */
 /* ------------------------------------------------------------------ */
 
+function getDelayRange(
+  minDefault: number,
+  maxDefault: number,
+  envPrefix: string,
+): { min: number; max: number } {
+  const minEnv = process.env[`${envPrefix}_MIN_MS`];
+  const maxEnv = process.env[`${envPrefix}_MAX_MS`];
+  const min = Math.max(0, parseInt(minEnv ?? "", 10) || minDefault);
+  const max = Math.max(min, parseInt(maxEnv ?? "", 10) || maxDefault);
+  return { min, max };
+}
+
 /** Randomised delay to avoid fixed-interval bot detection. */
 function jitterDelay(): Promise<void> {
-  const ms = 300 + Math.floor(Math.random() * 700); // 300-1000 ms
+  const scale = Math.max(
+    0,
+    parseFloat(process.env.CURL_JITTER_SCALE ?? "1") || 1,
+  );
+  const { min, max } = getDelayRange(300, 1000, "CURL_JITTER");
+  const scaledMin = Math.floor(min * scale);
+  const scaledMax = Math.floor(max * scale);
+  const span = Math.max(0, scaledMax - scaledMin);
+  const ms = scaledMin + Math.floor(Math.random() * (span + 1));
   return new Promise((r) => setTimeout(r, ms));
 }
 
@@ -145,7 +167,8 @@ function jitterDelay(): Promise<void> {
  */
 export async function curlFetchJsonWithRetry<T = unknown>(
   url: string,
-  maxAttempts = 6,
+  maxAttempts =
+    parseInt(process.env.CURL_MAX_ATTEMPTS ?? "", 10) || 6,
   options?: { headers?: Record<string, string> },
 ): Promise<T | null> {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {

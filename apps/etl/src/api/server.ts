@@ -1,86 +1,98 @@
-import 'dotenv/config';
-import Fastify from 'fastify';
-import cors from '@fastify/cors';
-import { getPrisma } from '../services/db.js';
-import { logger } from '../lib/logger.js';
+import "dotenv/config";
+import Fastify from "fastify";
+import cors from "@fastify/cors";
+import { getPrisma } from "../services/db.js";
+import { logger } from "../lib/logger.js";
 
 const rawPort = process.env.PORT?.trim();
-const PORT = rawPort ? Math.max(0, Math.min(65535, Number(rawPort)) || 3000) : 3000;
+const PORT = rawPort
+  ? Math.max(0, Math.min(65535, Number(rawPort)) || 3000)
+  : 3000;
 const prisma = getPrisma();
 
-const ETL_API_KEY = process.env.SOFASCORE_ETL_API_KEY?.trim() ?? '';
+const ETL_API_KEY = process.env.SOFASCORE_ETL_API_KEY?.trim() ?? "";
 
 const server = Fastify({ logger: false });
 
 // --- API key middleware (skip /health for uptime monitors) ---
-server.addHook('onRequest', async (request, reply) => {
-  if (request.url === '/health') return;
+server.addHook("onRequest", async (request, reply) => {
+  if (request.url === "/health") return;
 
   if (!ETL_API_KEY) {
-    logger.warn('SOFASCORE_ETL_API_KEY not set — all requests allowed (dev mode)');
+    logger.warn(
+      "SOFASCORE_ETL_API_KEY not set — all requests allowed (dev mode)",
+    );
     return;
   }
 
-  const provided = request.headers['x-api-key'];
+  const provided = request.headers["x-api-key"];
   if (provided !== ETL_API_KEY) {
-    await reply.status(401).send({ error: 'Unauthorized — invalid or missing API key' });
+    await reply
+      .status(401)
+      .send({ error: "Unauthorized — invalid or missing API key" });
   }
 });
 
-server.get('/health', async (_, reply) => {
-  await reply.send({ status: 'ok' });
+server.get("/health", async (_, reply) => {
+  await reply.send({ status: "ok" });
 });
 
-server.get<{ Params: { playerId: string } }>('/players/:playerId', async (request, reply) => {
-  const { playerId } = request.params;
-  if (!playerId?.trim()) {
-    await reply.status(400).send({ error: 'playerId is required' });
-    return;
-  }
-  const player = await prisma.etlPlayer.findUnique({
-    where: { id: playerId },
-    select: { id: true, name: true, position: true, imageUrl: true },
-  });
-  if (!player) {
-    await reply.status(404).send({ error: 'Player not found' });
-    return;
-  }
-  await reply.send({
-    id: player.id,
-    name: player.name,
-    position: player.position,
-    imageUrl: player.imageUrl,
-  });
-});
+server.get<{ Params: { playerId: string } }>(
+  "/players/:playerId",
+  async (request, reply) => {
+    const { playerId } = request.params;
+    if (!playerId?.trim()) {
+      await reply.status(400).send({ error: "playerId is required" });
+      return;
+    }
+    const player = await prisma.etlPlayer.findUnique({
+      where: { id: playerId },
+      select: { id: true, name: true, position: true, imageUrl: true },
+    });
+    if (!player) {
+      await reply.status(404).send({ error: "Player not found" });
+      return;
+    }
+    await reply.send({
+      id: player.id,
+      name: player.name,
+      position: player.position,
+      imageUrl: player.imageUrl,
+    });
+  },
+);
 
-server.get<{ Params: { teamId: string } }>('/teams/:teamId', async (request, reply) => {
-  const { teamId } = request.params;
-  if (!teamId?.trim()) {
-    await reply.status(400).send({ error: 'teamId is required' });
-    return;
-  }
-  const team = await prisma.etlTeam.findUnique({
-    where: { id: teamId },
-    select: { id: true, name: true, imageUrl: true },
-  });
-  if (!team) {
-    await reply.status(404).send({ error: 'Team not found' });
-    return;
-  }
-  await reply.send({
-    id: team.id,
-    name: team.name,
-    imageUrl: team.imageUrl,
-  });
-});
+server.get<{ Params: { teamId: string } }>(
+  "/teams/:teamId",
+  async (request, reply) => {
+    const { teamId } = request.params;
+    if (!teamId?.trim()) {
+      await reply.status(400).send({ error: "teamId is required" });
+      return;
+    }
+    const team = await prisma.etlTeam.findUnique({
+      where: { id: teamId },
+      select: { id: true, name: true, imageUrl: true },
+    });
+    if (!team) {
+      await reply.status(404).send({ error: "Team not found" });
+      return;
+    }
+    await reply.send({
+      id: team.id,
+      name: team.name,
+      imageUrl: team.imageUrl,
+    });
+  },
+);
 
 server.get<{
   Params: { playerId: string };
   Querystring: { from?: string; to?: string; limit?: string; offset?: string };
-}>('/players/:playerId/shots', async (request, reply) => {
+}>("/players/:playerId/shots", async (request, reply) => {
   const { playerId } = request.params;
   if (!playerId?.trim()) {
-    await reply.status(400).send({ error: 'playerId is required' });
+    await reply.status(400).send({ error: "playerId is required" });
     return;
   }
   const limit = Math.min(Number(request.query.limit) || 50, 200);
@@ -88,15 +100,19 @@ server.get<{
   const from = request.query.from;
   const to = request.query.to;
 
-  const where: { playerId: string; match?: { startTime?: { gte?: Date; lte?: Date } } } = { playerId };
+  const where: {
+    playerId: string;
+    match?: { startTime?: { gte?: Date; lte?: Date } };
+  } = { playerId };
   if (from || to) {
     where.match = { startTime: {} };
     if (from) {
-      const fromDate = new Date(from + 'T00:00:00.000Z');
-      if (!Number.isNaN(fromDate.getTime())) where.match.startTime!.gte = fromDate;
+      const fromDate = new Date(from + "T00:00:00.000Z");
+      if (!Number.isNaN(fromDate.getTime()))
+        where.match.startTime!.gte = fromDate;
     }
     if (to) {
-      const toDate = new Date(to + 'T23:59:59.999Z');
+      const toDate = new Date(to + "T23:59:59.999Z");
       if (!Number.isNaN(toDate.getTime())) where.match.startTime!.lte = toDate;
     }
   }
@@ -105,7 +121,7 @@ server.get<{
     prisma.etlShotEvent.findMany({
       where,
       include: { match: { select: { startTime: true } } },
-      orderBy: [{ match: { startTime: 'desc' } }, { minute: 'desc' }],
+      orderBy: [{ match: { startTime: "desc" } }, { minute: "desc" }],
       take: limit,
       skip: offset,
     }),
@@ -131,21 +147,30 @@ server.get<{
   await reply.send({ items, total, limit, offset });
 });
 
-const ON_TARGET_OUTCOMES = ['on_target', 'goal'];
+const ON_TARGET_OUTCOMES = ["on_target", "goal"];
+const STATUS_FINISHED = 100;
 
 server.get<{
   Params: { playerId: string };
   Querystring: { limit?: string };
-}>('/players/:playerId/last-matches', async (request, reply) => {
+}>("/players/:playerId/last-matches", async (request, reply) => {
   const { playerId } = request.params;
   if (!playerId?.trim()) {
-    await reply.status(400).send({ error: 'playerId is required' });
+    await reply.status(400).send({ error: "playerId is required" });
     return;
   }
   const limit = Math.min(Number(request.query.limit) || 20, 30);
 
   const matchPlayers = await prisma.etlMatchPlayer.findMany({
-    where: { playerId },
+    where: {
+      playerId,
+      match: {
+        OR: [
+          { statusCode: STATUS_FINISHED },
+          { statusType: "finished" },
+        ],
+      },
+    },
     include: {
       player: { select: { position: true, imageUrl: true } },
       match: {
@@ -155,12 +180,13 @@ server.get<{
         },
       },
     },
-    orderBy: { match: { startTime: 'desc' } },
+    orderBy: { match: { startTime: "desc" } },
     take: limit,
   });
 
   const matchIds = matchPlayers.map((mp) => mp.matchId);
-  let shotCountByMatch: Record<string, { total: number; onTarget: number }> = {};
+  let shotCountByMatch: Record<string, { total: number; onTarget: number }> =
+    {};
 
   if (matchIds.length > 0) {
     const shots = await prisma.etlShotEvent.findMany({
@@ -212,8 +238,15 @@ server.get<{
   const [shotsFromEvents, fallbackPlayer] = await Promise.all([
     prisma.etlShotEvent.findMany({
       where: { playerId },
-      include: { match: { include: { homeTeam: { select: { name: true } }, awayTeam: { select: { name: true } } } } },
-      orderBy: { match: { startTime: 'desc' } },
+      include: {
+        match: {
+          include: {
+            homeTeam: { select: { name: true } },
+            awayTeam: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { match: { startTime: "desc" } },
     }),
     prisma.etlPlayer.findUnique({
       where: { id: playerId },
@@ -241,7 +274,9 @@ server.get<{
     if (seenMatchIds.has(s.matchId)) continue;
     seenMatchIds.add(s.matchId);
     const matchShots = shotsFromEvents.filter((x) => x.matchId === s.matchId);
-    const onTarget = matchShots.filter((x) => ON_TARGET_OUTCOMES.includes(x.outcome)).length;
+    const onTarget = matchShots.filter((x) =>
+      ON_TARGET_OUTCOMES.includes(x.outcome),
+    ).length;
     fallbackItems.push({
       matchId: s.matchId,
       startTime: s.match.startTime,
@@ -271,10 +306,10 @@ server.get<{
 server.get<{
   Params: { matchId: string };
   Querystring: { limit?: string; offset?: string };
-}>('/matches/:matchId/shots', async (request, reply) => {
+}>("/matches/:matchId/shots", async (request, reply) => {
   const { matchId } = request.params;
   if (!matchId?.trim()) {
-    await reply.status(400).send({ error: 'matchId is required' });
+    await reply.status(400).send({ error: "matchId is required" });
     return;
   }
   const limit = Math.min(Number(request.query.limit) || 50, 200);
@@ -283,7 +318,7 @@ server.get<{
   const [shots, total] = await Promise.all([
     prisma.etlShotEvent.findMany({
       where: { matchId },
-      orderBy: [{ minute: 'asc' }, { second: 'asc' }],
+      orderBy: [{ minute: "asc" }, { second: "asc" }],
       take: limit,
       skip: offset,
     }),
@@ -310,13 +345,13 @@ server.get<{
 
 async function start(): Promise<void> {
   try {
-    if (process.env.CORS === '1' || process.env.CORS === 'true') {
+    if (process.env.CORS === "1" || process.env.CORS === "true") {
       await server.register(cors);
     }
-    await server.listen({ port: PORT, host: '0.0.0.0' });
-    logger.info('API listening', { url: `http://0.0.0.0:${PORT}` });
+    await server.listen({ port: PORT, host: "0.0.0.0" });
+    logger.info("API listening", { url: `http://0.0.0.0:${PORT}` });
   } catch (err) {
-    logger.error('API failed to start', err);
+    logger.error("API failed to start", err);
     process.exit(1);
   }
 }

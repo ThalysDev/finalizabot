@@ -73,8 +73,12 @@ function extractPlayersFromTeam(
       o.photo;
     const imageUrl = typeof img === "string" && img.length > 0 ? img : null;
     // SofaScore nests minutes inside statistics/stats sub-object
-    const statsObj = (o.statistics ?? o.stats) as Record<string, unknown> | undefined;
-    const playerStats = (playerObj?.statistics ?? playerObj?.stats) as Record<string, unknown> | undefined;
+    const statsObj = (o.statistics ?? o.stats) as
+      | Record<string, unknown>
+      | undefined;
+    const playerStats = (playerObj?.statistics ?? playerObj?.stats) as
+      | Record<string, unknown>
+      | undefined;
     const minutes =
       safeInt(o.minutesPlayed ?? o.playedMinutes ?? o.timePlayed) ??
       safeInt(statsObj?.minutesPlayed ?? statsObj?.playedMinutes) ??
@@ -144,19 +148,32 @@ export async function fetchAndPersistLineups(
     }
     const players = parseLineupsResponse(matchId, homeTeamId, awayTeamId, json);
     if (players.length === 0) return;
-    for (const p of players) {
-      await upsertPlayer({
-        id: p.playerId,
-        name: p.name,
-        position: p.position,
-        imageUrl: p.imageUrl,
-        currentTeamId: p.teamId,
-      });
-      await attachMatchPlayer(
-        matchId,
-        p.playerId,
-        p.teamId,
-        p.minutesPlayed ?? undefined,
+    const batchSize = Math.max(
+      1,
+      parseInt(process.env.LINEUPS_BATCH_SIZE ?? "20", 10) || 20,
+    );
+    for (let i = 0; i < players.length; i += batchSize) {
+      const batch = players.slice(i, i + batchSize);
+      await Promise.all(
+        batch.map((p) =>
+          upsertPlayer({
+            id: p.playerId,
+            name: p.name,
+            position: p.position,
+            imageUrl: p.imageUrl,
+            currentTeamId: p.teamId,
+          }),
+        ),
+      );
+      await Promise.all(
+        batch.map((p) =>
+          attachMatchPlayer(
+            matchId,
+            p.playerId,
+            p.teamId,
+            p.minutesPlayed ?? undefined,
+          ),
+        ),
       );
     }
     logger.info("Lineups ingested", { matchId, playersCount: players.length });

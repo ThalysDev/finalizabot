@@ -61,11 +61,31 @@ function getMatchUrl(matchId: string): string {
   return MATCH_URL_TEMPLATE.replace("{matchId}", matchId);
 }
 
+function getDelayRange(
+  minDefault: number,
+  maxDefault: number,
+  envPrefix: string,
+): { min: number; max: number } {
+  const minEnv = process.env[`${envPrefix}_MIN_MS`];
+  const maxEnv = process.env[`${envPrefix}_MAX_MS`];
+  const min = Math.max(0, parseInt(minEnv ?? "", 10) || minDefault);
+  const max = Math.max(min, parseInt(maxEnv ?? "", 10) || maxDefault);
+  return { min, max };
+}
+
 /** Randomised delay to avoid fixed-interval bot detection. */
 function randomDelay(short = false): Promise<void> {
-  const ms = short
-    ? 200 + Math.floor(Math.random() * 400) // 200-600 ms (for DB-only ops)
-    : 300 + Math.floor(Math.random() * 700); // 300-1000 ms (for API calls)
+  const scale = Math.max(
+    0,
+    parseFloat(process.env.SYNC_DELAY_SCALE ?? "1") || 1,
+  );
+  const { min, max } = short
+    ? getDelayRange(200, 600, "SYNC_DELAY_SHORT")
+    : getDelayRange(300, 1000, "SYNC_DELAY_API");
+  const scaledMin = Math.floor(min * scale);
+  const scaledMax = Math.floor(max * scale);
+  const span = Math.max(0, scaledMax - scaledMin);
+  const ms = scaledMin + Math.floor(Math.random() * (span + 1));
   return new Promise((r) => setTimeout(r, ms));
 }
 
@@ -378,6 +398,7 @@ async function ingestShotmap(
     const playerNames = new Map<string, string>();
     const playerTeams = new Map<string, string>();
     const seenMatchPlayers = new Set<string>();
+    const matchPlayerTeams = new Map<string, string>();
     for (const s of shots) {
       seenPlayers.add(s.playerId);
       // Prefer actual player name over numeric ID
@@ -389,6 +410,9 @@ async function ingestShotmap(
         playerTeams.set(s.playerId, s.teamId);
       }
       seenMatchPlayers.add(`${s.matchId}:${s.playerId}`);
+      if (s.teamId) {
+        matchPlayerTeams.set(`${s.matchId}:${s.playerId}`, s.teamId);
+      }
     }
     await Promise.all(
       [...seenPlayers].map((playerId) =>
@@ -402,10 +426,10 @@ async function ingestShotmap(
     await Promise.all(
       [...seenMatchPlayers].map((key) => {
         const colon = key.indexOf(":");
-        const m = colon >= 0 ? key.slice(0, colon) : key;
-        const p = colon >= 0 ? key.slice(colon + 1) : "";
-        const s = shots.find((x) => x.matchId === m && x.playerId === p)!;
-        return attachMatchPlayer(s.matchId, s.playerId, s.teamId);
+        const matchId = colon >= 0 ? key.slice(0, colon) : key;
+        const playerId = colon >= 0 ? key.slice(colon + 1) : "";
+        const teamId = matchPlayerTeams.get(key) ?? "";
+        return attachMatchPlayer(matchId, playerId, teamId);
       }),
     );
     await insertShotEvents(shots);
@@ -426,7 +450,12 @@ async function ingestShotmap(
 
 export async function runSofaScoreIngest(): Promise<void> {
   const stats = createStats();
+  const tLoad = Date.now();
   const matchIds = await loadMatchIds();
+  logger.info("Loaded match IDs", {
+    count: matchIds.length,
+    elapsedMs: Date.now() - tLoad,
+  });
   stats.matchesDiscovered = matchIds.length;
 
   if (matchIds.length === 0) {
@@ -455,6 +484,7 @@ export async function runSofaScoreIngest(): Promise<void> {
       concurrency: CONCURRENCY,
     });
 
+    const tPhase1A = Date.now();
     await mapConcurrent(matchIds, CONCURRENCY, async (matchId) => {
       await randomDelay();
       await ingestMatchData(
@@ -464,6 +494,13 @@ export async function runSofaScoreIngest(): Promise<void> {
         matchStatuses,
         stats,
       );
+    });
+    logger.info("Phase 1-A complete", {
+      elapsedMs: Date.now() - tPhase1A,
+      matches: stats.matchesIngested,
+      lineups: stats.lineupsIngested,
+      filtered: stats.matchesFiltered,
+      errors: stats.errors,
     });
 
     if (allowedMatchIds.size === 0) {
@@ -502,6 +539,7 @@ export async function runSofaScoreIngest(): Promise<void> {
         count: shotmapIds.length,
       });
 
+      const tPhase1B = Date.now();
       await mapConcurrent(shotmapIds, CONCURRENCY, async (matchId) => {
         await randomDelay();
         const teams = matchTeams.get(matchId);
@@ -512,12 +550,34 @@ export async function runSofaScoreIngest(): Promise<void> {
         );
         stats.shotsIngested += count;
       });
+      logger.info("Phase 1-B complete", {
+        elapsedMs: Date.now() - tPhase1B,
+        shots: stats.shotsIngested,
+      });
     }
 
     /* ---- Phase 2: historical matches (last N days) ---- */
-    const phase2Ids = (await discoverFinishedMatchIdsLastNDays()).filter(
+    const tPhase2Discover = Date.now();
+    const phase2DaysEnv = parseInt(process.env.SYNC_PHASE2_DAYS ?? "", 10);
+    const phase2Days = Number.isFinite(phase2DaysEnv) ? phase2DaysEnv : undefined;
+    let phase2Ids = (await discoverFinishedMatchIdsLastNDays(phase2Days)).filter(
       (id) => !allowedMatchIds.has(id),
     );
+    const skipExisting =
+      process.env.SYNC_PHASE2_SKIP_EXISTING !== "0" &&
+      process.env.SYNC_PHASE2_SKIP_EXISTING !== "false";
+    if (skipExisting && phase2Ids.length > 0) {
+      const existing = await prisma.etlMatch.findMany({
+        where: { id: { in: phase2Ids } },
+        select: { id: true },
+      });
+      const existingSet = new Set(existing.map((m) => m.id));
+      phase2Ids = phase2Ids.filter((id) => !existingSet.has(id));
+    }
+    logger.info("Phase 2 discovery complete", {
+      elapsedMs: Date.now() - tPhase2Discover,
+      count: phase2Ids.length,
+    });
     if (phase2Ids.length > 0) {
       stats.phase2Matches = phase2Ids.length;
       logger.info("Phase 2: ingesting last-N-days matches for player history", {
@@ -525,6 +585,7 @@ export async function runSofaScoreIngest(): Promise<void> {
         concurrency: CONCURRENCY,
       });
 
+      const tPhase2A = Date.now();
       await mapConcurrent(phase2Ids, CONCURRENCY, async (matchId) => {
         await randomDelay();
         await ingestMatchData(
@@ -535,10 +596,15 @@ export async function runSofaScoreIngest(): Promise<void> {
           stats,
         );
       });
+      logger.info("Phase 2-A complete", {
+        elapsedMs: Date.now() - tPhase2A,
+        matches: stats.phase2Matches,
+      });
 
       const phase2Allowed = phase2Ids.filter((id) => allowedMatchIds.has(id));
       if (phase2Allowed.length > 0) {
         // Phase 2 only has finished matches — all get shotmaps
+        const tPhase2B = Date.now();
         await mapConcurrent(phase2Allowed, CONCURRENCY, async (matchId) => {
           await randomDelay();
           const teams = matchTeams.get(matchId);
@@ -548,6 +614,10 @@ export async function runSofaScoreIngest(): Promise<void> {
             teams?.awayTeamId,
           );
           stats.phase2Shots += count;
+        });
+        logger.info("Phase 2-B complete", {
+          elapsedMs: Date.now() - tPhase2B,
+          shots: stats.phase2Shots,
         });
       }
     }

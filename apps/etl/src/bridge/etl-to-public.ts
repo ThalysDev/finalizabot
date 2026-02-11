@@ -66,12 +66,19 @@ export async function runBridge(): Promise<void> {
     logger.info(`[Bridge] ${analysisCount} análises de mercado geradas`);
 
     // 5. Download and cache images
-    try {
-      await syncAllImages();
-    } catch (err) {
-      logger.warn(
-        `[Bridge] Image sync failed (non-fatal): ${err instanceof Error ? err.message : err}`,
-      );
+    const skipImages =
+      process.env.SKIP_IMAGE_SYNC === "1" ||
+      process.env.SKIP_IMAGE_SYNC === "true";
+    if (skipImages) {
+      logger.info("[Bridge] SKIP_IMAGE_SYNC enabled — skipping image sync");
+    } else {
+      try {
+        await syncAllImages();
+      } catch (err) {
+        logger.warn(
+          `[Bridge] Image sync failed (non-fatal): ${err instanceof Error ? err.message : err}`,
+        );
+      }
     }
 
     logger.info("[Bridge] Sincronização concluída!");
@@ -88,7 +95,12 @@ export async function runBridge(): Promise<void> {
    ============================================================================ */
 
 async function syncMatches(): Promise<number> {
+  const matchDaysEnv = parseInt(process.env.BRIDGE_MATCH_DAYS ?? "", 10);
+  const matchCutoff = Number.isFinite(matchDaysEnv)
+    ? new Date(Date.now() - matchDaysEnv * 24 * 60 * 60 * 1000)
+    : null;
   const etlMatches = await prisma.etlMatch.findMany({
+    where: matchCutoff ? { startTime: { gte: matchCutoff } } : undefined,
     include: {
       homeTeam: true,
       awayTeam: true,
@@ -195,10 +207,16 @@ function mapStatus(
    ============================================================================ */
 
 async function syncPlayers(): Promise<number> {
+  const matchDaysEnv = parseInt(process.env.BRIDGE_MATCH_DAYS ?? "", 10);
+  const matchCutoff = Number.isFinite(matchDaysEnv)
+    ? new Date(Date.now() - matchDaysEnv * 24 * 60 * 60 * 1000)
+    : null;
   // Get all ETL players that have participated in matches
   const etlPlayers = await prisma.etlPlayer.findMany({
     where: {
-      matchPlayers: { some: {} }, // only players with match data
+      matchPlayers: {
+        some: matchCutoff ? { match: { startTime: { gte: matchCutoff } } } : {},
+      },
     },
     include: {
       currentTeam: true,
@@ -296,8 +314,13 @@ async function syncPlayers(): Promise<number> {
    ============================================================================ */
 
 async function syncPlayerMatchStats(): Promise<number> {
+  const matchDaysEnv = parseInt(process.env.BRIDGE_MATCH_DAYS ?? "", 10);
+  const matchCutoff = Number.isFinite(matchDaysEnv)
+    ? new Date(Date.now() - matchDaysEnv * 24 * 60 * 60 * 1000)
+    : null;
   // Get all ETL match-player records
   const matchPlayers = await prisma.etlMatchPlayer.findMany({
+    where: matchCutoff ? { match: { startTime: { gte: matchCutoff } } } : undefined,
     include: {
       match: true,
       player: true,
@@ -513,7 +536,10 @@ async function generateMarketAnalysis(): Promise<number> {
 
   // ── Pre-load all recent stats for all players in ONE query ────
   const allRecentStats = await prisma.playerMatchStats.findMany({
-    where: { playerId: { in: [...allPlayerIds] } },
+    where: {
+      playerId: { in: [...allPlayerIds] },
+      match: { status: "finished" },
+    },
     orderBy: { match: { matchDate: "desc" } },
     select: { playerId: true, shots: true },
   });

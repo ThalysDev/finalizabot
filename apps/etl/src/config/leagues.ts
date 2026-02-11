@@ -3,7 +3,11 @@ export const DEFAULT_EUROPE_LEAGUES =
 
 const envNames = process.env.ALLOWED_TOURNAMENT_NAMES?.trim();
 // Default to allow-all: tournament ID set is the authoritative filter
-const allowAll = envNames === undefined || envNames === "" || envNames === "*" || envNames?.toLowerCase() === "all";
+const allowAll =
+  envNames === undefined ||
+  envNames === "" ||
+  envNames === "*" ||
+  envNames?.toLowerCase() === "all";
 const useDefault = false; // kept for backwards compat but never triggers
 const ALLOWED_NAMES = allowAll
   ? null
