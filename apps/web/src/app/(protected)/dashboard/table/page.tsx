@@ -14,6 +14,10 @@ export const metadata: Metadata = {
   description: "Análise avançada de jogadores por finalizações",
 };
 
+// Force dynamic rendering (SSR) instead of static generation
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 async function fetchTableData(): Promise<{
   players: AdvancedPlayerRow[];
   match: { homeTeam: string; awayTeam: string; competition: string; matchDate: string } | null;
