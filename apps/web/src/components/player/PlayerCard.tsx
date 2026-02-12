@@ -186,10 +186,15 @@ export function PlayerCard({
       {/* Odds button */}
       {odds > 0 ? (
         <button
-          aria-label={`Odds ${formattedOdds} para ${name}`}
-          className="w-full py-2.5 rounded-xl bg-fb-primary/10 border border-fb-primary/15 text-fb-primary font-bold text-sm hover:bg-fb-primary/20 transition-all duration-200 mb-3 btn-press"
+          aria-label={`Odds estimada ${formattedOdds} para ${name}`}
+          className="w-full py-2.5 rounded-xl bg-fb-primary/10 border border-fb-primary/15 hover:bg-fb-primary/20 transition-all duration-200 mb-3 btn-press"
         >
-          {formattedOdds}
+          <span className="text-fb-primary font-bold text-sm block">
+            {formattedOdds}
+          </span>
+          <span className="text-fb-primary/60 text-[9px] italic">
+            (Estimativa)
+          </span>
         </button>
       ) : (
         <div className="w-full py-2.5 rounded-xl bg-fb-surface border border-fb-border/40 text-fb-text-muted font-medium text-sm text-center mb-3">

@@ -61,9 +61,17 @@ export function DataTable<T extends Record<string, unknown>>({
   const filtered = data.filter((row) => {
     if (!search) return true;
     const term = search.toLowerCase();
-    return Object.values(row).some(
-      (val) => typeof val === "string" && val.toLowerCase().includes(term),
-    );
+    return Object.values(row).some((val) => {
+      // Buscar em strings
+      if (typeof val === "string") {
+        return val.toLowerCase().includes(term);
+      }
+      // Buscar em números convertendo para string
+      if (typeof val === "number") {
+        return val.toString().includes(term);
+      }
+      return false;
+    });
   });
 
   // Sort
@@ -71,8 +79,22 @@ export function DataTable<T extends Record<string, unknown>>({
     if (!sortKey) return 0;
     const aVal = a[sortKey];
     const bVal = b[sortKey];
-    if (aVal == null || bVal == null) return 0;
-    const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+
+    // Tratar null/undefined (nulls vão para o final)
+    if (aVal == null && bVal == null) return 0;
+    if (aVal == null) return 1;
+    if (bVal == null) return -1;
+
+    // Comparação type-safe
+    if (typeof aVal === "number" && typeof bVal === "number") {
+      const cmp = aVal - bVal;
+      return sortDir === "asc" ? cmp : -cmp;
+    }
+
+    // Fallback para string comparison (com suporte a numeric strings)
+    const aStr = String(aVal);
+    const bStr = String(bVal);
+    const cmp = aStr.localeCompare(bStr, undefined, { numeric: true });
     return sortDir === "asc" ? cmp : -cmp;
   });
 
@@ -187,9 +209,23 @@ export function DataTable<T extends Record<string, unknown>>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-12 text-center text-fb-text-muted"
+                  className="px-4 py-12 text-center"
                 >
-                  {emptyMessage}
+                  {search ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-fb-text-muted text-sm">
+                        Nenhum resultado para "{search}"
+                      </p>
+                      <button
+                        onClick={() => setSearch("")}
+                        className="text-fb-primary text-xs hover:underline"
+                      >
+                        Limpar busca
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-fb-text-muted">{emptyMessage}</p>
+                  )}
                 </td>
               </tr>
             ) : (
@@ -271,7 +307,14 @@ export function DataTable<T extends Record<string, unknown>>({
    HELPER: Progress bar for L5/L10 columns
    ============================================================================ */
 export function SuccessBar({ hits, total }: { hits: number; total: number }) {
-  const pct = (hits / total) * 100;
+  // Validar inputs para prevenir NaN
+  const safeHits = Number.isFinite(hits) ? hits : 0;
+  const safeTotal = Number.isFinite(total) && total > 0 ? total : 1;
+  const safePct = (safeHits / safeTotal) * 100;
+
+  // Clampar porcentagem entre 0-100
+  const pct = Math.max(0, Math.min(100, safePct));
+
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 h-1.5 rounded-full bg-fb-surface-highlight overflow-hidden">
@@ -287,7 +330,7 @@ export function SuccessBar({ hits, total }: { hits: number; total: number }) {
         />
       </div>
       <span className="text-xs text-fb-text-secondary font-medium w-8 text-right">
-        {hits}/{total}
+        {safeHits}/{total > 0 ? total : 0}
       </span>
     </div>
   );

@@ -237,9 +237,16 @@ const columns: Column<AdvancedPlayerRow>[] = [
     sortable: true,
     align: "center",
     render: (row) => (
-      <span className="text-fb-text font-bold text-sm">
-        {row.odds > 0 ? row.odds.toFixed(2) : "—"}
-      </span>
+      <div className="flex flex-col items-center gap-0.5">
+        <span className="text-fb-text font-bold text-sm">
+          {row.odds > 0 ? row.odds.toFixed(2) : "—"}
+        </span>
+        {row.odds > 0 && (
+          <span className="text-[9px] text-fb-text-muted italic">
+            (Estimativa)
+          </span>
+        )}
+      </div>
     ),
   },
   {
