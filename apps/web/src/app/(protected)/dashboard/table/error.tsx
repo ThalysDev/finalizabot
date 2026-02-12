@@ -11,6 +11,10 @@ export default function TableError({
 }) {
   useEffect(() => {
     console.error("[AdvancedTable] error:", error);
+    console.error("[AdvancedTable] error.message:", error.message);
+    console.error("[AdvancedTable] error.stack:", error.stack);
+    console.error("[AdvancedTable] error.digest:", error.digest);
+    console.error("[AdvancedTable] error.cause:", error.cause);
   }, [error]);
 
   return (
@@ -34,18 +38,41 @@ export default function TableError({
         <h3 className="text-fb-text font-semibold text-lg mb-2">
           Erro ao carregar a tabela avançada
         </h3>
-        <p className="text-fb-text-muted text-sm max-w-md mb-6">
+        <p className="text-fb-text-muted text-sm max-w-md mb-1">
           Ocorreu um erro ao processar os dados. Isso pode acontecer quando o
           serviço ETL está indisponível ou existem dados inconsistentes.
-          {error.digest && (
-            <span className="block mt-1 text-xs opacity-60">
-              Código: {error.digest}
-            </span>
-          )}
         </p>
+        {error.digest && (
+          <p className="text-fb-text-muted text-xs mb-4">
+            Código: {error.digest}
+          </p>
+        )}
+
+        {/* Show detailed error in development */}
+        {process.env.NODE_ENV === 'development' && error.message && (
+          <div className="mt-4 p-4 bg-fb-surface border border-fb-border rounded-lg text-left max-w-2xl w-full">
+            <p className="text-xs font-mono text-fb-accent-red mb-2">
+              <strong>Error Message:</strong>
+            </p>
+            <p className="text-xs font-mono text-fb-text-muted mb-4 break-words">
+              {error.message}
+            </p>
+
+            {error.stack && (
+              <>
+                <p className="text-xs font-mono text-fb-accent-red mb-2">
+                  <strong>Stack Trace:</strong>
+                </p>
+                <pre className="text-xs font-mono text-fb-text-muted overflow-x-auto whitespace-pre-wrap max-h-64 overflow-y-auto">
+                  {error.stack}
+                </pre>
+              </>
+            )}
+          </div>
+        )}
         <button
           onClick={reset}
-          className="bg-fb-primary text-fb-primary-content font-bold py-2.5 px-6 rounded-lg text-sm hover:brightness-110 transition-all"
+          className="mt-6 bg-fb-primary text-white font-bold py-2.5 px-6 rounded-lg text-sm hover:brightness-110 transition-all"
         >
           Tentar Novamente
         </button>

@@ -24,12 +24,15 @@ async function fetchTableData(): Promise<{
   match: { homeTeam: string; awayTeam: string; competition: string; matchDate: string } | null;
   etlDown: boolean;
 }> {
+  console.log('[fetchTableData] Starting...');
   try {
   const line = DEFAULT_LINE;
+  console.log('[fetchTableData] Using line:', line);
 
   let dbPlayers: Awaited<ReturnType<typeof prisma.player.findMany>>;
   let upcomingMatch: Awaited<ReturnType<typeof prisma.match.findFirst>>;
   try {
+    console.log('[fetchTableData] Fetching players and match from DB...');
     [dbPlayers, upcomingMatch] = await Promise.all([
       prisma.player.findMany({ take: 50, orderBy: { updatedAt: "desc" } }),
       prisma.match.findFirst({
@@ -37,20 +40,25 @@ async function fetchTableData(): Promise<{
         orderBy: { matchDate: "asc" },
       }),
     ]);
-  } catch {
+    console.log('[fetchTableData] DB fetch success:', { playerCount: dbPlayers.length, hasMatch: !!upcomingMatch });
+  } catch (dbErr) {
     // DB unreachable — return empty
+    console.error('[fetchTableData] DB fetch failed:', dbErr);
     return { players: [], match: null, etlDown: true };
   }
 
   // Try ETL enrichment first
   let enriched = new Map<string, import("@/lib/etl/enricher").EtlEnrichResult>();
   try {
+    console.log('[fetchTableData] Attempting ETL enrichment...');
     enriched = await batchEnrichPlayers(
       dbPlayers.map((p) => ({ sofascoreId: p.sofascoreId })),
       line,
     );
-  } catch {
+    console.log('[fetchTableData] ETL enrichment success:', enriched.size, 'players');
+  } catch (etlErr) {
     // ETL unreachable — will use Prisma fallback below
+    console.log('[fetchTableData] ETL enrichment failed, will use Prisma fallback:', etlErr);
   }
 
   // Batch fetch odds for all players in one query
@@ -70,6 +78,7 @@ async function fetchTableData(): Promise<{
   // Check if ETL returned any useful data
   const hasEtlData = Array.from(enriched.values()).some((e) => e.stats !== null);
   let etlDown = false;
+  console.log('[fetchTableData] Has ETL data:', hasEtlData);
 
   let players: AdvancedPlayerRow[];
 
@@ -108,16 +117,20 @@ async function fetchTableData(): Promise<{
   } else {
     // Fallback: compute stats from Prisma PlayerMatchStats
     etlDown = true;
+    console.log('[fetchTableData] Using Prisma fallback path');
 
     let allStats: { playerId: string; shots: number; minutesPlayed: number }[] = [];
     try {
+      console.log('[fetchTableData] Fetching PlayerMatchStats for', dbPlayers.length, 'players...');
       allStats = await prisma.playerMatchStats.findMany({
         where: { playerId: { in: dbPlayers.map((p) => p.id) } },
         orderBy: { match: { matchDate: "desc" } },
         select: { playerId: true, shots: true, minutesPlayed: true },
       });
-    } catch {
+      console.log('[fetchTableData] PlayerMatchStats fetch success:', allStats.length, 'records');
+    } catch (statsErr) {
       // stats unavailable — will produce empty players
+      console.error('[fetchTableData] PlayerMatchStats fetch failed:', statsErr);
     }
 
     // Group by player, keep last 10
@@ -188,9 +201,11 @@ async function fetchTableData(): Promise<{
     console.error("[fetchTableData] match formatting error:", err);
   }
 
+  console.log('[fetchTableData] Completed successfully:', { playerCount: players.length, hasMatch: !!match, etlDown });
   return { players, match, etlDown };
   } catch (err) {
     console.error("[fetchTableData] unexpected error:", err);
+    console.error("[fetchTableData] error stack:", err instanceof Error ? err.stack : 'no stack');
     return { players: [], match: null, etlDown: true };
   }
 }
