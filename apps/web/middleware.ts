@@ -5,7 +5,6 @@ const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
   '/sign-up(.*)',
-  '/api/debug-table(.*)',  // Debug endpoint - remove after testing
 ])
 
 export default clerkMiddleware(async (auth, request) => {
