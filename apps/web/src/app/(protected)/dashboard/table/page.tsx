@@ -206,7 +206,13 @@ async function fetchTableData(): Promise<{
   } catch (err) {
     console.error("[fetchTableData] unexpected error:", err);
     console.error("[fetchTableData] error stack:", err instanceof Error ? err.stack : 'no stack');
-    return { players: [], match: null, etlDown: true };
+    console.error("[fetchTableData] error name:", err instanceof Error ? err.name : 'unknown');
+    console.error("[fetchTableData] error message:", err instanceof Error ? err.message : String(err));
+    // Re-throw the error with more context instead of returning empty data
+    // This will trigger error.tsx with full details
+    throw new Error(`fetchTableData failed: ${err instanceof Error ? err.message : String(err)}`, {
+      cause: err
+    });
   }
 }
 
