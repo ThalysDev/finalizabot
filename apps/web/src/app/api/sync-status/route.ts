@@ -1,6 +1,7 @@
 import prisma from "@/lib/db/prisma";
 
-export const revalidate = 60;
+// Force dynamic to avoid DB queries during build
+export const dynamic = 'force-dynamic';
 
 export async function GET(): Promise<Response> {
   const lastRun = await prisma.etlIngestRun.findFirst({
