@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import { Calendar, Search, Trophy, ArrowRight } from "lucide-react";
 import { MatchCard } from "@/components/match/MatchCard";
+import { MatchListItem } from "@/components/match/MatchListItem";
+import { ViewSwitcher } from "@/components/dashboard/ViewSwitcher";
 import type { MatchCardData } from "@/data/types";
 
 /* ============================================================================
@@ -28,6 +30,7 @@ export function DashboardContent({
   const [dayFilter, setDayFilter] = useState<"all" | "today" | "tomorrow">("all");
   const [compFilter, setCompFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [view, setView] = useState<"grid" | "list">("grid");
 
   // Unique competitions for filter tabs
   const competitions = useMemo(() => {
@@ -87,16 +90,19 @@ export function DashboardContent({
             </p>
           </div>
 
-          {/* Search */}
-          <div className="relative w-full md:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-fb-text-muted" />
-            <input
-              type="text"
-              placeholder="Buscar time ou competição..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-fb-surface border border-fb-border/60 rounded-lg text-sm text-fb-text placeholder:text-fb-text-muted focus:outline-none focus:ring-1 focus:ring-fb-primary/50"
-            />
+          {/* View Switcher + Search */}
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <ViewSwitcher view={view} onChange={setView} />
+            <div className="relative flex-1 md:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-fb-text-muted" />
+              <input
+                type="text"
+                placeholder="Buscar time ou competição..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 bg-fb-surface border border-fb-border/60 rounded-lg text-sm text-fb-text placeholder:text-fb-text-muted focus:outline-none focus:ring-1 focus:ring-fb-primary/50"
+              />
+            </div>
           </div>
         </div>
 
@@ -173,12 +179,20 @@ export function DashboardContent({
                   </span>
                 </div>
 
-                {/* Cards grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {compMatches.map((match) => (
-                    <MatchCard key={match.id} {...match} />
-                  ))}
-                </div>
+                {/* Cards grid or list */}
+                {view === "grid" ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {compMatches.map((match) => (
+                      <MatchCard key={match.id} {...match} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {compMatches.map((match) => (
+                      <MatchListItem key={match.id} {...match} />
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
