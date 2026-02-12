@@ -33,23 +33,30 @@ async function fetchTableData(): Promise<{
   try {
     console.log('[fetchTableData] Fetching players and match from DB...');
 
-    // First, get top players by match stats count using raw query
-    const topPlayerIds = await prisma.$queryRaw<Array<{ playerId: string, count: bigint }>>`
-      SELECT "playerId", COUNT(*) as count
-      FROM "PlayerMatchStats"
-      GROUP BY "playerId"
-      HAVING COUNT(*) >= 5
-      ORDER BY count DESC
-      LIMIT 50
-    `;
-    console.log('[fetchTableData] Top player IDs:', topPlayerIds.length);
+    // Get players with their match stats count
+    const playersWithCount = await prisma.player.findMany({
+      include: {
+        _count: {
+          select: { matchStats: true }
+        }
+      },
+      where: {
+        matchStats: {
+          some: {} // Only players with at least 1 stat
+        }
+      }
+    });
+
+    // Sort by count and take top 50
+    const topPlayers = playersWithCount
+      .filter(p => p._count.matchStats >= 5)
+      .sort((a, b) => b._count.matchStats - a._count.matchStats)
+      .slice(0, 50);
+
+    console.log('[fetchTableData] Top player IDs:', topPlayers.length);
 
     [dbPlayers, upcomingMatch] = await Promise.all([
-      prisma.player.findMany({
-        where: {
-          id: { in: topPlayerIds.map(p => p.playerId) }
-        }
-      }),
+      Promise.resolve(topPlayers),
       prisma.match.findFirst({
         where: { status: "scheduled", matchDate: { gte: new Date() } },
         orderBy: { matchDate: "asc" },
