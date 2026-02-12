@@ -1,5 +1,9 @@
 #!/usr/bin/env node
+import { config } from 'dotenv';
 import { PrismaClient } from '@prisma/client';
+
+// Load env from root
+config({ path: './.env' });
 
 const prisma = new PrismaClient({
   datasources: {
