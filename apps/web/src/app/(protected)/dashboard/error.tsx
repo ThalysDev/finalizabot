@@ -10,45 +10,37 @@ export default function DashboardError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[Dashboard] error:", error);
+    console.error("[Dashboard Error]", error);
   }, [error]);
 
   return (
-    <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="size-16 rounded-full bg-fb-accent-red/10 flex items-center justify-center mb-4">
-          <svg
-            className="size-8 text-fb-accent-red"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
-            />
-          </svg>
-        </div>
-        <h3 className="text-fb-text font-semibold text-lg mb-2">
-          Erro ao carregar o painel
-        </h3>
-        <p className="text-fb-text-muted text-sm max-w-md mb-6">
-          Ocorreu um erro ao buscar os dados das partidas. Tente novamente em
-          alguns instantes.
+    <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
+      <div className="max-w-md w-full bg-fb-surface border border-fb-border rounded-lg p-6">
+        <h2 className="text-fb-text font-bold text-xl mb-4">
+          Erro no Dashboard
+        </h2>
+        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded text-sm">
+          <p className="text-red-400 font-mono break-all">
+            {error.message}
+          </p>
           {error.digest && (
-            <span className="block mt-1 text-xs opacity-60">
-              Código: {error.digest}
-            </span>
+            <p className="text-red-400/60 text-xs mt-2">
+              ID: {error.digest}
+            </p>
           )}
-        </p>
+        </div>
         <button
-          onClick={reset}
-          className="bg-fb-primary text-fb-primary-content font-bold py-2.5 px-6 rounded-lg text-sm hover:brightness-110 transition-all"
+          onClick={() => reset()}
+          className="w-full bg-fb-primary text-white py-2 px-4 rounded hover:bg-fb-primary/90 transition-colors"
         >
-          Tentar Novamente
+          Tentar novamente
         </button>
+        <a
+          href="/"
+          className="block w-full text-center mt-3 text-fb-text-muted hover:text-fb-text transition-colors text-sm"
+        >
+          Voltar ao início
+        </a>
       </div>
     </div>
   );
