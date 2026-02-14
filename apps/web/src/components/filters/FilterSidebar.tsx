@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { SlidersHorizontal, X, RotateCcw } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 /* ============================================================================
    FILTER STATE
@@ -148,6 +149,7 @@ export function FilterSidebar({
         </label>
         <div className="flex bg-fb-surface rounded-lg p-1">
           <button
+            type="button"
             onClick={() => setMarketType("shots")}
             className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
               marketType === "shots"
@@ -158,6 +160,7 @@ export function FilterSidebar({
             Finalizações
           </button>
           <button
+            type="button"
             onClick={() => setMarketType("sot")}
             className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
               marketType === "sot"
@@ -179,6 +182,7 @@ export function FilterSidebar({
           {positions.map((pos) => (
             <button
               key={pos.value}
+              type="button"
               onClick={() => setPosition(pos.value)}
               className={`text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 position === pos.value
@@ -256,6 +260,7 @@ export function FilterSidebar({
 
       {/* Reset */}
       <button
+        type="button"
         onClick={resetFilters}
         className="w-full flex items-center justify-center gap-2 py-2 text-xs font-medium text-fb-text-muted hover:text-fb-text rounded-lg border border-fb-border/50 hover:bg-fb-surface transition-colors"
       >
@@ -279,28 +284,12 @@ function ToggleSwitch({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <button
-      onClick={() => onChange(!checked)}
-      className="flex items-center justify-between w-full group"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-    >
+    <div className="flex items-center justify-between w-full group">
       <span className="text-xs text-fb-text-secondary group-hover:text-fb-text transition-colors">
         {label}
       </span>
-      <div
-        className={`w-8 h-4 rounded-full transition-colors relative ${
-          checked ? "bg-fb-primary" : "bg-fb-surface-highlight"
-        }`}
-      >
-        <div
-          className={`absolute top-0.5 size-3 rounded-full bg-white transition-transform ${
-            checked ? "translate-x-4" : "translate-x-0.5"
-          }`}
-        />
-      </div>
-    </button>
+      <Switch checked={checked} onCheckedChange={onChange} label={label} />
+    </div>
   );
 }
 
@@ -325,6 +314,7 @@ export function MobileFilterSheet({
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-fb-text font-semibold">Filtros</h3>
           <button
+            type="button"
             onClick={onClose}
             className="text-fb-text-muted hover:text-fb-text"
           >

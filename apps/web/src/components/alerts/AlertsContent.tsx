@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { AlertCard } from "@/components/alerts/AlertCard";
+import { Switch } from "@/components/ui/switch";
 import type { AlertData } from "@/data/types";
 
 /* ============================================================================
@@ -507,29 +508,12 @@ function NotifToggle({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className="flex items-center justify-between w-full"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-    >
+    <div className="flex items-center justify-between w-full">
       <div className="flex items-center gap-2">
         <Icon className="size-3.5 text-fb-text-muted" />
         <span className="text-xs text-fb-text-secondary">{label}</span>
       </div>
-      <div
-        className={`w-8 h-4 rounded-full relative transition-colors ${
-          checked ? "bg-fb-primary" : "bg-fb-surface-highlight"
-        }`}
-      >
-        <div
-          className={`absolute top-0.5 size-3 rounded-full bg-white transition-transform ${
-            checked ? "translate-x-4" : "translate-x-0.5"
-          }`}
-        />
-      </div>
-    </button>
+      <Switch checked={checked} onCheckedChange={onChange} label={label} />
+    </div>
   );
 }
