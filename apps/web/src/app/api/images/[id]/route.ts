@@ -35,7 +35,7 @@ export async function GET(
     });
 
     if (!image) {
-      return new NextResponse(null, { status: 404 });
+      return jsonError("Image not found", 404);
     }
 
     return new NextResponse(image.data, {
@@ -48,6 +48,6 @@ export async function GET(
     });
   } catch (err) {
     logger.error("[/api/images] fetch failed", err);
-    return new NextResponse(null, { status: 500 });
+    return jsonError("Failed to fetch image", 500);
   }
 }

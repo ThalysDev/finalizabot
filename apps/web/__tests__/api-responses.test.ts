@@ -88,3 +88,133 @@ describe("GET /api/sync-status", () => {
     expect(error).toHaveBeenCalledWith("[/api/sync-status] query failed", dbError);
   });
 });
+
+describe("GET /api/images/[id]", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  function mockValidationModule() {
+    vi.doMock("@/lib/validation", () => ({
+      validateImageCacheId: (id: string | undefined | null) => {
+        if (!id || typeof id !== "string") return null;
+        const trimmed = id.trim();
+        return /^c[a-z0-9]{24,}$/.test(trimmed) ? trimmed : null;
+      },
+    }));
+  }
+
+  function mockApiResponsesModule() {
+    vi.doMock("@/lib/api/responses", () => ({
+      jsonError: (
+        message: string,
+        status: number,
+        headers?: Record<string, string>,
+      ) =>
+        new Response(JSON.stringify({ error: message }), {
+          status,
+          headers: {
+            "Cache-Control": "no-store",
+            ...(headers ?? {}),
+          },
+        }),
+    }));
+  }
+
+  it("returns binary image payload with cache headers", async () => {
+    const imageId = "c123456789012345678901234";
+    const findUnique = vi.fn().mockResolvedValue({
+      data: new Uint8Array([1, 2, 3]),
+      contentType: "image/png",
+    });
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { imageCache: { findUnique } },
+    }));
+    vi.doMock("@/lib/logger", () => ({
+      logger: { error: vi.fn() },
+    }));
+    mockValidationModule();
+    mockApiResponsesModule();
+
+    const { GET } = await import("../src/app/api/images/[id]/route");
+    const response = await GET({} as never, {
+      params: Promise.resolve({ id: imageId }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("image/png");
+    expect(response.headers.get("Cache-Control")).toContain("immutable");
+  });
+
+  it("returns 400 for invalid image id", async () => {
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { imageCache: { findUnique: vi.fn() } },
+    }));
+    vi.doMock("@/lib/logger", () => ({
+      logger: { error: vi.fn() },
+    }));
+    mockValidationModule();
+    mockApiResponsesModule();
+
+    const { GET } = await import("../src/app/api/images/[id]/route");
+    const response = await GET({} as never, {
+      params: Promise.resolve({ id: "invalid" }),
+    });
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(400);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(body).toEqual({ error: "Invalid image id" });
+  });
+
+  it("returns 404 with standardized payload when image does not exist", async () => {
+    const findUnique = vi.fn().mockResolvedValue(null);
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { imageCache: { findUnique } },
+    }));
+    vi.doMock("@/lib/logger", () => ({
+      logger: { error: vi.fn() },
+    }));
+    mockValidationModule();
+    mockApiResponsesModule();
+
+    const { GET } = await import("../src/app/api/images/[id]/route");
+    const response = await GET({} as never, {
+      params: Promise.resolve({ id: "c123456789012345678901234" }),
+    });
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(body).toEqual({ error: "Image not found" });
+  });
+
+  it("returns 500 with standardized payload when DB query fails", async () => {
+    const dbError = new Error("db error");
+    const findUnique = vi.fn().mockRejectedValue(dbError);
+    const error = vi.fn();
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { imageCache: { findUnique } },
+    }));
+    vi.doMock("@/lib/logger", () => ({
+      logger: { error },
+    }));
+    mockValidationModule();
+    mockApiResponsesModule();
+
+    const { GET } = await import("../src/app/api/images/[id]/route");
+    const response = await GET({} as never, {
+      params: Promise.resolve({ id: "c123456789012345678901234" }),
+    });
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(500);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(body).toEqual({ error: "Failed to fetch image" });
+    expect(error).toHaveBeenCalledWith("[/api/images] fetch failed", dbError);
+  });
+});
