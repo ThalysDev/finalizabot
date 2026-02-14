@@ -148,8 +148,8 @@ describe("calcHits()", () => {
   });
 
   it("ignores non-finite shot values", () => {
-    expect(calcHits([1, Number.NaN, 2, Number.POSITIVE_INFINITY], 1.5, 10)).toBe(
-      1,
-    );
+    expect(
+      calcHits([1, Number.NaN, 2, Number.POSITIVE_INFINITY], 1.5, 10),
+    ).toBe(1);
   });
 });

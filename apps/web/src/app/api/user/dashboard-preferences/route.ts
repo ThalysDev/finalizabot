@@ -1,47 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { resolveOrCreateAppUserId } from "@/lib/auth/resolveAppUserId";
-
-type ViewMode = "grid" | "list";
-type DayFilter = "all" | "today" | "tomorrow";
-
-interface DashboardPreferencePayload {
-  dayFilter: DayFilter;
-  compFilter: string;
-  searchQuery: string;
-  view: ViewMode;
-}
-
-const DEFAULT_PREFERENCES: DashboardPreferencePayload = {
-  dayFilter: "all",
-  compFilter: "all",
-  searchQuery: "",
-  view: "grid",
-};
-
-function sanitizePayload(input: unknown): DashboardPreferencePayload {
-  const data = (input ?? {}) as Partial<DashboardPreferencePayload>;
-
-  const dayFilter: DayFilter =
-    data.dayFilter === "today" || data.dayFilter === "tomorrow"
-      ? data.dayFilter
-      : "all";
-
-  const view: ViewMode = data.view === "list" ? "list" : "grid";
-
-  return {
-    dayFilter,
-    compFilter:
-      typeof data.compFilter === "string" && data.compFilter.trim()
-        ? data.compFilter.trim().slice(0, 120)
-        : "all",
-    searchQuery:
-      typeof data.searchQuery === "string"
-        ? data.searchQuery.trim().slice(0, 120)
-        : "",
-    view,
-  };
-}
+import {
+  type DashboardPreferencePayload,
+  DEFAULT_DASHBOARD_PREFERENCES,
+  sanitizeDashboardPreferencePayload,
+} from "@/lib/preferences/sanitize";
 
 export async function GET() {
   const appUserId = await resolveOrCreateAppUserId();
@@ -74,7 +38,7 @@ export async function GET() {
     const preference = rows[0];
 
     if (!preference) {
-      return NextResponse.json(DEFAULT_PREFERENCES, {
+      return NextResponse.json(DEFAULT_DASHBOARD_PREFERENCES, {
         status: 200,
         headers: { "Cache-Control": "no-store" },
       });
@@ -95,7 +59,7 @@ export async function GET() {
       headers: { "Cache-Control": "no-store" },
     });
   } catch {
-    return NextResponse.json(DEFAULT_PREFERENCES, {
+    return NextResponse.json(DEFAULT_DASHBOARD_PREFERENCES, {
       status: 200,
       headers: { "Cache-Control": "no-store" },
     });
@@ -110,7 +74,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = (await request.json()) as unknown;
-    const payload = sanitizePayload(body);
+    const payload = sanitizeDashboardPreferencePayload(body);
 
     type PreferenceRow = {
       dayFilter: string;

@@ -5,7 +5,9 @@
  * @param lastN - Número de jogos a considerar (5 ou 10)
  */
 export function calcHits(shots: number[], line: number, lastN: number): number {
-  const normalizedLastN = Number.isFinite(lastN) ? Math.max(0, Math.trunc(lastN)) : 0;
+  const normalizedLastN = Number.isFinite(lastN)
+    ? Math.max(0, Math.trunc(lastN))
+    : 0;
   if (normalizedLastN === 0 || !Number.isFinite(line)) return 0;
 
   const relevant = shots.slice(-normalizedLastN).filter(Number.isFinite);
@@ -30,7 +32,8 @@ export function stdev(arr: number[]): number | null {
 
   const avg = mean(values);
   const squaredDiffs = values.map((val) => Math.pow(val - avg, 2));
-  const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length;
+  const variance =
+    squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length;
   return Math.sqrt(variance);
 }
 

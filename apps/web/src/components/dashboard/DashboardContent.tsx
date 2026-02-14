@@ -204,7 +204,9 @@ export function DashboardContent({
   }, [matches, dayFilter, compFilter, searchQuery]);
 
   const hasActiveFilters =
-    dayFilter !== "all" || compFilter !== "all" || searchQuery.trim().length > 0;
+    dayFilter !== "all" ||
+    compFilter !== "all" ||
+    searchQuery.trim().length > 0;
 
   const activeFilterCount =
     (dayFilter !== "all" ? 1 : 0) +

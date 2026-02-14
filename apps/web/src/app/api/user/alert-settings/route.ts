@@ -1,64 +1,10 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { resolveOrCreateAppUserId } from "@/lib/auth/resolveAppUserId";
-
-interface AlertSettingsPayload {
-  minRoi: number;
-  maxCv: number;
-  pushEnabled: boolean;
-  emailEnabled: boolean;
-  silentMode: boolean;
-  leagues: string[];
-}
-
-const DEFAULT_PAYLOAD: AlertSettingsPayload = {
-  minRoi: 10,
-  maxCv: 0.5,
-  pushEnabled: true,
-  emailEnabled: false,
-  silentMode: false,
-  leagues: ["Premier League", "La Liga", "Champions League"],
-};
-
-function sanitizePayload(input: unknown): AlertSettingsPayload {
-  const data = (input ?? {}) as Partial<AlertSettingsPayload>;
-
-  const minRoi =
-    typeof data.minRoi === "number"
-      ? Math.max(0, Math.min(100, data.minRoi))
-      : DEFAULT_PAYLOAD.minRoi;
-
-  const maxCv =
-    typeof data.maxCv === "number"
-      ? Math.max(0, Math.min(2, data.maxCv))
-      : DEFAULT_PAYLOAD.maxCv;
-
-  const leagues = Array.isArray(data.leagues)
-    ? data.leagues
-        .filter((item): item is string => typeof item === "string")
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .slice(0, 20)
-    : DEFAULT_PAYLOAD.leagues;
-
-  return {
-    minRoi,
-    maxCv,
-    pushEnabled:
-      typeof data.pushEnabled === "boolean"
-        ? data.pushEnabled
-        : DEFAULT_PAYLOAD.pushEnabled,
-    emailEnabled:
-      typeof data.emailEnabled === "boolean"
-        ? data.emailEnabled
-        : DEFAULT_PAYLOAD.emailEnabled,
-    silentMode:
-      typeof data.silentMode === "boolean"
-        ? data.silentMode
-        : DEFAULT_PAYLOAD.silentMode,
-    leagues: leagues.length > 0 ? leagues : DEFAULT_PAYLOAD.leagues,
-  };
-}
+import {
+  DEFAULT_ALERT_SETTINGS,
+  sanitizeAlertSettingsPayload,
+} from "@/lib/preferences/sanitize";
 
 export async function GET() {
   const appUserId = await resolveOrCreateAppUserId();
@@ -80,7 +26,7 @@ export async function GET() {
     });
 
     if (!settings) {
-      return NextResponse.json(DEFAULT_PAYLOAD, {
+      return NextResponse.json(DEFAULT_ALERT_SETTINGS, {
         status: 200,
         headers: { "Cache-Control": "no-store" },
       });
@@ -101,7 +47,7 @@ export async function GET() {
       },
     );
   } catch {
-    return NextResponse.json(DEFAULT_PAYLOAD, {
+    return NextResponse.json(DEFAULT_ALERT_SETTINGS, {
       status: 200,
       headers: { "Cache-Control": "no-store" },
     });
@@ -116,7 +62,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = (await request.json()) as unknown;
-    const payload = sanitizePayload(body);
+    const payload = sanitizeAlertSettingsPayload(body);
 
     const saved = await prisma.alertSettings.upsert({
       where: { userId: appUserId },

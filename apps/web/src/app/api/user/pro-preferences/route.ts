@@ -1,54 +1,10 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { resolveOrCreateAppUserId } from "@/lib/auth/resolveAppUserId";
-
-type SortDir = "asc" | "desc";
-
-interface ProPreferencesPayload {
-  positionFilter: string;
-  sortKey: string;
-  sortDir: SortDir;
-  minMatches: number;
-  minEv: number;
-  searchQuery: string;
-}
-
-const DEFAULT_PAYLOAD: ProPreferencesPayload = {
-  positionFilter: "Todos",
-  sortKey: "ev",
-  sortDir: "desc",
-  minMatches: 0,
-  minEv: 0,
-  searchQuery: "",
-};
-
-function sanitizePayload(input: unknown): ProPreferencesPayload {
-  const data = (input ?? {}) as Partial<ProPreferencesPayload>;
-
-  return {
-    positionFilter:
-      typeof data.positionFilter === "string" && data.positionFilter.trim()
-        ? data.positionFilter.trim().slice(0, 40)
-        : DEFAULT_PAYLOAD.positionFilter,
-    sortKey:
-      typeof data.sortKey === "string" && data.sortKey.trim()
-        ? data.sortKey.trim().slice(0, 30)
-        : DEFAULT_PAYLOAD.sortKey,
-    sortDir: data.sortDir === "asc" ? "asc" : "desc",
-    minMatches:
-      typeof data.minMatches === "number"
-        ? Math.max(0, Math.min(100, Math.trunc(data.minMatches)))
-        : DEFAULT_PAYLOAD.minMatches,
-    minEv:
-      typeof data.minEv === "number"
-        ? Math.max(-100, Math.min(100, Math.trunc(data.minEv)))
-        : DEFAULT_PAYLOAD.minEv,
-    searchQuery:
-      typeof data.searchQuery === "string"
-        ? data.searchQuery.trim().slice(0, 120)
-        : DEFAULT_PAYLOAD.searchQuery,
-  };
-}
+import {
+  DEFAULT_PRO_PREFERENCES,
+  sanitizeProPreferencesPayload,
+} from "@/lib/preferences/sanitize";
 
 export async function GET() {
   const appUserId = await resolveOrCreateAppUserId();
@@ -85,7 +41,7 @@ export async function GET() {
     const preference = rows[0];
 
     if (!preference) {
-      return NextResponse.json(DEFAULT_PAYLOAD, {
+      return NextResponse.json(DEFAULT_PRO_PREFERENCES, {
         status: 200,
         headers: { "Cache-Control": "no-store" },
       });
@@ -106,7 +62,7 @@ export async function GET() {
       },
     );
   } catch {
-    return NextResponse.json(DEFAULT_PAYLOAD, {
+    return NextResponse.json(DEFAULT_PRO_PREFERENCES, {
       status: 200,
       headers: { "Cache-Control": "no-store" },
     });
@@ -121,7 +77,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = (await request.json()) as unknown;
-    const payload = sanitizePayload(body);
+    const payload = sanitizeProPreferencesPayload(body);
 
     type PreferenceRow = {
       positionFilter: string;
