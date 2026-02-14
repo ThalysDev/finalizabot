@@ -777,7 +777,12 @@ describe("GET /api/matches/[id]", () => {
     });
     const body = (await response.json()) as {
       match: { id: string };
-      etlShots: { items: unknown[]; total: number; limit: number; offset: number };
+      etlShots: {
+        items: unknown[];
+        total: number;
+        limit: number;
+        offset: number;
+      };
     };
 
     expect(response.status).toBe(200);
@@ -830,7 +835,12 @@ describe("GET /api/matches/[id]", () => {
       },
     );
     const body = (await response.json()) as {
-      etlShots: { items: Array<{ minute: number }>; total: number; limit: number; offset: number };
+      etlShots: {
+        items: Array<{ minute: number }>;
+        total: number;
+        limit: number;
+        offset: number;
+      };
     };
 
     expect(response.status).toBe(200);
