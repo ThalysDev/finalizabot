@@ -20,6 +20,19 @@ export function validateId(id: string | undefined | null): string | null {
 }
 
 /**
+ * Validates an ImageCache ID (CUID only).
+ * Returns sanitized id or null.
+ */
+export function validateImageCacheId(
+  id: string | undefined | null,
+): string | null {
+  if (!id || typeof id !== "string") return null;
+  const trimmed = id.trim();
+  if (CUID_RE.test(trimmed)) return trimmed;
+  return null;
+}
+
+/**
  * Validates a search query string.
  * Returns sanitised query or null.
  */

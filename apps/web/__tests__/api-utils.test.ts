@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { checkRateLimit } from "../src/lib/rate-limit";
 import {
   validateId,
+  validateImageCacheId,
   validateImageProxyUrl,
   validateSearchQuery,
 } from "../src/lib/validation";
@@ -83,6 +84,20 @@ describe("validateId()", () => {
 
   it("trims whitespace", () => {
     expect(validateId("  12345  ")).toBe("12345");
+  });
+});
+
+describe("validateImageCacheId()", () => {
+  it("accepts CUID format", () => {
+    expect(validateImageCacheId("clx1234567890abcdefghijklm")).toBe(
+      "clx1234567890abcdefghijklm",
+    );
+  });
+
+  it("rejects numeric ids and invalid values", () => {
+    expect(validateImageCacheId("12345")).toBeNull();
+    expect(validateImageCacheId("../../../etc/passwd")).toBeNull();
+    expect(validateImageCacheId(null)).toBeNull();
   });
 });
 
