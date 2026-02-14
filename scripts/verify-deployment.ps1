@@ -125,16 +125,8 @@ Write-Host "[4/6] Checking git status..." -ForegroundColor Yellow
 Write-Host ""
 
 $null = Test-Warning "Working tree has pending changes" {
-    git diff-index --quiet HEAD --
-    $hasModified = $LASTEXITCODE -ne 0
-
-    $hasUntracked = $false
-    $firstUntracked = git ls-files --others --exclude-standard | Select-Object -First 1
-    if ($firstUntracked) {
-        $hasUntracked = $true
-    }
-
-    $hasModified -or $hasUntracked
+    $status = git status --porcelain=v1 --untracked-files=normal
+    ($status | Out-String).Trim().Length -gt 0
 } "Local changes detected. Commit/stash before final release checks."
 
 Write-Host ""
