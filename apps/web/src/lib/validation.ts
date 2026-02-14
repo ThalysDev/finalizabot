@@ -20,6 +20,19 @@ export function validateId(id: string | undefined | null): string | null {
 }
 
 /**
+ * Validates a SofaScore numeric ID.
+ * Returns sanitized id or null.
+ */
+export function validateSofascoreId(
+  id: string | undefined | null,
+): string | null {
+  if (!id || typeof id !== "string") return null;
+  const trimmed = id.trim();
+  if (NUMERIC_ID_RE.test(trimmed)) return trimmed;
+  return null;
+}
+
+/**
  * Validates an ImageCache ID (CUID only).
  * Returns sanitized id or null.
  */
