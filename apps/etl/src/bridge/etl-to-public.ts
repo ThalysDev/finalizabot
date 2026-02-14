@@ -31,6 +31,10 @@ function playerImageUrl(sofascoreId: string): string {
 
 /** Advisory lock ID — must be unique across the database */
 const BRIDGE_LOCK_ID = 987654321;
+const BRIDGE_PAGE_SIZE = Math.max(
+  100,
+  parseInt(process.env.BRIDGE_PAGE_SIZE ?? "500", 10) || 500,
+);
 
 /* ============================================================================
    Main bridge function
@@ -71,9 +75,15 @@ export async function runBridge(): Promise<void> {
       process.env.SKIP_IMAGE_SYNC === "1" ||
       process.env.SKIP_IMAGE_SYNC === "true";
     if (skipImages) {
-      logger.warn("[Bridge] ⚠️  SKIP_IMAGE_SYNC está ATIVADO — imagens NÃO serão baixadas!");
-      logger.warn("[Bridge] ⚠️  Escudos e fotos de jogadores podem não carregar no front-end!");
-      logger.warn("[Bridge] ⚠️  Recomendado apenas para desenvolvimento/testes rápidos.");
+      logger.warn(
+        "[Bridge] ⚠️  SKIP_IMAGE_SYNC está ATIVADO — imagens NÃO serão baixadas!",
+      );
+      logger.warn(
+        "[Bridge] ⚠️  Escudos e fotos de jogadores podem não carregar no front-end!",
+      );
+      logger.warn(
+        "[Bridge] ⚠️  Recomendado apenas para desenvolvimento/testes rápidos.",
+      );
     } else {
       try {
         await syncAllImages();
@@ -102,55 +112,69 @@ async function syncMatches(): Promise<number> {
   const matchCutoff = Number.isFinite(matchDaysEnv)
     ? new Date(Date.now() - matchDaysEnv * 24 * 60 * 60 * 1000)
     : null;
-  const etlMatches = await prisma.etlMatch.findMany({
-    where: matchCutoff ? { startTime: { gte: matchCutoff } } : undefined,
-    include: {
-      homeTeam: true,
-      awayTeam: true,
-    },
-    orderBy: { startTime: "desc" },
-  });
 
-  // Batch upserts in chunks of 50 inside a transaction
   const BATCH_SIZE = 50;
   let count = 0;
+  let cursorId: string | undefined;
 
-  for (let i = 0; i < etlMatches.length; i += BATCH_SIZE) {
-    const batch = etlMatches.slice(i, i + BATCH_SIZE);
-    const ops = batch.map((em) => {
-      const data = buildMatchUpsertData(em);
-      return prisma.match.upsert({
-        where: { sofascoreId: em.id },
-        create: { sofascoreId: em.id, ...data },
-        update: data,
-      });
+  while (true) {
+    const etlMatches = await prisma.etlMatch.findMany({
+      where: matchCutoff ? { startTime: { gte: matchCutoff } } : undefined,
+      include: {
+        homeTeam: true,
+        awayTeam: true,
+      },
+      orderBy: { id: "asc" },
+      take: BRIDGE_PAGE_SIZE,
+      ...(cursorId
+        ? {
+            cursor: { id: cursorId },
+            skip: 1,
+          }
+        : {}),
     });
 
-    try {
-      await prisma.$transaction(ops);
-      count += batch.length;
-    } catch (err) {
-      logger.warn(
-        `[Bridge] Erro ao sync batch de matches (offset ${i}): ${err instanceof Error ? err.message : err}`,
-      );
-      // Fallback: try individually for this failed batch
-      for (const em of batch) {
-        try {
-          const data = buildMatchUpsertData(em);
-          await prisma.match.upsert({
-            where: { sofascoreId: em.id },
-            create: { sofascoreId: em.id, ...data },
-            update: data,
-          });
-          count++;
-        } catch (innerErr) {
-          logger.warn(
-            `[Bridge] Erro ao sync match ${em.id}: ${innerErr instanceof Error ? innerErr.message : innerErr}`,
-          );
+    if (etlMatches.length === 0) break;
+
+    for (let i = 0; i < etlMatches.length; i += BATCH_SIZE) {
+      const batch = etlMatches.slice(i, i + BATCH_SIZE);
+      const ops = batch.map((em) => {
+        const data = buildMatchUpsertData(em);
+        return prisma.match.upsert({
+          where: { sofascoreId: em.id },
+          create: { sofascoreId: em.id, ...data },
+          update: data,
+        });
+      });
+
+      try {
+        await prisma.$transaction(ops);
+        count += batch.length;
+      } catch (err) {
+        logger.warn(
+          `[Bridge] Erro ao sync batch de matches (offset ${i}): ${err instanceof Error ? err.message : err}`,
+        );
+        for (const em of batch) {
+          try {
+            const data = buildMatchUpsertData(em);
+            await prisma.match.upsert({
+              where: { sofascoreId: em.id },
+              create: { sofascoreId: em.id, ...data },
+              update: data,
+            });
+            count++;
+          } catch (innerErr) {
+            logger.warn(
+              `[Bridge] Erro ao sync match ${em.id}: ${innerErr instanceof Error ? innerErr.message : innerErr}`,
+            );
+          }
         }
       }
     }
+
+    cursorId = etlMatches[etlMatches.length - 1]?.id;
   }
+
   return count;
 }
 
@@ -198,99 +222,112 @@ async function syncPlayers(): Promise<number> {
   const matchCutoff = Number.isFinite(matchDaysEnv)
     ? new Date(Date.now() - matchDaysEnv * 24 * 60 * 60 * 1000)
     : null;
-  // Get all ETL players that have participated in matches
-  const etlPlayers = await prisma.etlPlayer.findMany({
-    where: {
-      matchPlayers: {
-        some: matchCutoff ? { match: { startTime: { gte: matchCutoff } } } : {},
-      },
-    },
-    include: {
-      currentTeam: true,
-    },
-  });
 
-  if (etlPlayers.length === 0) return 0;
-
-  // Batch upserts in chunks of 50 via $transaction
   const BATCH_SIZE = 50;
   let count = 0;
+  let cursorId: string | undefined;
 
-  for (let i = 0; i < etlPlayers.length; i += BATCH_SIZE) {
-    const batch = etlPlayers.slice(i, i + BATCH_SIZE);
-
-    const ops = batch.map((ep) => {
-      const isNumericName = /^\d+$/.test(ep.name);
-      const safeName = isNumericName ? "Unknown" : ep.name;
-
-      return prisma.player.upsert({
-        where: { sofascoreId: ep.id },
-        create: {
-          sofascoreId: ep.id,
-          name: safeName,
-          position: ep.position ?? "Unknown",
-          sofascoreUrl: `https://www.sofascore.com/player/${ep.slug ?? ep.id}/${ep.id}`,
-          imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),
-          teamName: ep.currentTeam?.name ?? null,
-          teamImageUrl:
-            ep.currentTeam?.imageUrl ??
-            (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
+  while (true) {
+    const etlPlayers = await prisma.etlPlayer.findMany({
+      where: {
+        matchPlayers: {
+          some: matchCutoff
+            ? { match: { startTime: { gte: matchCutoff } } }
+            : {},
         },
-        update: {
-          ...(isNumericName ? {} : { name: ep.name }),
-          position: ep.position ?? "Unknown",
-          imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),
-          teamName: ep.currentTeam?.name ?? null,
-          teamImageUrl:
-            ep.currentTeam?.imageUrl ??
-            (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
-        },
-      });
+      },
+      include: {
+        currentTeam: true,
+      },
+      orderBy: { id: "asc" },
+      take: BRIDGE_PAGE_SIZE,
+      ...(cursorId
+        ? {
+            cursor: { id: cursorId },
+            skip: 1,
+          }
+        : {}),
     });
 
-    try {
-      await prisma.$transaction(ops);
-      count += batch.length;
-    } catch (err) {
-      logger.warn(
-        `[Bridge] Batch player sync failed (batch ${Math.floor(i / BATCH_SIZE) + 1}): ${err instanceof Error ? err.message : err}`,
-      );
-      // Fallback: try individually for this failed batch
-      for (const ep of batch) {
-        try {
-          const isNumericName = /^\d+$/.test(ep.name);
-          const safeName = isNumericName ? "Unknown" : ep.name;
-          await prisma.player.upsert({
-            where: { sofascoreId: ep.id },
-            create: {
-              sofascoreId: ep.id,
-              name: safeName,
-              position: ep.position ?? "Unknown",
-              sofascoreUrl: `https://www.sofascore.com/player/${ep.slug ?? ep.id}/${ep.id}`,
-              imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),
-              teamName: ep.currentTeam?.name ?? null,
-              teamImageUrl:
-                ep.currentTeam?.imageUrl ??
-                (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
-            },
-            update: {
-              ...(isNumericName ? {} : { name: ep.name }),
-              position: ep.position ?? "Unknown",
-              imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),
-              teamName: ep.currentTeam?.name ?? null,
-              teamImageUrl:
-                ep.currentTeam?.imageUrl ??
-                (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
-            },
-          });
-          count++;
-        } catch (innerErr) {
-          logger.warn(
-            `[Bridge] Erro ao sync player ${ep.id}: ${innerErr instanceof Error ? innerErr.message : innerErr}`,
-          );
+    if (etlPlayers.length === 0) break;
+
+    for (let i = 0; i < etlPlayers.length; i += BATCH_SIZE) {
+      const batch = etlPlayers.slice(i, i + BATCH_SIZE);
+
+      const ops = batch.map((ep) => {
+        const isNumericName = /^\d+$/.test(ep.name);
+        const safeName = isNumericName ? "Unknown" : ep.name;
+
+        return prisma.player.upsert({
+          where: { sofascoreId: ep.id },
+          create: {
+            sofascoreId: ep.id,
+            name: safeName,
+            position: ep.position ?? "Unknown",
+            sofascoreUrl: `https://www.sofascore.com/player/${ep.slug ?? ep.id}/${ep.id}`,
+            imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),
+            teamName: ep.currentTeam?.name ?? null,
+            teamImageUrl:
+              ep.currentTeam?.imageUrl ??
+              (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
+          },
+          update: {
+            ...(isNumericName ? {} : { name: ep.name }),
+            position: ep.position ?? "Unknown",
+            imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),
+            teamName: ep.currentTeam?.name ?? null,
+            teamImageUrl:
+              ep.currentTeam?.imageUrl ??
+              (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
+          },
+        });
+      });
+
+      try {
+        await prisma.$transaction(ops);
+        count += batch.length;
+      } catch (err) {
+        logger.warn(
+          `[Bridge] Batch player sync failed (batch ${Math.floor(i / BATCH_SIZE) + 1}): ${err instanceof Error ? err.message : err}`,
+        );
+        for (const ep of batch) {
+          try {
+            const isNumericName = /^\d+$/.test(ep.name);
+            const safeName = isNumericName ? "Unknown" : ep.name;
+            await prisma.player.upsert({
+              where: { sofascoreId: ep.id },
+              create: {
+                sofascoreId: ep.id,
+                name: safeName,
+                position: ep.position ?? "Unknown",
+                sofascoreUrl: `https://www.sofascore.com/player/${ep.slug ?? ep.id}/${ep.id}`,
+                imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),
+                teamName: ep.currentTeam?.name ?? null,
+                teamImageUrl:
+                  ep.currentTeam?.imageUrl ??
+                  (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
+              },
+              update: {
+                ...(isNumericName ? {} : { name: ep.name }),
+                position: ep.position ?? "Unknown",
+                imageUrl: ep.imageUrl ?? playerImageUrl(ep.id),
+                teamName: ep.currentTeam?.name ?? null,
+                teamImageUrl:
+                  ep.currentTeam?.imageUrl ??
+                  (ep.currentTeamId ? teamImageUrl(ep.currentTeamId) : null),
+              },
+            });
+            count++;
+          } catch (innerErr) {
+            logger.warn(
+              `[Bridge] Erro ao sync player ${ep.id}: ${innerErr instanceof Error ? innerErr.message : innerErr}`,
+            );
+          }
         }
       }
     }
+
+    cursorId = etlPlayers[etlPlayers.length - 1]?.id;
   }
 
   return count;
@@ -307,7 +344,9 @@ async function syncPlayerMatchStats(): Promise<number> {
     : null;
   // Get all ETL match-player records
   const matchPlayers = await prisma.etlMatchPlayer.findMany({
-    where: matchCutoff ? { match: { startTime: { gte: matchCutoff } } } : undefined,
+    where: matchCutoff
+      ? { match: { startTime: { gte: matchCutoff } } }
+      : undefined,
     include: {
       match: true,
       player: true,
@@ -594,7 +633,8 @@ async function generateMarketAnalysis(): Promise<number> {
 
       let recommendation = "NEUTRO";
       if (probability >= 0.7 && confidence >= 0.6) recommendation = "APOSTAR";
-      else if (probability >= 0.5 && confidence >= 0.5) recommendation = "CONSIDERAR";
+      else if (probability >= 0.5 && confidence >= 0.5)
+        recommendation = "CONSIDERAR";
       else if (probability < 0.3) recommendation = "EVITAR";
 
       const reasoning = `Baseado em ${shots.length} jogos: média ${avgShots.toFixed(1)} chutes, ${hits}/${shots.length} acima da linha ${DEFAULT_LINE}. CV: ${cv?.toFixed(2) ?? "N/A"}.`;

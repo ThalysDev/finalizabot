@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Calendar, Search, Trophy, ArrowRight } from "lucide-react";
 import { MatchCard } from "@/components/match/MatchCard";
 import { MatchListItem } from "@/components/match/MatchListItem";
@@ -27,16 +27,56 @@ export function DashboardContent({
   tomorrowCount,
   fallbackLabel,
 }: DashboardContentProps) {
-  const [dayFilter, setDayFilter] = useState<"all" | "today" | "tomorrow">("all");
+  const STORAGE_KEY = "fb:dashboard:preferences";
+  const [dayFilter, setDayFilter] = useState<"all" | "today" | "tomorrow">(
+    "all",
+  );
   const [compFilter, setCompFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as {
+        dayFilter?: "all" | "today" | "tomorrow";
+        compFilter?: string;
+        searchQuery?: string;
+        view?: "grid" | "list";
+      };
+
+      if (parsed.dayFilter) setDayFilter(parsed.dayFilter);
+      if (parsed.compFilter) setCompFilter(parsed.compFilter);
+      if (parsed.searchQuery) setSearchQuery(parsed.searchQuery);
+      if (parsed.view) setView(parsed.view);
+    } catch {
+      // ignore invalid localStorage payload
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ dayFilter, compFilter, searchQuery, view }),
+      );
+    } catch {
+      // storage may be unavailable in private mode
+    }
+  }, [dayFilter, compFilter, searchQuery, view]);
 
   // Unique competitions for filter tabs
   const competitions = useMemo(() => {
     const comps = new Set(matches.map((m) => m.competition));
     return ["all", ...Array.from(comps)];
   }, [matches]);
+
+  useEffect(() => {
+    if (compFilter !== "all" && !competitions.includes(compFilter)) {
+      setCompFilter("all");
+    }
+  }, [compFilter, competitions]);
 
   const filteredMatches = useMemo(() => {
     let result = matches;
@@ -168,7 +208,7 @@ export function DashboardContent({
                 <div className="flex items-center gap-2 mb-3">
                   <Trophy className="size-4 text-fb-primary" />
                   <h2
-                    className="text-fb-text font-semibold text-sm truncate max-w-[200px] sm:max-w-xs"
+                    className="text-fb-text font-semibold text-sm truncate max-w-50 sm:max-w-xs"
                     title={comp}
                   >
                     {comp}

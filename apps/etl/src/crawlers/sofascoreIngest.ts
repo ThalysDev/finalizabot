@@ -325,7 +325,11 @@ async function ingestMatchData(
     matchStatuses.set(matchId, statusCode);
 
     // Ensure team FK targets exist before match upsert.
-    const newTeams: Array<{ id: string; name: string; imageUrl: string | null }> = [];
+    const newTeams: Array<{
+      id: string;
+      name: string;
+      imageUrl: string | null;
+    }> = [];
 
     if (!teamCache.has(homeId)) {
       const home = {
@@ -496,7 +500,10 @@ export async function runSofaScoreIngest(): Promise<void> {
     { homeTeamId: string; awayTeamId: string }
   >();
   const matchStatuses = new Map<string, number | null>();
-  const teamCache = new Map<string, { id: string; name: string; imageUrl: string | null }>();
+  const teamCache = new Map<
+    string,
+    { id: string; name: string; imageUrl: string | null }
+  >();
 
   try {
     /* ---- Phase 1-A: match metadata + lineups ---- */
@@ -529,7 +536,7 @@ export async function runSofaScoreIngest(): Promise<void> {
     if (teamCache.size > 0) {
       logger.info("Upserting unique teams", { count: teamCache.size });
       await Promise.all(
-        Array.from(teamCache.values()).map(team => upsertTeam(team))
+        Array.from(teamCache.values()).map((team) => upsertTeam(team)),
       );
     }
 
@@ -589,10 +596,12 @@ export async function runSofaScoreIngest(): Promise<void> {
     /* ---- Phase 2: historical matches (last N days) ---- */
     const tPhase2Discover = Date.now();
     const phase2DaysEnv = parseInt(process.env.SYNC_PHASE2_DAYS ?? "", 10);
-    const phase2Days = Number.isFinite(phase2DaysEnv) ? phase2DaysEnv : undefined;
-    let phase2Ids = (await discoverFinishedMatchIdsLastNDays(phase2Days)).filter(
-      (id) => !allowedMatchIds.has(id),
-    );
+    const phase2Days = Number.isFinite(phase2DaysEnv)
+      ? phase2DaysEnv
+      : undefined;
+    let phase2Ids = (
+      await discoverFinishedMatchIdsLastNDays(phase2Days)
+    ).filter((id) => !allowedMatchIds.has(id));
     const skipExisting =
       process.env.SYNC_PHASE2_SKIP_EXISTING !== "0" &&
       process.env.SYNC_PHASE2_SKIP_EXISTING !== "false";

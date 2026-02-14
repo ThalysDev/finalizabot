@@ -33,6 +33,24 @@ function delay(): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+async function mapConcurrent<T>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<void>,
+): Promise<void> {
+  let i = 0;
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    async () => {
+      while (i < items.length) {
+        const idx = i++;
+        await fn(items[idx]);
+      }
+    },
+  );
+  await Promise.all(workers);
+}
+
 const BASE = "https://api.sofascore.com/api/v1";
 const SPORT_BASE = `${BASE}/sport/football`;
 const STATUS_FINISHED = 100;
@@ -325,14 +343,25 @@ export async function discoverFinishedMatchIdsLastNDays(
   const maxLookback =
     parseInt(process.env.SYNC_HISTORY_LOOKBACK_DAYS ?? "60", 10) || 60;
   const lookbackDays = Math.min(n, maxLookback);
+  const historyConcurrency = Math.max(
+    1,
+    parseInt(process.env.SYNC_HISTORY_CONCURRENCY ?? "4", 10) || 4,
+  );
+  const dateStrings: string[] = [];
+
   for (let offset = 0; offset < lookbackDays; offset++) {
     const d = new Date(Date.now() - offset * 24 * 60 * 60 * 1000);
-    const dateStr = d.toLocaleDateString("en-CA", { timeZone: tz });
+    dateStrings.push(d.toLocaleDateString("en-CA", { timeZone: tz }));
+  }
+
+  await mapConcurrent(dateStrings, historyConcurrency, async (dateStr) => {
+    await delay();
     const data = await fetchJson<ScheduledEventsResponse>(
       getScheduledEventsUrl(dateStr),
     );
     const events = data?.events;
-    if (!Array.isArray(events)) continue;
+    if (!Array.isArray(events)) return;
+
     for (const ev of events) {
       const code = ev?.status?.code;
       if (code !== STATUS_FINISHED) continue;
@@ -341,8 +370,9 @@ export async function discoverFinishedMatchIdsLastNDays(
         typeof uniqueId === "number" &&
         idSet.size > 0 &&
         !idSet.has(uniqueId)
-      )
+      ) {
         continue;
+      }
       const name = ev?.tournament?.name;
       if (name != null && !isAllowedTournament(name)) continue;
       const ts = ev.startTimestamp;
@@ -350,12 +380,12 @@ export async function discoverFinishedMatchIdsLastNDays(
       const id = ev?.id;
       if (id != null) allIds.add(String(id));
     }
-    await delay();
-  }
+  });
 
   logger.info("Discovered finished matches in last N days", {
     days: n,
     lookback: lookbackDays,
+    concurrency: historyConcurrency,
     count: allIds.size,
     elapsedMs: Date.now() - t0,
   });

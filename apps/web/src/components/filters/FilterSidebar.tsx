@@ -28,19 +28,48 @@ export interface FilterSidebarProps {
   className?: string;
   onFilterChange?: (filters: FilterState) => void;
   initialFilters?: FilterState;
+  storageKey?: string;
 }
 
 export function FilterSidebar({
   className = "",
   onFilterChange,
   initialFilters,
+  storageKey = "fb:filters:global",
 }: FilterSidebarProps) {
   const init = initialFilters ?? DEFAULT_FILTERS;
-  const [marketType, setMarketType] = useState<"shots" | "sot">(init.marketType);
+  const [marketType, setMarketType] = useState<"shots" | "sot">(
+    init.marketType,
+  );
   const [position, setPosition] = useState(init.position);
   const [oddsRange, setOddsRange] = useState([init.oddsMin, init.oddsMax]);
   const [cvThreshold, setCvThreshold] = useState(init.cvThreshold);
   const [showOnlyValue, setShowOnlyValue] = useState(init.showOnlyValue);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(storageKey);
+      if (!saved) return;
+
+      const parsed = JSON.parse(saved) as Partial<FilterState>;
+      if (parsed.marketType) setMarketType(parsed.marketType);
+      if (parsed.position) setPosition(parsed.position);
+      if (
+        typeof parsed.oddsMin === "number" &&
+        typeof parsed.oddsMax === "number"
+      ) {
+        setOddsRange([parsed.oddsMin, parsed.oddsMax]);
+      }
+      if (typeof parsed.cvThreshold === "number") {
+        setCvThreshold(parsed.cvThreshold);
+      }
+      if (typeof parsed.showOnlyValue === "boolean") {
+        setShowOnlyValue(parsed.showOnlyValue);
+      }
+    } catch {
+      // ignore malformed storage
+    }
+  }, [storageKey]);
 
   // Emit filter changes
   const emitFilters = useCallback(() => {
@@ -52,11 +81,36 @@ export function FilterSidebar({
       cvThreshold,
       showOnlyValue,
     });
-  }, [marketType, position, oddsRange, cvThreshold, showOnlyValue, onFilterChange]);
+  }, [
+    marketType,
+    position,
+    oddsRange,
+    cvThreshold,
+    showOnlyValue,
+    onFilterChange,
+  ]);
 
   useEffect(() => {
     emitFilters();
   }, [emitFilters]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          marketType,
+          position,
+          oddsMin: oddsRange[0],
+          oddsMax: oddsRange[1],
+          cvThreshold,
+          showOnlyValue,
+        }),
+      );
+    } catch {
+      // storage may be unavailable
+    }
+  }, [storageKey, marketType, position, oddsRange, cvThreshold, showOnlyValue]);
 
   function resetFilters() {
     setMarketType(DEFAULT_FILTERS.marketType);
@@ -64,6 +118,11 @@ export function FilterSidebar({
     setOddsRange([DEFAULT_FILTERS.oddsMin, DEFAULT_FILTERS.oddsMax]);
     setCvThreshold(DEFAULT_FILTERS.cvThreshold);
     setShowOnlyValue(DEFAULT_FILTERS.showOnlyValue);
+    try {
+      window.localStorage.removeItem(storageKey);
+    } catch {
+      // ignore
+    }
   }
 
   const positions = [
