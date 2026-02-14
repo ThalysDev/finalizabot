@@ -5,6 +5,7 @@ import { Calendar, Search, Trophy, ArrowRight } from "lucide-react";
 import { MatchCard } from "@/components/match/MatchCard";
 import { MatchListItem } from "@/components/match/MatchListItem";
 import { ViewSwitcher } from "@/components/dashboard/ViewSwitcher";
+import { StatePanel } from "@/components/ui/StatePanel";
 import type { MatchCardData } from "@/data/types";
 
 /* ============================================================================
@@ -370,48 +371,37 @@ export function DashboardContent({
           </div>
         ) : matches.length > 0 ? (
           /* Filtered to zero */
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="size-16 rounded-full bg-fb-surface flex items-center justify-center mb-4">
-              <Search className="size-8 text-fb-text-muted" />
-            </div>
-            <h3 className="text-fb-text font-semibold text-lg mb-2">
-              Nenhum resultado
-            </h3>
-            <p className="text-fb-text-muted text-sm max-w-md">
-              Nenhuma partida corresponde à busca. Tente outro termo.
-            </p>
-          </div>
+          <StatePanel
+            icon={Search}
+            title="Nenhum resultado"
+            description="Nenhuma partida corresponde à busca. Tente outro termo."
+          />
         ) : (
           /* No matches at all */
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="size-20 rounded-full bg-linear-to-br from-fb-primary/10 to-fb-surface flex items-center justify-center mb-6">
-              <Calendar className="size-10 text-fb-primary" />
-            </div>
-            <h3 className="text-fb-text font-bold text-xl mb-3">
-              Nenhuma partida agendada
-            </h3>
-            <p className="text-fb-text-muted text-sm max-w-lg mb-6">
-              O sync diário descobre automaticamente as partidas do dia e popula
-              o banco de dados. Execute o sync manualmente ou aguarde a execução
-              programada (3h BRT).
-            </p>
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex items-center gap-2 text-fb-text-muted text-xs">
-                <ArrowRight className="size-3.5" />
-                <code className="bg-fb-surface px-2 py-1 rounded text-fb-primary">
-                  npm run sync
-                </code>
-                <span>— Sincroniza partidas de hoje</span>
+          <StatePanel
+            icon={Calendar}
+            title="Nenhuma partida agendada"
+            description="O sync diário descobre automaticamente as partidas do dia e popula o banco de dados. Execute o sync manualmente ou aguarde a execução programada (3h BRT)."
+            iconClassName="size-20 bg-linear-to-br from-fb-primary/10 to-fb-surface"
+            action={
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center gap-2 text-fb-text-muted text-xs">
+                  <ArrowRight className="size-3.5" />
+                  <code className="bg-fb-surface px-2 py-1 rounded text-fb-primary">
+                    npm run sync
+                  </code>
+                  <span>— Sincroniza partidas de hoje</span>
+                </div>
+                <div className="flex items-center gap-2 text-fb-text-muted text-xs">
+                  <ArrowRight className="size-3.5" />
+                  <code className="bg-fb-surface px-2 py-1 rounded text-fb-primary">
+                    npm run db:seed
+                  </code>
+                  <span>— Cria dados de exemplo</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-fb-text-muted text-xs">
-                <ArrowRight className="size-3.5" />
-                <code className="bg-fb-surface px-2 py-1 rounded text-fb-primary">
-                  npm run db:seed
-                </code>
-                <span>— Cria dados de exemplo</span>
-              </div>
-            </div>
-          </div>
+            }
+          />
         )}
       </div>
     </div>

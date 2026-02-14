@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { AlertCard } from "@/components/alerts/AlertCard";
+import { StatePanel } from "@/components/ui/StatePanel";
 import { Switch } from "@/components/ui/switch";
 import type { AlertData } from "@/data/types";
 
@@ -473,19 +474,15 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="size-16 rounded-full bg-fb-surface flex items-center justify-center mb-4">
-                <Inbox className="size-8 text-fb-text-muted" />
-              </div>
-              <h3 className="text-fb-text font-semibold text-lg mb-2">
-                Nenhum alerta disponível
-              </h3>
-              <p className="text-fb-text-muted text-sm max-w-md">
-                {alerts.length > 0
+            <StatePanel
+              icon={Inbox}
+              title="Nenhum alerta disponível"
+              description={
+                alerts.length > 0
                   ? "Ajuste os filtros para ver mais oportunidades."
-                  : "As oportunidades de valor aparecerão aqui quando forem detectadas com base nas análises de mercado."}
-              </p>
-            </div>
+                  : "As oportunidades de valor aparecerão aqui quando forem detectadas com base nas análises de mercado."
+              }
+            />
           )}
         </div>
       </div>

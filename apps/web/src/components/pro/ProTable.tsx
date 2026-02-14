@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, Search } from "lucide-react";
+import { StatePanel } from "@/components/ui/StatePanel";
 import type { ProPlayerRow } from "@/data/types";
 
 const headers = [
@@ -314,6 +315,14 @@ export function ProTable({ players }: { players: ProPlayerRow[] }) {
       </div>
 
       <div className="flex-1 overflow-auto">
+        {sorted.length === 0 ? (
+          <StatePanel
+            icon={Search}
+            title="Nenhum jogador encontrado"
+            description="Nenhum jogador atende aos filtros atuais. Ajuste os parâmetros para ampliar os resultados."
+            className="py-14"
+          />
+        ) : (
         <table className="w-full border-collapse text-left text-sm whitespace-nowrap">
           <thead className="bg-fb-surface sticky top-0 z-10 text-[11px] font-semibold text-fb-text-muted uppercase tracking-wider">
             <tr>
@@ -374,6 +383,7 @@ export function ProTable({ players }: { players: ProPlayerRow[] }) {
             ))}
           </tbody>
         </table>
+        )}
       </div>
     </>
   );
