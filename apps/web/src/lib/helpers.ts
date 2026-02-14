@@ -77,14 +77,8 @@ export function cachedImageUrl(
 export function buildTeamBadgeUrl(
   teamId?: string | null,
 ): string | undefined {
-  // Aceitar qualquer string não-vazia (IDs alfanuméricos também)
-  if (!teamId || teamId.trim() === '') return undefined;
-  // Primary: try cached image by SofaScore numeric ID
-  // Fallback: proxy through SofaScore CDN directly
-  return (
-    cachedImageUrl(teamId) ??
-    `/api/image-proxy?url=${encodeURIComponent(`https://api.sofascore.com/api/v1/team/${teamId}/image`)}`
-  );
+  if (!teamId || teamId.trim() === "") return undefined;
+  return `/api/image-proxy?url=${encodeURIComponent(`https://api.sofascore.com/api/v1/team/${teamId}/image`)}`;
 }
 
 /* ============================================================================

@@ -2,6 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "npm install",
-  "buildCommand": "npm run db:generate && npm run build:shared && npm -w @finalizabot/web run build",
+  "buildCommand": "npm run build:vercel",
   "outputDirectory": "apps/web/.next"
 }

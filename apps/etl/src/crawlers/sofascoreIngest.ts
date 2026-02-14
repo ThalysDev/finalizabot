@@ -324,20 +324,30 @@ async function ingestMatchData(
     // Track status for shotmap decision
     matchStatuses.set(matchId, statusCode);
 
-    // Cache teams for batch upsert after Phase 1-A
+    // Ensure team FK targets exist before match upsert.
+    const newTeams: Array<{ id: string; name: string; imageUrl: string | null }> = [];
+
     if (!teamCache.has(homeId)) {
-      teamCache.set(homeId, {
+      const home = {
         id: homeId,
         name: homeName,
         imageUrl: teamImageUrl(homeTeam),
-      });
+      };
+      teamCache.set(homeId, home);
+      newTeams.push(home);
     }
     if (!teamCache.has(awayId)) {
-      teamCache.set(awayId, {
+      const away = {
         id: awayId,
         name: awayName,
         imageUrl: teamImageUrl(awayTeam),
-      });
+      };
+      teamCache.set(awayId, away);
+      newTeams.push(away);
+    }
+
+    if (newTeams.length > 0) {
+      await Promise.all(newTeams.map((team) => upsertTeam(team)));
     }
 
     matchTeams.set(matchId, { homeTeamId: homeId, awayTeamId: awayId });

@@ -23,16 +23,23 @@ export async function GET() {
   const etl = await etlHealth();
 
   const allOk = dbStatus === "ok" && !!etl.data;
+  const statusCode = allOk ? 200 : 503;
 
   return NextResponse.json(
     {
-      status: allOk ? "healthy" : "degraded",
+      status: allOk ? "healthy" : "unhealthy",
       db: dbStatus,
       dbError: exposeErrors ? dbError : null,
       etl: etl.data ? "ok" : "unavailable",
       etlError: exposeErrors ? etl.error : null,
       timestamp: new Date().toISOString(),
     },
-    { status: allOk ? 200 : 503 },
+    {
+      status: statusCode,
+      headers: {
+        "Cache-Control":
+          "no-store, no-cache, must-revalidate, proxy-revalidate",
+      },
+    },
   );
 }

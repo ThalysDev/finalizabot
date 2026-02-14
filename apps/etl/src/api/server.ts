@@ -12,8 +12,11 @@ const prisma = getPrisma();
 
 const ETL_API_KEY = process.env.SOFASCORE_ETL_API_KEY?.trim() ?? "";
 const NODE_ENV = process.env.NODE_ENV?.trim() ?? "development";
-const ALLOW_UNAUTHENTICATED =
-  process.env.SOFASCORE_ETL_ALLOW_UNAUTHENTICATED !== "false";
+const allowUnauthenticatedEnv =
+  process.env.SOFASCORE_ETL_ALLOW_UNAUTHENTICATED?.trim();
+const ALLOW_UNAUTHENTICATED = allowUnauthenticatedEnv
+  ? allowUnauthenticatedEnv === "true"
+  : NODE_ENV !== "production";
 
 let unauthWarningLogged = false;
 
