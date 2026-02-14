@@ -18,6 +18,7 @@
     "sync:bridge": "npm -w @finalizabot/etl run bridge",
     "sync:full": "npm -w @finalizabot/etl run sync:full",
     "sync:images": "npm -w @finalizabot/etl run sync:images",
+    "sync:bridge:measure": "node scripts/sync-bridge-measure.mjs",
     "report:bridge-timings": "node scripts/report-bridge-timings.mjs",
     "lint": "npm -w @finalizabot/web run lint",
     "quality:ci": "npm run lint && npm run test && npm run build && npm run build:etl",

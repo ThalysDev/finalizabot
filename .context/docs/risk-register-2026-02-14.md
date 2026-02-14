@@ -58,6 +58,9 @@
   - `syncMatches`, `syncPlayers`, `syncPlayerMatchStats`, `generateMarketAnalysis`
 - Added persisted baseline file with percentile aggregation:
   - `logs/bridge-timings.jsonl` (rolling history with p50/p95 summaries)
+- Added automated measurement command with retry/backoff for lock contention:
+  - `npm run sync:bridge:measure`
+  - retries `sync:bridge` until lock release, then runs `report:bridge-timings`
 - Optimized `syncPlayerMatchStats` execution model:
   - processes ETL matches in configurable batches (`BRIDGE_STATS_MATCH_BATCH_SIZE`)
   - applies upsert CTE per batch instead of one large global upsert
