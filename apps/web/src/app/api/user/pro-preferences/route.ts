@@ -5,11 +5,12 @@ import {
   DEFAULT_PRO_PREFERENCES,
   sanitizeProPreferencesPayload,
 } from "@/lib/preferences/sanitize";
+import { jsonError } from "@/lib/api/responses";
 
 export async function GET() {
   const appUserId = await resolveOrCreateAppUserId();
   if (!appUserId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401);
   }
 
   try {
@@ -72,7 +73,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   const appUserId = await resolveOrCreateAppUserId();
   if (!appUserId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401);
   }
 
   try {
@@ -139,15 +140,7 @@ export async function PUT(request: Request) {
       },
       { status: 200 },
     );
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to save pro preferences",
-      },
-      { status: 400 },
-    );
+  } catch {
+    return jsonError("Failed to save pro preferences", 400);
   }
 }
