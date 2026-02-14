@@ -3,16 +3,14 @@ import prisma from "@/lib/db/prisma";
 import { logger } from "@/lib/logger";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizeMatchesQueryParams } from "@/lib/api/query-params";
+import { jsonError, jsonRateLimited } from "@/lib/api/responses";
 
 export async function GET(req: NextRequest) {
   // Rate limit: 30 req/min per IP
   const ip = getClientIp(req);
   const rl = checkRateLimit(`matches:${ip}`, { limit: 30, windowSec: 60 });
   if (!rl.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
-    );
+    return jsonRateLimited(rl.retryAfter);
   }
 
   try {
@@ -47,9 +45,6 @@ export async function GET(req: NextRequest) {
     );
   } catch (error) {
     logger.error("[/api/matches] list failed", error);
-    return NextResponse.json(
-      { error: "Failed to fetch matches" },
-      { status: 500 },
-    );
+    return jsonError("Failed to fetch matches", 500);
   }
 }

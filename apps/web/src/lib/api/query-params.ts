@@ -113,10 +113,7 @@ export function normalizeDebugTableQueryParams(
 
   return {
     line: Math.max(MIN_DEBUG_LINE, Math.min(MAX_DEBUG_LINE, lineRaw)),
-    minMatches: Math.max(
-      1,
-      Math.min(MAX_DEBUG_MIN_MATCHES, minMatchesRaw),
-    ),
+    minMatches: Math.max(1, Math.min(MAX_DEBUG_MIN_MATCHES, minMatchesRaw)),
     limit: Math.max(1, Math.min(MAX_DEBUG_LIMIT, limitRaw)),
   };
 }

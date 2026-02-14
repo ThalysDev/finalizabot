@@ -5,6 +5,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateId } from "@/lib/validation";
 import { logger } from "@/lib/logger";
 import { normalizePlayerShotsDateRangeQueryParams } from "@/lib/api/query-params";
+import { jsonError, jsonRateLimited } from "@/lib/api/responses";
 
 export async function GET(
   request: Request,
@@ -14,17 +15,14 @@ export async function GET(
   const ip = getClientIp(request);
   const rl = checkRateLimit(`player:${ip}`, { limit: 60, windowSec: 60 });
   if (!rl.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
-    );
+    return jsonRateLimited(rl.retryAfter);
   }
 
   try {
     const { id: rawId } = await params;
     const id = validateId(rawId);
     if (!id) {
-      return NextResponse.json({ error: "Invalid player ID" }, { status: 400 });
+      return jsonError("Invalid player ID", 400);
     }
     const { searchParams } = new URL(request.url);
     const { from, to } = normalizePlayerShotsDateRangeQueryParams(searchParams);
@@ -61,7 +59,7 @@ export async function GET(
     });
 
     if (!player) {
-      return NextResponse.json({ error: "Player not found" }, { status: 404 });
+      return jsonError("Player not found", 404);
     }
 
     // Busca shots via ETL API HTTP (não mais via Prisma etl schema)
@@ -83,9 +81,6 @@ export async function GET(
     );
   } catch (error) {
     logger.error("[/api/players/:id] fetch failed", error);
-    return NextResponse.json(
-      { error: "Failed to fetch player" },
-      { status: 500 },
-    );
+    return jsonError("Failed to fetch player", 500);
   }
 }

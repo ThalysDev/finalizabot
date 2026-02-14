@@ -13,6 +13,7 @@ import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { validateImageCacheId } from "@/lib/validation";
+import { jsonError } from "@/lib/api/responses";
 
 const CACHE_TTL = 60 * 60 * 24 * 30; // 30 days
 
@@ -24,7 +25,7 @@ export async function GET(
   const id = validateImageCacheId(rawId);
 
   if (!id) {
-    return NextResponse.json({ error: "Invalid image id" }, { status: 400 });
+    return jsonError("Invalid image id", 400);
   }
 
   try {

@@ -6,6 +6,7 @@ import { DEFAULT_LINE } from "@/lib/etl/config";
 import { formatDateTime } from "@/lib/format/date";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizeDebugTableQueryParams } from "@/lib/api/query-params";
+import { jsonRateLimited } from "@/lib/api/responses";
 
 export const dynamic = "force-dynamic";
 
@@ -40,10 +41,7 @@ export async function GET(request: Request) {
   const ip = getClientIp(request);
   const rl = checkRateLimit(`debug-table:${ip}`, { limit: 10, windowSec: 60 });
   if (!rl.allowed) {
-    return NextResponse.json(
-      { success: false, error: { message: "Too many requests" } },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
-    );
+    return jsonRateLimited(rl.retryAfter);
   }
 
   if (isProduction && !allowDebugInProd) {

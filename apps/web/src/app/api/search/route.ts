@@ -4,16 +4,14 @@ import { logger } from "@/lib/logger";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateSearchQuery } from "@/lib/validation";
 import { normalizeSearchQueryParams } from "@/lib/api/query-params";
+import { jsonError, jsonRateLimited } from "@/lib/api/responses";
 
 export async function GET(req: NextRequest) {
   // Rate limit: 30 req/min per IP
   const ip = getClientIp(req);
   const rl = checkRateLimit(`search:${ip}`, { limit: 30, windowSec: 60 });
   if (!rl.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
-    );
+    return jsonRateLimited(rl.retryAfter);
   }
 
   try {
@@ -46,6 +44,6 @@ export async function GET(req: NextRequest) {
     );
   } catch (error) {
     logger.error("[/api/search] query failed", error);
-    return NextResponse.json({ error: "Search failed" }, { status: 500 });
+    return jsonError("Search failed", 500);
   }
 }

@@ -5,6 +5,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateId } from "@/lib/validation";
 import { logger } from "@/lib/logger";
 import { normalizeMatchShotsInput } from "@/lib/fetchers/match-shots";
+import { jsonError, jsonRateLimited } from "@/lib/api/responses";
 
 export async function GET(
   request: Request,
@@ -14,17 +15,14 @@ export async function GET(
   const ip = getClientIp(request);
   const rl = checkRateLimit(`match:${ip}`, { limit: 60, windowSec: 60 });
   if (!rl.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
-    );
+    return jsonRateLimited(rl.retryAfter);
   }
 
   try {
     const { id: rawId } = await params;
     const id = validateId(rawId);
     if (!id) {
-      return NextResponse.json({ error: "Invalid match ID" }, { status: 400 });
+      return jsonError("Invalid match ID", 400);
     }
     const { searchParams } = new URL(request.url);
 
@@ -40,7 +38,7 @@ export async function GET(
     });
 
     if (!match) {
-      return NextResponse.json({ error: "Match not found" }, { status: 404 });
+      return jsonError("Match not found", 404);
     }
 
     // Busca shots via ETL API HTTP (não mais via Prisma etl schema)
@@ -66,9 +64,6 @@ export async function GET(
     );
   } catch (error) {
     logger.error("[/api/matches/:id] fetch failed", error);
-    return NextResponse.json(
-      { error: "Failed to fetch match" },
-      { status: 500 },
-    );
+    return jsonError("Failed to fetch match", 500);
   }
 }
