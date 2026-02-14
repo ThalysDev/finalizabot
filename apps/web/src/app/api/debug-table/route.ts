@@ -64,7 +64,11 @@ export async function GET(request: Request) {
 
     // Get players with their match stats count
     const playersWithCount = await prisma.player.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        position: true,
+        sofascoreId: true,
         _count: {
           select: { matchStats: true },
         },
