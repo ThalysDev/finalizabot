@@ -10,31 +10,22 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { validateImageProxyUrl } from "@/lib/validation";
 
-const ALLOWED_HOSTS = ["api.sofascore.com"];
 const CACHE_TTL = 60 * 60 * 24 * 7; // 7 days
 
 export async function GET(req: NextRequest) {
-  const url = req.nextUrl.searchParams.get("url");
+  const validation = validateImageProxyUrl(req.nextUrl.searchParams.get("url"));
 
-  if (!url) {
-    return NextResponse.json({ error: "Missing url param" }, { status: 400 });
-  }
-
-  // Validate hostname
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return NextResponse.json({ error: "Invalid url" }, { status: 400 });
-  }
-
-  if (!ALLOWED_HOSTS.includes(parsed.hostname)) {
-    return NextResponse.json({ error: "Host not allowed" }, { status: 403 });
+  if (!validation.ok) {
+    return NextResponse.json(
+      { error: validation.error },
+      { status: validation.status },
+    );
   }
 
   try {
-    const res = await fetch(url, {
+    const res = await fetch(validation.url, {
       headers: {
         Accept: "image/png,image/jpeg,image/svg+xml,image/*,*/*",
         Referer: "https://www.sofascore.com/",

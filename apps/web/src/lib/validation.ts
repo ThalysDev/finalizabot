@@ -54,3 +54,53 @@ export function isPublicPath(pathname: string): boolean {
   const normalized = normalizePathname(pathname);
   return PUBLIC_ROUTE_PATTERNS.some((pattern) => pattern.test(normalized));
 }
+
+const IMAGE_PROXY_ALLOWED_HOSTS = new Set(["api.sofascore.com"]);
+
+type ImageProxyValidationOk = {
+  ok: true;
+  url: string;
+};
+
+type ImageProxyValidationError = {
+  ok: false;
+  status: 400 | 403;
+  error: string;
+};
+
+export type ImageProxyValidationResult =
+  | ImageProxyValidationOk
+  | ImageProxyValidationError;
+
+export function validateImageProxyUrl(
+  rawUrl: string | null,
+): ImageProxyValidationResult {
+  if (!rawUrl || typeof rawUrl !== "string" || !rawUrl.trim()) {
+    return { ok: false, status: 400, error: "Missing url param" };
+  }
+
+  if (rawUrl.length > 2048) {
+    return { ok: false, status: 400, error: "Invalid url" };
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl.trim());
+  } catch {
+    return { ok: false, status: 400, error: "Invalid url" };
+  }
+
+  if (parsed.protocol !== "https:") {
+    return { ok: false, status: 403, error: "Protocol not allowed" };
+  }
+
+  if (parsed.username || parsed.password || parsed.port) {
+    return { ok: false, status: 403, error: "URL not allowed" };
+  }
+
+  if (!IMAGE_PROXY_ALLOWED_HOSTS.has(parsed.hostname)) {
+    return { ok: false, status: 403, error: "Host not allowed" };
+  }
+
+  return { ok: true, url: parsed.toString() };
+}

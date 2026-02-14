@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { checkRateLimit } from "../src/lib/rate-limit";
-import { validateId, validateSearchQuery } from "../src/lib/validation";
+import {
+  validateId,
+  validateImageProxyUrl,
+  validateSearchQuery,
+} from "../src/lib/validation";
 
 /* ============================================================================
    Rate Limiter
@@ -104,5 +108,67 @@ describe("validateSearchQuery()", () => {
 
   it("rejects excessively long queries", () => {
     expect(validateSearchQuery("a".repeat(101))).toBeNull();
+  });
+});
+
+describe("validateImageProxyUrl()", () => {
+  it("accepts valid sofascore https url", () => {
+    const result = validateImageProxyUrl(
+      "https://api.sofascore.com/api/v1/team/5981/image",
+    );
+
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects missing and malformed urls", () => {
+    const missing = validateImageProxyUrl(null);
+    expect(missing).toEqual({
+      ok: false,
+      status: 400,
+      error: "Missing url param",
+    });
+
+    const malformed = validateImageProxyUrl("not-a-url");
+    expect(malformed).toEqual({
+      ok: false,
+      status: 400,
+      error: "Invalid url",
+    });
+  });
+
+  it("rejects non-https and non-allowed hosts", () => {
+    const http = validateImageProxyUrl("http://api.sofascore.com/api/v1/x");
+    expect(http).toEqual({
+      ok: false,
+      status: 403,
+      error: "Protocol not allowed",
+    });
+
+    const host = validateImageProxyUrl("https://example.com/image.png");
+    expect(host).toEqual({
+      ok: false,
+      status: 403,
+      error: "Host not allowed",
+    });
+  });
+
+  it("rejects credentials and custom port", () => {
+    const withCredentials = validateImageProxyUrl(
+      "https://user:pass@api.sofascore.com/api/v1/team/1/image",
+    );
+    expect(withCredentials).toEqual({
+      ok: false,
+      status: 403,
+      error: "URL not allowed",
+    });
+
+    const withPort = validateImageProxyUrl(
+      "https://api.sofascore.com:8443/api/v1/team/1/image",
+    );
+    expect(withPort).toEqual({
+      ok: false,
+      status: 403,
+      error: "URL not allowed",
+    });
   });
 });
