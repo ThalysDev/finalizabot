@@ -21,6 +21,7 @@ Welcome to the repository knowledge base. Start with the project overview, then 
 - [Security & Compliance Notes](./security.md)
 - [Tooling & Productivity Guide](./tooling.md)
 - [**System Audit (2026-02-11)**](./audit.md) — Auditoria completa: ETL, Web, Shared, Seguranca, Testes
+- [**Handoff Técnico (2026-02-14)**](./handoff-2026-02-14.md) — Backlog priorizado, riscos e plano de execução contínua
 
 ## Status de Atualização (2026-02-13)
 
@@ -31,6 +32,7 @@ Welcome to the repository knowledge base. Start with the project overview, then 
 | `development-workflow.md` | ✅ Atualizado  | Processo diário, scripts e revisão.            |
 | `testing-strategy.md`     | ✅ Atualizado  | Vitest como padrão oficial.                    |
 | `audit.md`                | ✅ Base válida | Contém achados amplos; revisar periodicamente. |
+| `handoff-2026-02-14.md`   | ✅ Atualizado  | Estado atual + próximos ciclos executáveis.    |
 | `security.md`             | ⚠️ Parcial     | Manter alinhado com hardening contínuo.        |
 | `data-flow.md`            | ⚠️ Parcial     | Revisar após mudanças de integração.           |
 | `tooling.md`              | ⚠️ Parcial     | Revisar quando scripts/workflows mudarem.      |

@@ -26,5 +26,6 @@ This directory contains ready-to-customize playbooks for AI agents collaborating
 
 ## Related Resources
 - [Documentation Index](../docs/README.md)
+- [Handoff Técnico Atual (2026-02-14)](../docs/handoff-2026-02-14.md)
 - [Agent Knowledge Base](../../AGENTS.md)
 - [Contributor Guidelines](../../CONTRIBUTING.md)
