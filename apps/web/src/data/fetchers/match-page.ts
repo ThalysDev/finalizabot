@@ -264,7 +264,10 @@ export async function fetchMatchPageData(
 
   if (etlConfigured) {
     // ── ETL path (batched with concurrency control) ──────────────
-    let etlResults = new Map<string, import("@/lib/etl/enricher").EtlEnrichResult>();
+    let etlResults = new Map<
+      string,
+      import("@/lib/etl/enricher").EtlEnrichResult
+    >();
     try {
       etlResults = await batchEnrichPlayers(
         playerEntries.map((p) => ({ sofascoreId: p.sofascoreId })),
@@ -305,10 +308,7 @@ export async function fetchMatchPageData(
     // Batch Prisma fallback for players without ETL data
     if (needsFallback.length > 0) {
       try {
-        const fallbackCards = await batchEnrichFromPrisma(
-          needsFallback,
-          line,
-        );
+        const fallbackCards = await batchEnrichFromPrisma(needsFallback, line);
         let fi = 0;
         for (let i = 0; i < enriched.length; i++) {
           if (enriched[i] === null && fi < fallbackCards.length) {
