@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ChevronUp,
   ChevronDown,
@@ -28,6 +28,15 @@ export interface DataTableProps<T> {
   columns: Column<T>[];
   data: T[];
   rowKey?: (row: T, index: number) => string;
+  searchValue?: string;
+  onSearchValueChange?: (value: string) => void;
+  sortValue?: { key: string | null; dir: "asc" | "desc" };
+  onSortValueChange?: (value: {
+    key: string | null;
+    dir: "asc" | "desc";
+  }) => void;
+  pageValue?: number;
+  onPageValueChange?: (value: number) => void;
   searchable?: boolean;
   searchPlaceholder?: string;
   pageSize?: number;
@@ -45,6 +54,12 @@ export function DataTable<T extends Record<string, unknown>>({
   columns,
   data,
   rowKey,
+  searchValue,
+  onSearchValueChange,
+  sortValue,
+  onSortValueChange,
+  pageValue,
+  onPageValueChange,
   searchable = true,
   searchPlaceholder = "Buscar jogador...",
   pageSize = 10,
@@ -54,14 +69,43 @@ export function DataTable<T extends Record<string, unknown>>({
   onFilterChange,
   activeFilter,
 }: DataTableProps<T>) {
-  const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [page, setPage] = useState(0);
+  const [internalSearch, setInternalSearch] = useState("");
+  const [internalSortKey, setInternalSortKey] = useState<string | null>(null);
+  const [internalSortDir, setInternalSortDir] = useState<"asc" | "desc">(
+    "desc",
+  );
+  const [internalPage, setInternalPage] = useState(0);
+
+  const resolvedSearch = searchValue ?? internalSearch;
+  const resolvedSortKey = sortValue?.key ?? internalSortKey;
+  const resolvedSortDir = sortValue?.dir ?? internalSortDir;
+  const resolvedPage = pageValue ?? internalPage;
+
+  function setSearch(next: string) {
+    if (searchValue === undefined) setInternalSearch(next);
+    onSearchValueChange?.(next);
+  }
+
+  function setSort(next: { key: string | null; dir: "asc" | "desc" }) {
+    if (sortValue === undefined) {
+      setInternalSortKey(next.key);
+      setInternalSortDir(next.dir);
+    }
+    onSortValueChange?.(next);
+  }
+
+  const setPage = useCallback(
+    (next: number) => {
+      const safeNext = Math.max(0, next);
+      if (pageValue === undefined) setInternalPage(safeNext);
+      onPageValueChange?.(safeNext);
+    },
+    [onPageValueChange, pageValue],
+  );
 
   const filtered = useMemo(() => {
-    if (!search) return data;
-    const term = search.toLowerCase();
+    if (!resolvedSearch) return data;
+    const term = resolvedSearch.toLowerCase();
     return data.filter((row) => {
       return Object.values(row).some((val) => {
         if (typeof val === "string") {
@@ -73,13 +117,13 @@ export function DataTable<T extends Record<string, unknown>>({
         return false;
       });
     });
-  }, [data, search]);
+  }, [data, resolvedSearch]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
-      if (!sortKey) return 0;
-      const aVal = a[sortKey];
-      const bVal = b[sortKey];
+      if (!resolvedSortKey) return 0;
+      const aVal = a[resolvedSortKey];
+      const bVal = b[resolvedSortKey];
 
       if (aVal == null && bVal == null) return 0;
       if (aVal == null) return 1;
@@ -87,35 +131,40 @@ export function DataTable<T extends Record<string, unknown>>({
 
       if (typeof aVal === "number" && typeof bVal === "number") {
         const cmp = aVal - bVal;
-        return sortDir === "asc" ? cmp : -cmp;
+        return resolvedSortDir === "asc" ? cmp : -cmp;
       }
 
       const aStr = String(aVal);
       const bStr = String(bVal);
       const cmp = aStr.localeCompare(bStr, undefined, { numeric: true });
-      return sortDir === "asc" ? cmp : -cmp;
+      return resolvedSortDir === "asc" ? cmp : -cmp;
     });
-  }, [filtered, sortKey, sortDir]);
+  }, [filtered, resolvedSortKey, resolvedSortDir]);
 
   const totalPages = Math.ceil(sorted.length / pageSize);
+  const safePage = totalPages > 0 ? Math.min(resolvedPage, totalPages - 1) : 0;
+
+  useEffect(() => {
+    if (resolvedPage !== safePage) setPage(safePage);
+  }, [resolvedPage, safePage, setPage]);
+
   const paginated = useMemo(
-    () => sorted.slice(page * pageSize, (page + 1) * pageSize),
-    [sorted, page, pageSize],
+    () => sorted.slice(safePage * pageSize, (safePage + 1) * pageSize),
+    [sorted, safePage, pageSize],
   );
 
   const visiblePages = useMemo(() => {
     return Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-      const p = page < 3 ? i : page - 2 + i;
+      const p = safePage < 3 ? i : safePage - 2 + i;
       return p >= totalPages ? null : p;
     }).filter((p): p is number => p !== null);
-  }, [totalPages, page]);
+  }, [totalPages, safePage]);
 
   function handleSort(key: string) {
-    if (sortKey === key) {
-      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    if (resolvedSortKey === key) {
+      setSort({ key, dir: resolvedSortDir === "asc" ? "desc" : "asc" });
     } else {
-      setSortKey(key);
-      setSortDir("desc");
+      setSort({ key, dir: "desc" });
     }
     setPage(0);
   }
@@ -143,7 +192,7 @@ export function DataTable<T extends Record<string, unknown>>({
             <Search className="size-4 text-fb-text-muted shrink-0" />
             <input
               type="text"
-              value={search}
+              value={resolvedSearch}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(0);
@@ -184,9 +233,9 @@ export function DataTable<T extends Record<string, unknown>>({
                 <th
                   key={col.key}
                   aria-sort={
-                    !col.sortable || sortKey !== col.key
+                    !col.sortable || resolvedSortKey !== col.key
                       ? "none"
-                      : sortDir === "asc"
+                      : resolvedSortDir === "asc"
                         ? "ascending"
                         : "descending"
                   }
@@ -211,8 +260,8 @@ export function DataTable<T extends Record<string, unknown>>({
                           PRO
                         </span>
                       )}
-                      {sortKey === col.key ? (
-                        sortDir === "asc" ? (
+                      {resolvedSortKey === col.key ? (
+                        resolvedSortDir === "asc" ? (
                           <ChevronUp className="size-3" />
                         ) : (
                           <ChevronDown className="size-3" />
@@ -239,10 +288,10 @@ export function DataTable<T extends Record<string, unknown>>({
             {paginated.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="px-4 py-12 text-center">
-                  {search ? (
+                  {resolvedSearch ? (
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-fb-text-muted text-sm">
-                        Nenhum resultado para &quot;{search}&quot;
+                        Nenhum resultado para &quot;{resolvedSearch}&quot;
                       </p>
                       <button
                         type="button"
@@ -262,8 +311,8 @@ export function DataTable<T extends Record<string, unknown>>({
                 <tr
                   key={
                     rowKey
-                      ? rowKey(row, page * pageSize + idx)
-                      : buildFallbackRowKey(row, page * pageSize + idx)
+                      ? rowKey(row, safePage * pageSize + idx)
+                      : buildFallbackRowKey(row, safePage * pageSize + idx)
                   }
                   className="border-b border-fb-border/50 hover:bg-fb-surface/50 transition-colors"
                 >
@@ -279,7 +328,7 @@ export function DataTable<T extends Record<string, unknown>>({
                       } ${col.blurred ? "blur-[2px] select-none opacity-60" : ""}`}
                     >
                       {col.render
-                        ? col.render(row, page * pageSize + idx)
+                        ? col.render(row, safePage * pageSize + idx)
                         : (row[col.key] as React.ReactNode)}
                     </td>
                   ))}
@@ -294,14 +343,15 @@ export function DataTable<T extends Record<string, unknown>>({
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4 px-1">
           <p className="text-xs text-fb-text-muted">
-            {page * pageSize + 1}–
-            {Math.min((page + 1) * pageSize, sorted.length)} de {sorted.length}
+            {safePage * pageSize + 1}–
+            {Math.min((safePage + 1) * pageSize, sorted.length)} de{" "}
+            {sorted.length}
           </p>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setPage(Math.max(0, page - 1))}
-              disabled={page === 0}
+              onClick={() => setPage(Math.max(0, safePage - 1))}
+              disabled={safePage === 0}
               className="p-1.5 rounded-lg bg-fb-surface text-fb-text-secondary hover:text-fb-text disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft className="size-4" />
@@ -312,7 +362,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 key={p}
                 onClick={() => setPage(p)}
                 className={`size-8 rounded-lg text-xs font-medium transition-colors ${
-                  p === page
+                  p === safePage
                     ? "bg-fb-primary text-fb-primary-content"
                     : "bg-fb-surface text-fb-text-secondary hover:text-fb-text"
                 }`}
@@ -322,8 +372,8 @@ export function DataTable<T extends Record<string, unknown>>({
             ))}
             <button
               type="button"
-              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-              disabled={page === totalPages - 1}
+              onClick={() => setPage(Math.min(totalPages - 1, safePage + 1))}
+              disabled={safePage === totalPages - 1}
               className="p-1.5 rounded-lg bg-fb-surface text-fb-text-secondary hover:text-fb-text disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight className="size-4" />

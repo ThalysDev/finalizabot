@@ -1,5 +1,7 @@
 "use client";
 
+import { useCallback } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   DataTable,
   SuccessBar,
@@ -128,11 +130,62 @@ interface AdvancedTableClientProps {
 }
 
 export function AdvancedTableClient({ players }: AdvancedTableClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const searchValue = searchParams.get("q") ?? "";
+  const sortKey = searchParams.get("sort");
+  const sortDirParam = searchParams.get("dir");
+  const sortDir =
+    sortDirParam === "asc" || sortDirParam === "desc" ? sortDirParam : "desc";
+  const pageParam = parseInt(searchParams.get("page") ?? "1", 10);
+  const pageValue =
+    Number.isFinite(pageParam) && pageParam > 0 ? pageParam - 1 : 0;
+
+  const updateParams = useCallback(
+    (next: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      for (const [key, value] of Object.entries(next)) {
+        if (value == null || value.length === 0) {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      }
+
+      const nextQuery = params.toString();
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+        scroll: false,
+      });
+    },
+    [pathname, router, searchParams],
+  );
+
   return (
     <DataTable
       columns={columns}
       data={players}
-      rowKey={(row, index) => `${row.player}-${row.team}-${row.position}-${index}`}
+      rowKey={(row, index) =>
+        `${row.player}-${row.team}-${row.position}-${index}`
+      }
+      searchValue={searchValue}
+      onSearchValueChange={(value) =>
+        updateParams({ q: value || null, page: "1" })
+      }
+      sortValue={{ key: sortKey, dir: sortDir }}
+      onSortValueChange={(value) =>
+        updateParams({
+          sort: value.key,
+          dir: value.key ? value.dir : null,
+          page: "1",
+        })
+      }
+      pageValue={pageValue}
+      onPageValueChange={(value) =>
+        updateParams({ page: value > 0 ? String(value + 1) : null })
+      }
       searchPlaceholder="Buscar jogador por nome..."
       filterTabs={[{ label: "Todos", value: "all" }]}
       activeFilter="all"

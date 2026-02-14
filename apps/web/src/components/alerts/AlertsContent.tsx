@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Diamond,
   Radio,
@@ -46,10 +47,30 @@ interface AlertSettingsPayload {
    ============================================================================ */
 export function AlertsContent({ alerts }: AlertsContentProps) {
   const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [minROI, setMinROI] = useState(0);
-  const [maxCV, setMaxCV] = useState(1.0);
-  const [selectedLeagues, setSelectedLeagues] = useState<Set<string>>(
-    new Set(ALL_LEAGUES),
+  const urlDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const urlMinRoi = parseInt(searchParams.get("minRoi") ?? "", 10);
+  const hasUrlMinRoi = Number.isFinite(urlMinRoi);
+  const parsedUrlMaxCv = parseFloat(searchParams.get("maxCv") ?? "");
+  const hasUrlMaxCv = Number.isFinite(parsedUrlMaxCv);
+  const urlLeagues = searchParams
+    .get("leagues")
+    ?.split(",")
+    .map((league) => league.trim())
+    .filter((league) => ALL_LEAGUES.includes(league));
+  const hasUrlLeagues = Array.isArray(urlLeagues) && urlLeagues.length > 0;
+
+  const [minROI, setMinROI] = useState(() =>
+    hasUrlMinRoi ? Math.max(0, Math.min(30, urlMinRoi)) : 0,
+  );
+  const [maxCV, setMaxCV] = useState(() =>
+    hasUrlMaxCv ? Math.max(0, Math.min(1, parsedUrlMaxCv)) : 1.0,
+  );
+  const [selectedLeagues, setSelectedLeagues] = useState<Set<string>>(() =>
+    hasUrlLeagues ? new Set(urlLeagues) : new Set(ALL_LEAGUES),
   );
   const [pushEnabled, setPushEnabled] = useState(true);
   const [emailEnabled, setEmailEnabled] = useState(false);
@@ -83,8 +104,12 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
           (await response.json()) as Partial<AlertSettingsPayload>;
         if (cancelled) return;
 
-        if (typeof payload.minRoi === "number") setMinROI(payload.minRoi);
-        if (typeof payload.maxCv === "number") setMaxCV(payload.maxCv);
+        if (typeof payload.minRoi === "number" && !hasUrlMinRoi) {
+          setMinROI(payload.minRoi);
+        }
+        if (typeof payload.maxCv === "number" && !hasUrlMaxCv) {
+          setMaxCV(payload.maxCv);
+        }
         if (typeof payload.pushEnabled === "boolean") {
           setPushEnabled(payload.pushEnabled);
         }
@@ -94,7 +119,7 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
         if (typeof payload.silentMode === "boolean") {
           setSilentMode(payload.silentMode);
         }
-        if (Array.isArray(payload.leagues)) {
+        if (Array.isArray(payload.leagues) && !hasUrlLeagues) {
           const safeLeagues = payload.leagues.filter((league) =>
             ALL_LEAGUES.includes(league),
           );
@@ -118,7 +143,50 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [hasUrlLeagues, hasUrlMaxCv, hasUrlMinRoi]);
+
+  useEffect(() => {
+    if (urlDebounceRef.current) {
+      clearTimeout(urlDebounceRef.current);
+    }
+
+    urlDebounceRef.current = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (minROI > 0) {
+        params.set("minRoi", String(minROI));
+      } else {
+        params.delete("minRoi");
+      }
+
+      if (maxCV < 1) {
+        params.set("maxCv", maxCV.toFixed(2));
+      } else {
+        params.delete("maxCv");
+      }
+
+      if (
+        selectedLeagues.size > 0 &&
+        selectedLeagues.size < ALL_LEAGUES.length
+      ) {
+        params.set("leagues", Array.from(selectedLeagues).join(","));
+      } else {
+        params.delete("leagues");
+      }
+
+      const nextQuery = params.toString();
+      if (nextQuery === searchParams.toString()) return;
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+        scroll: false,
+      });
+    }, 250);
+
+    return () => {
+      if (urlDebounceRef.current) {
+        clearTimeout(urlDebounceRef.current);
+      }
+    };
+  }, [maxCV, minROI, pathname, router, searchParams, selectedLeagues]);
 
   useEffect(() => {
     if (!serverSettingsEnabled || !serverSettingsLoaded) return;
@@ -331,12 +399,20 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
 
         {/* Mobile filter sheet */}
         {mobileFiltersOpen && (
-          <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Filtros de alertas">
+          <div
+            className="fixed inset-0 z-50 md:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Filtros de alertas"
+          >
             <div
               className="absolute inset-0 bg-black/60"
               onClick={() => setMobileFiltersOpen(false)}
             />
-            <div id="alerts-mobile-filters" className="absolute bottom-0 left-0 right-0 bg-fb-bg rounded-t-2xl max-h-[80vh] overflow-y-auto p-5">
+            <div
+              id="alerts-mobile-filters"
+              className="absolute bottom-0 left-0 right-0 bg-fb-bg rounded-t-2xl max-h-[80vh] overflow-y-auto p-5"
+            >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-fb-text font-semibold">Filtros</h3>
                 <button
