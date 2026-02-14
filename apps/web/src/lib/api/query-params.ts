@@ -39,10 +39,7 @@ export function normalizeSearchQueryParams(
 export function normalizeMatchesQueryParams(
   searchParams: URLSearchParams,
 ): MatchesQueryParams {
-  const daysRaw = sanitizeInt(
-    searchParams.get("days"),
-    DEFAULT_MATCHES_DAYS,
-  );
+  const daysRaw = sanitizeInt(searchParams.get("days"), DEFAULT_MATCHES_DAYS);
   const limitRaw = sanitizeInt(
     searchParams.get("limit"),
     DEFAULT_MATCHES_LIMIT,

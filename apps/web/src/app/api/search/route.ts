@@ -40,13 +40,12 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       { results: players },
-      { headers: { "Cache-Control": "s-maxage=30, stale-while-revalidate=15" } },
+      {
+        headers: { "Cache-Control": "s-maxage=30, stale-while-revalidate=15" },
+      },
     );
   } catch (error) {
     logger.error("[/api/search] query failed", error);
-    return NextResponse.json(
-      { error: "Search failed" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Search failed" }, { status: 500 });
   }
 }

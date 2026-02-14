@@ -16,7 +16,9 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const { days, limit } = normalizeMatchesQueryParams(req.nextUrl.searchParams);
+    const { days, limit } = normalizeMatchesQueryParams(
+      req.nextUrl.searchParams,
+    );
 
     const matches = await prisma.match.findMany({
       where: {
@@ -39,7 +41,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       { matches },
-      { headers: { "Cache-Control": "s-maxage=120, stale-while-revalidate=60" } },
+      {
+        headers: { "Cache-Control": "s-maxage=120, stale-while-revalidate=60" },
+      },
     );
   } catch (error) {
     logger.error("[/api/matches] list failed", error);
