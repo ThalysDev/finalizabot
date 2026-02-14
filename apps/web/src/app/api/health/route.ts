@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { etlHealth } from "@/lib/etl/client";
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/health
@@ -18,20 +19,32 @@ export async function GET() {
     dbStatus = "ok";
   } catch (err) {
     dbError = err instanceof Error ? err.message : "DB connection failed";
+    logger.error("[/api/health] db check failed", err);
   }
 
-  const etl = await etlHealth();
+  let etlStatus: "ok" | "unavailable" = "unavailable";
+  let etlError: string | null = null;
+  try {
+    const etl = await etlHealth();
+    if (etl.data) {
+      etlStatus = "ok";
+    } else {
+      etlError = etl.error ?? "ETL unavailable";
+    }
+  } catch (err) {
+    etlError = err instanceof Error ? err.message : "ETL health check failed";
+    logger.error("[/api/health] etl check failed", err);
+  }
 
-  const allOk = dbStatus === "ok" && !!etl.data;
+  const allOk = dbStatus === "ok" && etlStatus === "ok";
   const statusCode = allOk ? 200 : 503;
 
   return NextResponse.json(
     {
       status: allOk ? "healthy" : "unhealthy",
       db: dbStatus,
-      dbError: exposeErrors ? dbError : null,
-      etl: etl.data ? "ok" : "unavailable",
-      etlError: exposeErrors ? etl.error : null,
+      etl: etlStatus,
+      ...(exposeErrors ? { dbError, etlError } : {}),
       timestamp: new Date().toISOString(),
     },
     {

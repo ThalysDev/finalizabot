@@ -229,20 +229,22 @@ describe("GET /api/search", () => {
   });
 
   function mockApiResponsesModule() {
-    const jsonError = vi.fn((message: string, status: number) =>
-      new Response(JSON.stringify({ error: message }), {
-        status,
-        headers: { "Cache-Control": "no-store" },
-      }),
+    const jsonError = vi.fn(
+      (message: string, status: number) =>
+        new Response(JSON.stringify({ error: message }), {
+          status,
+          headers: { "Cache-Control": "no-store" },
+        }),
     );
-    const jsonRateLimited = vi.fn((retryAfter: number) =>
-      new Response(JSON.stringify({ error: "Too many requests" }), {
-        status: 429,
-        headers: {
-          "Cache-Control": "no-store",
-          "Retry-After": String(retryAfter),
-        },
-      }),
+    const jsonRateLimited = vi.fn(
+      (retryAfter: number) =>
+        new Response(JSON.stringify({ error: "Too many requests" }), {
+          status: 429,
+          headers: {
+            "Cache-Control": "no-store",
+            "Retry-After": String(retryAfter),
+          },
+        }),
     );
 
     vi.doMock("@/lib/api/responses", () => ({
@@ -342,7 +344,10 @@ describe("GET /api/search", () => {
     expect(response.status).toBe(500);
     expect(body).toEqual({ error: "Search failed" });
     expect(jsonError).toHaveBeenCalledWith("Search failed", 500);
-    expect(logError).toHaveBeenCalledWith("[/api/search] query failed", dbError);
+    expect(logError).toHaveBeenCalledWith(
+      "[/api/search] query failed",
+      dbError,
+    );
   });
 });
 
@@ -353,20 +358,22 @@ describe("GET /api/matches", () => {
   });
 
   function mockApiResponsesModule() {
-    const jsonError = vi.fn((message: string, status: number) =>
-      new Response(JSON.stringify({ error: message }), {
-        status,
-        headers: { "Cache-Control": "no-store" },
-      }),
+    const jsonError = vi.fn(
+      (message: string, status: number) =>
+        new Response(JSON.stringify({ error: message }), {
+          status,
+          headers: { "Cache-Control": "no-store" },
+        }),
     );
-    const jsonRateLimited = vi.fn((retryAfter: number) =>
-      new Response(JSON.stringify({ error: "Too many requests" }), {
-        status: 429,
-        headers: {
-          "Cache-Control": "no-store",
-          "Retry-After": String(retryAfter),
-        },
-      }),
+    const jsonRateLimited = vi.fn(
+      (retryAfter: number) =>
+        new Response(JSON.stringify({ error: "Too many requests" }), {
+          status: 429,
+          headers: {
+            "Cache-Control": "no-store",
+            "Retry-After": String(retryAfter),
+          },
+        }),
     );
 
     vi.doMock("@/lib/api/responses", () => ({
@@ -466,6 +473,95 @@ describe("GET /api/matches", () => {
     expect(response.status).toBe(500);
     expect(body).toEqual({ error: "Failed to fetch matches" });
     expect(jsonError).toHaveBeenCalledWith("Failed to fetch matches", 500);
-    expect(logError).toHaveBeenCalledWith("[/api/matches] list failed", dbError);
+    expect(logError).toHaveBeenCalledWith(
+      "[/api/matches] list failed",
+      dbError,
+    );
+  });
+});
+
+describe("GET /api/health", () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    process.env.NODE_ENV = originalNodeEnv;
+  });
+
+  it("returns healthy status when db and etl are available", async () => {
+    const queryRaw = vi.fn().mockResolvedValue([{ "?column?": 1 }]);
+    const etlHealth = vi
+      .fn()
+      .mockResolvedValue({ data: { ok: true }, error: null });
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { $queryRawUnsafe: queryRaw },
+    }));
+    vi.doMock("@/lib/etl/client", () => ({ etlHealth }));
+    vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
+
+    const { GET } = await import("../src/app/api/health/route");
+    const response = await GET();
+    const body = (await response.json()) as {
+      status: string;
+      db: string;
+      etl: string;
+      timestamp: string;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.status).toBe("healthy");
+    expect(body.db).toBe("ok");
+    expect(body.etl).toBe("ok");
+    expect(typeof body.timestamp).toBe("string");
+    expect(response.headers.get("Cache-Control")).toContain("no-store");
+  });
+
+  it("hides detailed errors in production when dependencies fail", async () => {
+    process.env.NODE_ENV = "production";
+    const queryRaw = vi.fn().mockRejectedValue(new Error("db down"));
+    const etlHealth = vi
+      .fn()
+      .mockResolvedValue({ data: null, error: "etl down" });
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { $queryRawUnsafe: queryRaw },
+    }));
+    vi.doMock("@/lib/etl/client", () => ({ etlHealth }));
+    vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
+
+    const { GET } = await import("../src/app/api/health/route");
+    const response = await GET();
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(response.status).toBe(503);
+    expect(body.status).toBe("unhealthy");
+    expect(body.db).toBe("unavailable");
+    expect(body.etl).toBe("unavailable");
+    expect(body).not.toHaveProperty("dbError");
+    expect(body).not.toHaveProperty("etlError");
+  });
+
+  it("includes detailed errors outside production", async () => {
+    process.env.NODE_ENV = "test";
+    const queryRaw = vi.fn().mockRejectedValue(new Error("db down"));
+    const etlHealth = vi
+      .fn()
+      .mockResolvedValue({ data: null, error: "etl down" });
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { $queryRawUnsafe: queryRaw },
+    }));
+    vi.doMock("@/lib/etl/client", () => ({ etlHealth }));
+    vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
+
+    const { GET } = await import("../src/app/api/health/route");
+    const response = await GET();
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(response.status).toBe(503);
+    expect(body.dbError).toBe("db down");
+    expect(body.etlError).toBe("etl down");
   });
 });
