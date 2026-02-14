@@ -4,42 +4,42 @@ name: development-workflow
 description: Day-to-day engineering processes, branching, and contribution guidelines
 category: workflow
 generated: 2026-02-11
-status: unfilled
+status: filled
 scaffoldVersion: "2.0.0"
 ---
+
 ## Development Workflow
 
-<!-- Outline the day-to-day engineering process for this repository. -->
-
-_Add descriptive content here._
+Fluxo orientado a mudanças pequenas por trilha (web, etl, shared), com validação local antes de PR e documentação atualizada junto da implementação.
 
 ## Branching & Releases
 
-<!-- Describe the branching model (trunk-based, Git Flow, etc.). Note release cadence and tagging conventions. -->
-
-- _Item 1_
-- _Item 2_
-- _Item 3_
+- Branching model: trunk-based com branch curta por tarefa.
+- Base branch: `main`.
+- Commits: Conventional Commits (ex.: `feat(web): ...`, `fix(etl): ...`).
+- Release cadence: incremental, priorizando estabilidade do sync e web.
 
 ## Local Development
 
-<!-- Commands to install dependencies, run locally, and build for distribution. Use code blocks for commands. -->
-
 - Install: `npm install`
-- Run: `npm run dev`
+- Run web: `npm run dev:web`
+- Run ETL API: `npm run dev:etl`
 - Build: `npm run build`
+- Testes: `npm run test`
 
 ## Code Review Expectations
 
-<!-- Summarize review checklists and required approvals. Reference AGENTS.md for agent collaboration tips. -->
-
-_Add descriptive content here._
+- Revisar escopo e impacto por workspace (`web`, `etl`, `shared`).
+- Verificar consistência de documentação quando houver alteração de comportamento.
+- Garantir ausência de secrets em código, logs e exemplos de ambiente.
+- Executar build/test localmente quando aplicável.
 
 ## Onboarding Tasks
 
-<!-- Point newcomers to first issues or starter tickets. Link to internal runbooks or dashboards. -->
-
-_Add descriptive content here (optional)._
+- Ler `README.md` para visão geral.
+- Ler `project-overview.md` e `architecture.md` para contexto técnico.
+- Rodar web + ETL local e validar fluxo básico.
+- Consultar `audit.md` para riscos e backlog priorizado.
 
 ## Related Resources
 

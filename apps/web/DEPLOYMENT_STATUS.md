@@ -1,5 +1,11 @@
 # 🚀 FinalizaBOT - Deployment Success Report
 
+> ⚠️ **Documento legado / referência secundária**
+>
+> Este relatório contém contexto histórico e pode divergir do estado atual do monorepo.
+> Para decisões técnicas e operacionais atuais, priorize `README.md` (visão executiva)
+> e `.context/docs/*` (referência técnica detalhada).
+
 **Date**: February 5, 2026  
 **Status**: ✅ LIVE IN PRODUCTION (LOCAL DEVELOPMENT)  
 **Uptime**: Active  

@@ -4,108 +4,109 @@ name: architecture
 description: System architecture, layers, patterns, and design decisions
 category: architecture
 generated: 2026-02-11
-status: unfilled
+status: filled
 scaffoldVersion: "2.0.0"
 ---
+
 ## Architecture Notes
 
-<!-- Describe how the system is assembled and why the current design exists. -->
-
-_Add descriptive content here._
+O projeto adota arquitetura modular em monorepo, separando claramente ingestão de dados (ETL), apresentação (web) e contratos compartilhados (shared). A decisão principal de design é manter o schema Prisma centralizado em `packages/shared` para evitar drift entre serviços.
 
 ## System Architecture Overview
 
-<!-- Summarize the top-level topology (monolith, modular service, microservices) and deployment model. Highlight how requests traverse the system and where control pivots between layers. -->
+Topologia: monorepo com três módulos principais.
 
-_Add descriptive content here._
+- `apps/etl`: coleta dados do SofaScore, normaliza e persiste em schema ETL/public.
+- `apps/web`: consome dados (via ETL API e/ou banco) para renderização no frontend.
+- `packages/shared`: Prisma client, schema e utilitários de cálculo/tipos.
+
+Deploy model atual combina execução web (Vercel) e rotinas ETL automatizadas via GitHub Actions/scripts.
 
 ## Architectural Layers
 
-<!-- List architecture layers with their purpose and key directories. Do NOT list symbol counts inline - reference codebase-map.json for detailed analysis. -->
-
-- **Services**: Core business logic (`src/services/`)
-- **Generators**: Content generation (`src/generators/`)
+- **Presentation Layer**: Next.js app (`apps/web/src/app`, `apps/web/src/components`)
+- **Integration Layer**: fetchers/clients ETL (`apps/web/src/data`, `apps/web/src/lib/etl`)
+- **Ingestion Layer**: crawlers e parser (`apps/etl/src/crawlers`, `apps/etl/src/parsers`)
+- **Synchronization Layer**: bridge ETL → public (`apps/etl/src/bridge`)
+- **Data Layer**: schema Prisma e client (`packages/shared/prisma`, `packages/shared/src/db`)
 
 > See [`codebase-map.json`](./codebase-map.json) for complete symbol counts and dependency graphs.
 
 ## Detected Design Patterns
 
-<!-- Table with Pattern, Confidence, Locations, and Description columns. Link to actual implementations. -->
-
-| Pattern | Confidence | Locations | Description |
-|---------|------------|-----------|-------------|
-| Factory | 85% | `LLMClientFactory` | Creates LLM client instances |
+| Pattern                      | Confidence | Locations                                          | Description                                               |
+| ---------------------------- | ---------- | -------------------------------------------------- | --------------------------------------------------------- |
+| Pipeline por estágio         | 95%        | `apps/etl/src/index.ts`, `apps/etl/src/crawlers/*` | Coleta, normalização e persistência em etapas encadeadas. |
+| Bridge / Data Sync           | 90%        | `apps/etl/src/bridge/etl-to-public.ts`             | Sincroniza schema ETL para schema de consumo.             |
+| Shared Kernel                | 90%        | `packages/shared/*`                                | Reuso de tipos, schema e cálculo entre web e ETL.         |
+| Boundary via package exports | 80%        | `packages/shared/package.json`                     | Fronteira explícita de módulos consumíveis.               |
 
 ## Entry Points
 
-<!-- List entry points with markdown links to the actual files. -->
-
-- _Item 1_
-- _Item 2_
-- _Item 3_
+- `apps/etl/src/index.ts`
+- `apps/etl/src/api/server.ts`
+- `apps/web/src/app/layout.tsx`
+- `apps/web/src/app/api/*`
 
 ## Public API
 
-<!-- Table of exported symbols with Symbol, Type, and Location columns. -->
-
-| Column 1 | Column 2 | Column 3 |
-|----------|----------|----------|
-| _value_ | _value_ | _value_ |
+| Symbol                       | Type             | Location                             |
+| ---------------------------- | ---------------- | ------------------------------------ |
+| `@finalizabot/shared`        | package export   | `packages/shared/src/index.ts`       |
+| `@finalizabot/shared/prisma` | package export   | `packages/shared/src/db/prisma.ts`   |
+| `@finalizabot/shared/calc`   | package export   | `packages/shared/src/calc/market.ts` |
+| ETL HTTP API                 | service endpoint | `apps/etl/src/api/server.ts`         |
 
 ## Internal System Boundaries
 
-<!-- Document seams between domains, bounded contexts, or service ownership. Note data ownership, synchronization strategies, and shared contract enforcement. -->
-
-_Add descriptive content here (optional)._
+- Web não deve conhecer detalhes de crawler.
+- ETL é dono da ingestão e normalização dos dados externos.
+- Shared é dono do contrato de dados (Prisma schema/tipos/cálculo).
+- Bridge é o ponto de tradução entre dados brutos e visão de consumo.
 
 ## External Service Dependencies
 
-<!-- List SaaS platforms, third-party APIs, or infrastructure services. Describe authentication methods, rate limits, and failure considerations. -->
-
-- _Item 1 (optional)_
-- _Item 2_
-- _Item 3_
+- SofaScore (fonte de dados primária via crawlers)
+- Neon PostgreSQL (armazenamento principal)
+- Clerk (autenticação no web)
+- Vercel (hosting do web)
+- GitHub Actions (CI + sync agendado)
 
 ## Key Decisions & Trade-offs
 
-<!-- Summarize architectural decisions, experiments, or ADR outcomes. Explain why selected approaches won over alternatives. -->
-
-_Add descriptive content here (optional)._
+- Monorepo para reduzir drift entre web/etl/shared.
+- Prisma centralizado para reduzir inconsistência de schema.
+- ETL dedicado para isolamento de scraping de alto custo.
+- Trade-off: mais acoplamento operacional entre sync e consumo.
 
 ## Diagrams
 
-<!-- Link architectural diagrams or add mermaid definitions showing system components and their relationships. -->
-
 ```mermaid
 graph TD
-    A[Start] --> B[End]
+    A[SofaScore] --> B[ETL Crawlers]
+    B --> C[Normalize + Persist ETL]
+    C --> D[Bridge ETL to Public]
+    D --> E[Neon PostgreSQL]
+    E --> F[Web Fetchers/API]
+    F --> G[Next.js UI]
 ```
 
 ## Risks & Constraints
 
-<!-- Document performance constraints, scaling considerations, or external system assumptions. -->
-
-_Add descriptive content here (optional)._
+- Risco de escala no bridge por queries amplas e potenciais padrões N+1.
+- Dependência de disponibilidade da fonte externa (SofaScore).
+- Cobertura de testes ainda baixa para fluxos críticos ETL.
+- Parte da documentação operacional ainda em convergência.
 
 ## Top Directories Snapshot
 
-<!-- List top directories with approximate file counts. -->
-
-- _Item 1_
-- _Item 2_
-- _Item 3_
-
-## Related Resources
-
-<!-- Link to Project Overview and other relevant documentation. -->
-
-- _Item 1_
-- _Item 2_
-- _Item 3_
+- `apps/web/`
+- `apps/etl/`
+- `packages/shared/`
+- `.context/docs/`
+- `scripts/`
 
 ## Related Resources
-
-<!-- Link to related documents for cross-navigation. -->
 
 - [project-overview.md](./project-overview.md)
 - [data-flow.md](./data-flow.md)

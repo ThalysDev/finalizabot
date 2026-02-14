@@ -1,5 +1,10 @@
 # 🚀 Setup Rápido - FinalizaBOT MVP
 
+> ⚠️ **Documento legado / referência secundária**
+>
+> Este passo a passo pertence ao contexto MVP e pode divergir da configuração atual.
+> Para setup vigente, siga `README.md` da raiz e `.context/docs/development-workflow.md`.
+
 ## ⚡ Comandos para rodar o projeto
 
 ### 1️⃣ Instalar Docker Desktop (se não tiver)

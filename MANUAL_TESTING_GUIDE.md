@@ -1,5 +1,10 @@
 # 🧪 Guia de Teste Manual - FinalizaBOT v2
 
+> ⚠️ **Documento legado / referência secundária**
+>
+> Este checklist foi mantido como histórico operacional e pode divergir da versão atual do sistema.
+> Antes de executar validações formais, confirme fluxos e rotas na documentação de `.context/docs/*`.
+
 **URL de Produção**: https://finalizabot-d6rro1djx-thalys-rodrigues-projects.vercel.app
 
 **Pré-requisito**: Login com Clerk (conta criada)
@@ -9,6 +14,7 @@
 ## 📋 Checklist Interativo
 
 ### ✅ **Preparação**
+
 - [ ] Abrir Chrome DevTools (F12)
 - [ ] Aba Console aberta (para ver erros)
 - [ ] Aba Network aberta (para ver requests de imagens)
@@ -29,6 +35,7 @@
    - [ ] ❌ **BUG**: Ícones Shield (escudo genérico) aparecem
 
    **Screenshot esperado**:
+
    ```
    ┌─────────────────────┐
    │  Premier League     │
@@ -45,10 +52,13 @@
    - [ ] ❌ **BUG**: Nome quebra para linha seguinte
 
    **Teste com**:
+
    ```
    "UEFA Champions League - Qualification Round"
    ```
+
    Deve truncar para:
+
    ```
    "UEFA Champions League..." (com tooltip no hover)
    ```
@@ -60,7 +70,7 @@
 
 5. **Verificar Console (F12)**:
    - [ ] ✅ **ESPERADO**: 0 erros no console
-   - [ ] ⚠️  **AVISO**: Warnings sobre images são OK (fallback funcionando)
+   - [ ] ⚠️ **AVISO**: Warnings sobre images são OK (fallback funcionando)
    - [ ] ❌ **BUG**: Erros TypeError, undefined, null reference
 
 6. **Verificar Network Tab**:
@@ -96,22 +106,23 @@
 
    **4.1. Selecionar Linha 0.5**:
    - [ ] Clicar no botão "0.5" (ou input)
-   - [ ] Anotar valor do CV: ___________
+   - [ ] Anotar valor do CV: ****\_\_\_****
    - [ ] Verificar tooltip: "(jogos que bateram 0.5+)"
 
    **4.2. Selecionar Linha 1.5**:
    - [ ] Clicar no botão "1.5"
-   - [ ] Anotar valor do CV: ___________
+   - [ ] Anotar valor do CV: ****\_\_\_****
    - [ ] ✅ **ESPERADO**: CV é **DIFERENTE** do anterior
    - [ ] ❌ **BUG**: CV permanece igual
 
    **4.3. Selecionar Linha 2.5**:
    - [ ] Clicar no botão "2.5"
-   - [ ] Anotar valor do CV: ___________
+   - [ ] Anotar valor do CV: ****\_\_\_****
    - [ ] ✅ **ESPERADO**: CV é **DIFERENTE** novamente
    - [ ] ❌ **BUG**: CV permanece igual
 
    **Exemplo Esperado**:
+
    ```
    Linha 0.5 → CV: 0.45
    Linha 1.5 → CV: 0.38  ← DIFERENTE!
@@ -180,7 +191,7 @@
 ### **Passo a Passo**:
 
 1. **No Dashboard**:
-   - [ ] Ver horário de uma partida: __________
+   - [ ] Ver horário de uma partida: ****\_\_****
    - [ ] Verificar que está em fuso correto (GMT-3)
 
 2. **Comparar com SofaScore**:
@@ -195,20 +206,23 @@
 ### **Problema: Escudos não aparecem (Shield icon)**
 
 **Possíveis causas**:
+
 1. ImageCache vazio no banco
 2. SKIP_IMAGE_SYNC ativado
 3. Fallback não funcionando
 
 **Debug**:
+
 ```javascript
 // Abrir console (F12)
 // Executar:
-fetch('/api/images/test').then(r => console.log(r.status))
+fetch("/api/images/test").then((r) => console.log(r.status));
 // ✅ Esperado: 200 ou 404
 // ❌ Bug: 500
 ```
 
 **Solução**:
+
 - Verificar logs do image sync
 - Rodar `node scripts/check-db.mjs`
 - Se ImageCache vazio, rodar sync
@@ -218,11 +232,13 @@ fetch('/api/images/test').then(r => console.log(r.status))
 ### **Problema: CV não recalcula**
 
 **Possíveis causas**:
+
 1. useMemo não está funcionando
 2. Dependência [shotValues, line] incorreta
 3. calcCV não foi importado
 
 **Debug**:
+
 ```javascript
 // Abrir console (F12)
 // No componente PlayerDetailView, verificar:
@@ -231,6 +247,7 @@ console.log(shotValues, line);
 ```
 
 **Solução**:
+
 - Verificar import de calcCV
 - Verificar que linha muda ao clicar
 - Re-build se necessário
@@ -240,11 +257,13 @@ console.log(shotValues, line);
 ### **Problema: Coluna "Posição" não aparece**
 
 **Possíveis causas**:
+
 1. Type AdvancedPlayerRow sem campo position
 2. Fetcher não inclui position
 3. Coluna não foi adicionada
 
 **Debug**:
+
 ```javascript
 // Abrir console (F12) em /dashboard/table
 // Verificar dados da tabela:
@@ -252,6 +271,7 @@ console.log(shotValues, line);
 ```
 
 **Solução**:
+
 - Verificar commit 0eae4d8 foi deployado
 - Limpar cache Next.js
 - Re-build
@@ -261,23 +281,27 @@ console.log(shotValues, line);
 ## 📊 Resumo de Resultados
 
 ### **Dashboard**
+
 - Escudos carregam: [ ] Sim [ ] Não
 - Layout não quebra: [ ] Sim [ ] Não
 - Partidas de hoje: [ ] Sim [ ] Não
 - Erros no console: [ ] Sim [ ] Não
 
 ### **Página de Jogador**
+
 - CV recalcula: [ ] Sim [ ] Não
 - Posição aparece: [ ] Sim [ ] Não
 - Fotos carregam: [ ] Sim [ ] Não
 - Últimas 10 corretas: [ ] Sim [ ] Não
 
 ### **Tabela Avançada**
+
 - Coluna posição: [ ] Sim [ ] Não
 - Ordenação funciona: [ ] Sim [ ] Não
 - Sem NaN/Infinity: [ ] Sim [ ] Não
 
 ### **Geral**
+
 - Timezone correto: [ ] Sim [ ] Não
 - Sem erros críticos: [ ] Sim [ ] Não
 
@@ -304,6 +328,7 @@ Para considerar deploy **100% bem-sucedido**:
 ## 📸 Screenshots Esperados
 
 ### **Dashboard - Sucesso**
+
 ```
 ┌─────────────────────────────────────┐
 │ Premier League                      │
@@ -317,6 +342,7 @@ Para considerar deploy **100% bem-sucedido**:
 ```
 
 ### **Player Page - CV Dinâmico**
+
 ```
 ┌─────────────────────────────────────┐
 │ Linha: [0.5] [1.5] [2.5] [Custom]   │
@@ -336,6 +362,7 @@ Selecionar 1.5:
 ```
 
 ### **Tabela Avançada - Coluna Posição**
+
 ```
 ┌────────────┬──────────┬──────┬──────┬──────┐
 │ Jogador    │ Posição  │ L5   │ L10  │ CV   │
@@ -353,12 +380,14 @@ Selecionar 1.5:
 ## 🚀 Após Testes
 
 ### **Se Tudo OK**:
+
 ```bash
 # Marcar como completo
 echo "✅ Todos os testes passaram!" > TEST_RESULTS.txt
 ```
 
 ### **Se Problemas Encontrados**:
+
 1. Anotar problemas específicos
 2. Consultar DEPLOY_CHECKLIST.md → Troubleshooting
 3. Verificar logs Vercel

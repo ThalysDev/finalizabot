@@ -1,5 +1,10 @@
 # PRODUCTION DEPLOYMENT GUIDE - FinalizaBOT
 
+> ⚠️ **Documento legado / referência secundária**
+>
+> Este guia pode conter trechos desatualizados em relação ao estado atual do projeto.
+> Use como referência histórica e valide com `README.md` e `.context/docs/*` antes de executar mudanças em produção.
+
 ## Pre-Deployment Checklist
 
 ### Code Quality

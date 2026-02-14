@@ -1,5 +1,10 @@
 # TESTING GUIDE - FinalizaBOT
 
+> ⚠️ **Documento legado / referência secundária**
+>
+> Este guia pode conter fluxos antigos e não representa sozinho a estratégia oficial de testes.
+> Para padrão vigente, consulte `.context/docs/testing-strategy.md`.
+
 ## Responsiveness Testing Checklist
 
 ### Mobile Devices (375px - 425px)

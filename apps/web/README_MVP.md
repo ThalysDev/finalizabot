@@ -1,5 +1,10 @@
 # FinalizaBOT - MVP
 
+> ⚠️ **Documento legado / referência secundária**
+>
+> Conteúdo histórico da fase MVP; pode divergir do estado atual do monorepo.
+> Para visão atual, use `README.md` (raiz) e `.context/docs/*`.
+
 Sistema de análise de mercado para apostas esportivas focado em finalizações (shots) de jogadores.
 
 ## 🚀 Stack Tecnológica

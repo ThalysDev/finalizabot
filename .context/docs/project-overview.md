@@ -4,94 +4,94 @@ name: project-overview
 description: High-level overview of the project, its purpose, and key components
 category: overview
 generated: 2026-02-11
-status: unfilled
+status: filled
 scaffoldVersion: "2.0.0"
 ---
+
 ## Project Overview
 
-<!-- Summarize in 2-3 sentences what problem this project solves and who benefits from it. Focus on the value proposition. -->
+FinalizaBOT é uma plataforma de análise de finalização para futebol, com foco em estatística de jogadores, padrões de mercado e suporte à tomada de decisão orientada por dados. O monorepo integra um frontend Next.js (`apps/web`), um pipeline ETL com API (`apps/etl`) e um pacote compartilhado com Prisma, tipos e cálculos (`packages/shared`).
 
-_Add descriptive content here._
+O sistema consome dados processados do ETL e expõe uma experiência web para busca de partidas/jogadores, leitura de tendências e visualização de métricas históricas.
 
 ## Codebase Reference
-
-<!-- Add a callout pointing to codebase-map.json for detailed symbol counts, architecture layers, and dependencies. Do NOT list all symbols inline. -->
 
 > **Detailed Analysis**: For complete symbol counts, architecture layers, and dependency graphs, see [`codebase-map.json`](./codebase-map.json).
 
 ## Quick Facts
 
-<!-- List root directory path, primary languages (with file counts), and key entry points. Reference codebase-map.json for full analysis. -->
-
-- Root: `/path/to/repo`
-- Languages: TypeScript (150 files), Python (20 files)
-- Entry: `src/index.ts`
+- Root: `finalizabot/`
+- Linguagens: TypeScript (predominante) e SQL via Prisma.
+- Workspaces: `apps/web`, `apps/etl`, `packages/shared`.
+- Entrada web: `apps/web/src/app/layout.tsx`
+- Entrada ETL: `apps/etl/src/index.ts`
 - Full analysis: [`codebase-map.json`](./codebase-map.json)
 
 ## Entry Points
 
-<!-- List main entry points with links (CLI, server, library exports). Use markdown links with line numbers. -->
-
-- _Item 1_
-- _Item 2_
-- _Item 3_
+- `apps/web/src/app/layout.tsx` (bootstrap da aplicação web)
+- `apps/web/src/app/api/*` (rotas HTTP do frontend)
+- `apps/etl/src/index.ts` (modos ETL: ingest, bridge, full, images)
+- `apps/etl/src/api/server.ts` (API Fastify do ETL)
+- `packages/shared/src/index.ts` (exports compartilhados)
 
 ## Key Exports
 
-<!-- Reference codebase-map.json for the complete list. -->
-
-- _Item 1_
-- _Item 2_
-- _Item 3_
+- Prisma client compartilhado (`@finalizabot/shared/prisma`)
+- Utilitários de cálculo de mercado (`@finalizabot/shared/calc`)
+- Tipos de domínio compartilhados (`@finalizabot/shared/types`)
 
 ## File Structure & Code Organization
 
-<!-- List top-level directories with brief descriptions of their purpose. -->
-
-- `src/` — TypeScript source files and CLI entrypoints.
-- `tests/` — Automated tests and fixtures.
+- `apps/web/` — Next.js app, componentes UI, fetchers e API routes.
+- `apps/etl/` — Coleta/discovery/normalização/bridge e API de dados.
+- `packages/shared/` — Prisma schema, client compartilhado, tipos e cálculo.
+- `scripts/` — utilitários operacionais e verificação.
+- `.context/docs/` — documentação técnica canônica.
+- `.github/workflows/` — CI e automações agendadas de sincronização.
 
 ## Technology Stack Summary
 
-<!-- Outline primary runtimes, languages, and platforms in use. Note build tooling, linting, and formatting infrastructure. -->
-
-_Add descriptive content here._
+- Runtime: Node.js 20+
+- Linguagem: TypeScript (ESM predominante)
+- Frontend: Next.js 15 + React 19 + Tailwind CSS 4
+- Backend ETL/API: Fastify + Undici + Playwright/Crawlee
+- Dados: Prisma + Neon PostgreSQL
+- Testes: Vitest (runner único no monorepo)
 
 ## Core Framework Stack
 
-<!-- Document core frameworks per layer (backend, frontend, data, messaging). Mention architectural patterns enforced by these frameworks. -->
-
-_Add descriptive content here (optional)._
+- Camada web orientada a Server Components + API routes.
+- Camada ETL orientada a pipeline por modo (`MODE`) e sincronização incremental.
+- Camada de dados centralizada em Prisma (`packages/shared/prisma/schema.prisma`).
 
 ## UI & Interaction Libraries
 
-<!-- List UI kits, CLI interaction helpers, or design system dependencies. Note theming, accessibility, or localization considerations. -->
-
-_Add descriptive content here (optional)._
+- `@clerk/nextjs` para autenticação.
+- `lucide-react`, `recharts`, Radix/utility libs no frontend.
+- Design tokens e estilos centralizados no app web.
 
 ## Development Tools Overview
 
-<!-- Highlight essential CLIs, scripts, or developer environments. Link to Tooling guide for deeper setup. -->
-
-_Add descriptive content here (optional)._
+- Workspaces npm (`npm -w ...`) para execução por pacote.
+- Scripts de sync e bridge no root e no ETL.
+- Workflows GitHub para CI e sync agendado.
 
 ## Getting Started Checklist
 
-<!-- Provide numbered steps to get a new developer productive. Include install, run, and verify steps. -->
-
 1. Install dependencies with `npm install`.
-2. Explore the CLI by running `npm run dev`.
-3. Review Development Workflow for day-to-day tasks.
+2. Build shared package with `npm run build:shared` (ou `npm run build`).
+3. Start web with `npm run dev:web` and ETL API with `npm run dev:etl`.
+4. Run tests with `npm run test`.
+5. Review `development-workflow.md` for day-to-day process.
 
 ## Next Steps
 
-<!-- Capture product positioning, key stakeholders, and links to external documentation or product specs. -->
-
-_Add descriptive content here (optional)._
+- Consolidar documentos legados em trilha de saneamento documental.
+- Expandir cobertura de testes para ETL crawlers, fetchers e API routes.
+- Revisar periodicamente a matriz de risco em `audit.md`.
 
 ## Related Resources
-
-<!-- Link to related documents for cross-navigation. -->
 
 - [architecture.md](./architecture.md)
 - [development-workflow.md](./development-workflow.md)
