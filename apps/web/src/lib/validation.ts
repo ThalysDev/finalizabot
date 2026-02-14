@@ -31,3 +31,26 @@ export function validateSearchQuery(
   if (trimmed.length < 2 || trimmed.length > 100) return null;
   return trimmed;
 }
+
+const PUBLIC_ROUTE_PATTERNS: RegExp[] = [
+  /^\/$/,
+  /^\/sign-in(?:\/.*)?$/,
+  /^\/sign-up(?:\/.*)?$/,
+  /^\/match(?:\/.*)?$/,
+  /^\/api\/health$/,
+  /^\/api\/image-proxy$/,
+  /^\/api\/images(?:\/.*)?$/,
+  /^\/api\/sync-status$/,
+];
+
+function normalizePathname(pathname: string): string {
+  const trimmed = pathname.trim();
+  if (trimmed.length === 0) return "/";
+  if (trimmed === "/") return "/";
+  return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
+}
+
+export function isPublicPath(pathname: string): boolean {
+  const normalized = normalizePathname(pathname);
+  return PUBLIC_ROUTE_PATTERNS.some((pattern) => pattern.test(normalized));
+}

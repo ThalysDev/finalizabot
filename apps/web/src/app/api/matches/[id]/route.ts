@@ -4,6 +4,7 @@ import { etlMatchShots } from "@/lib/etl/client";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateId } from "@/lib/validation";
 import { logger } from "@/lib/logger";
+import { normalizeMatchShotsInput } from "@/lib/fetchers/match-shots";
 
 export async function GET(
   request: Request,
@@ -26,8 +27,6 @@ export async function GET(
       return NextResponse.json({ error: "Invalid match ID" }, { status: 400 });
     }
     const { searchParams } = new URL(request.url);
-    const limit = searchParams.get("limit");
-    const offset = searchParams.get("offset");
 
     const match = await prisma.match.findUnique({
       where: { id },
@@ -47,9 +46,14 @@ export async function GET(
     // Busca shots via ETL API HTTP (não mais via Prisma etl schema)
     let etlShots = { items: [] as unknown[], total: 0, limit: 50, offset: 0 };
     if (match.sofascoreId) {
+      const normalized = normalizeMatchShotsInput(match.sofascoreId, {
+        limit: searchParams.get("limit"),
+        offset: searchParams.get("offset"),
+      });
+
       const res = await etlMatchShots(match.sofascoreId, {
-        limit: limit ? Number(limit) : undefined,
-        offset: offset ? Number(offset) : undefined,
+        limit: normalized.params.limit,
+        offset: normalized.params.offset,
       });
       if (res.data) {
         etlShots = res.data;

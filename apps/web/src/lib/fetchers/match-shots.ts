@@ -1,11 +1,14 @@
 export interface MatchShotsQueryParams {
-  limit?: number;
-  offset?: number;
+  limit?: unknown;
+  offset?: unknown;
 }
 
 export interface NormalizedMatchShotsInput {
   matchId: string | null;
-  params: Required<MatchShotsQueryParams>;
+  params: {
+    limit: number;
+    offset: number;
+  };
 }
 
 const DEFAULT_LIMIT = 100;

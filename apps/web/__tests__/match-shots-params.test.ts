@@ -41,4 +41,14 @@ describe("normalizeMatchShotsInput()", () => {
     expect(normalized.params.limit).toBe(12);
     expect(normalized.params.offset).toBe(4);
   });
+
+  it("accepts numeric strings from URL query params", () => {
+    const normalized = normalizeMatchShotsInput("123", {
+      limit: "25",
+      offset: "10",
+    });
+
+    expect(normalized.params.limit).toBe(25);
+    expect(normalized.params.offset).toBe(10);
+  });
 });
