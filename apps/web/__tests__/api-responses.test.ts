@@ -85,7 +85,10 @@ describe("GET /api/sync-status", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(body).toEqual({ lastSync: null });
-    expect(error).toHaveBeenCalledWith("[/api/sync-status] query failed", dbError);
+    expect(error).toHaveBeenCalledWith(
+      "[/api/sync-status] query failed",
+      dbError,
+    );
   });
 });
 
@@ -216,5 +219,253 @@ describe("GET /api/images/[id]", () => {
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(body).toEqual({ error: "Failed to fetch image" });
     expect(error).toHaveBeenCalledWith("[/api/images] fetch failed", dbError);
+  });
+});
+
+describe("GET /api/search", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  function mockApiResponsesModule() {
+    const jsonError = vi.fn((message: string, status: number) =>
+      new Response(JSON.stringify({ error: message }), {
+        status,
+        headers: { "Cache-Control": "no-store" },
+      }),
+    );
+    const jsonRateLimited = vi.fn((retryAfter: number) =>
+      new Response(JSON.stringify({ error: "Too many requests" }), {
+        status: 429,
+        headers: {
+          "Cache-Control": "no-store",
+          "Retry-After": String(retryAfter),
+        },
+      }),
+    );
+
+    vi.doMock("@/lib/api/responses", () => ({
+      jsonError,
+      jsonRateLimited,
+    }));
+
+    return { jsonError, jsonRateLimited };
+  }
+
+  it("returns cached empty results when query is invalid", async () => {
+    const findMany = vi.fn();
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { player: { findMany } },
+    }));
+    vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
+    vi.doMock("@/lib/rate-limit", () => ({
+      checkRateLimit: vi.fn(() => ({ allowed: true })),
+      getClientIp: vi.fn(() => "127.0.0.1"),
+    }));
+    vi.doMock("@/lib/api/query-params", () => ({
+      normalizeSearchQueryParams: vi.fn(() => ({ q: "  ", limit: 8 })),
+    }));
+    vi.doMock("@/lib/validation", () => ({
+      validateSearchQuery: vi.fn(() => null),
+    }));
+    mockApiResponsesModule();
+
+    const { GET } = await import("../src/app/api/search/route");
+    const req = { nextUrl: { searchParams: new URLSearchParams() } } as never;
+    const response = await GET(req);
+    const body = (await response.json()) as { results: unknown[] };
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe(
+      "s-maxage=30, stale-while-revalidate=15",
+    );
+    expect(body).toEqual({ results: [] });
+    expect(findMany).not.toHaveBeenCalled();
+  });
+
+  it("returns rate-limited response when limiter blocks request", async () => {
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { player: { findMany: vi.fn() } },
+    }));
+    vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
+    vi.doMock("@/lib/rate-limit", () => ({
+      checkRateLimit: vi.fn(() => ({ allowed: false, retryAfter: 17 })),
+      getClientIp: vi.fn(() => "127.0.0.1"),
+    }));
+    vi.doMock("@/lib/api/query-params", () => ({
+      normalizeSearchQueryParams: vi.fn(() => ({ q: "Messi", limit: 8 })),
+    }));
+    vi.doMock("@/lib/validation", () => ({
+      validateSearchQuery: vi.fn((q: string) => q),
+    }));
+    const { jsonRateLimited } = mockApiResponsesModule();
+
+    const { GET } = await import("../src/app/api/search/route");
+    const req = { nextUrl: { searchParams: new URLSearchParams() } } as never;
+    const response = await GET(req);
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("17");
+    expect(body.error).toBe("Too many requests");
+    expect(jsonRateLimited).toHaveBeenCalledWith(17);
+  });
+
+  it("returns standardized 500 payload when query fails", async () => {
+    const dbError = new Error("db exploded");
+    const findMany = vi.fn().mockRejectedValue(dbError);
+    const logError = vi.fn();
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { player: { findMany } },
+    }));
+    vi.doMock("@/lib/logger", () => ({ logger: { error: logError } }));
+    vi.doMock("@/lib/rate-limit", () => ({
+      checkRateLimit: vi.fn(() => ({ allowed: true })),
+      getClientIp: vi.fn(() => "127.0.0.1"),
+    }));
+    vi.doMock("@/lib/api/query-params", () => ({
+      normalizeSearchQueryParams: vi.fn(() => ({ q: "Messi", limit: 8 })),
+    }));
+    vi.doMock("@/lib/validation", () => ({
+      validateSearchQuery: vi.fn((q: string) => q),
+    }));
+    const { jsonError } = mockApiResponsesModule();
+
+    const { GET } = await import("../src/app/api/search/route");
+    const req = { nextUrl: { searchParams: new URLSearchParams() } } as never;
+    const response = await GET(req);
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(500);
+    expect(body).toEqual({ error: "Search failed" });
+    expect(jsonError).toHaveBeenCalledWith("Search failed", 500);
+    expect(logError).toHaveBeenCalledWith("[/api/search] query failed", dbError);
+  });
+});
+
+describe("GET /api/matches", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  function mockApiResponsesModule() {
+    const jsonError = vi.fn((message: string, status: number) =>
+      new Response(JSON.stringify({ error: message }), {
+        status,
+        headers: { "Cache-Control": "no-store" },
+      }),
+    );
+    const jsonRateLimited = vi.fn((retryAfter: number) =>
+      new Response(JSON.stringify({ error: "Too many requests" }), {
+        status: 429,
+        headers: {
+          "Cache-Control": "no-store",
+          "Retry-After": String(retryAfter),
+        },
+      }),
+    );
+
+    vi.doMock("@/lib/api/responses", () => ({
+      jsonError,
+      jsonRateLimited,
+    }));
+
+    return { jsonError, jsonRateLimited };
+  }
+
+  it("returns matches list with cache header", async () => {
+    const matches = [
+      {
+        id: "m1",
+        homeTeam: "A",
+        awayTeam: "B",
+        competition: "League",
+        matchDate: new Date("2026-02-14T12:00:00.000Z"),
+      },
+    ];
+    const findMany = vi.fn().mockResolvedValue(matches);
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { match: { findMany } },
+    }));
+    vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
+    vi.doMock("@/lib/rate-limit", () => ({
+      checkRateLimit: vi.fn(() => ({ allowed: true })),
+      getClientIp: vi.fn(() => "127.0.0.1"),
+    }));
+    vi.doMock("@/lib/api/query-params", () => ({
+      normalizeMatchesQueryParams: vi.fn(() => ({ days: 7, limit: 50 })),
+    }));
+    mockApiResponsesModule();
+
+    const { GET } = await import("../src/app/api/matches/route");
+    const req = { nextUrl: { searchParams: new URLSearchParams() } } as never;
+    const response = await GET(req);
+    const body = (await response.json()) as { matches: typeof matches };
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe(
+      "s-maxage=120, stale-while-revalidate=60",
+    );
+    expect(body.matches).toHaveLength(1);
+    expect(findMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns rate-limited response when limiter blocks request", async () => {
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { match: { findMany: vi.fn() } },
+    }));
+    vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
+    vi.doMock("@/lib/rate-limit", () => ({
+      checkRateLimit: vi.fn(() => ({ allowed: false, retryAfter: 33 })),
+      getClientIp: vi.fn(() => "127.0.0.1"),
+    }));
+    vi.doMock("@/lib/api/query-params", () => ({
+      normalizeMatchesQueryParams: vi.fn(() => ({ days: 7, limit: 50 })),
+    }));
+    const { jsonRateLimited } = mockApiResponsesModule();
+
+    const { GET } = await import("../src/app/api/matches/route");
+    const req = { nextUrl: { searchParams: new URLSearchParams() } } as never;
+    const response = await GET(req);
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("33");
+    expect(body.error).toBe("Too many requests");
+    expect(jsonRateLimited).toHaveBeenCalledWith(33);
+  });
+
+  it("returns standardized 500 payload when DB query fails", async () => {
+    const dbError = new Error("matches db exploded");
+    const findMany = vi.fn().mockRejectedValue(dbError);
+    const logError = vi.fn();
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { match: { findMany } },
+    }));
+    vi.doMock("@/lib/logger", () => ({ logger: { error: logError } }));
+    vi.doMock("@/lib/rate-limit", () => ({
+      checkRateLimit: vi.fn(() => ({ allowed: true })),
+      getClientIp: vi.fn(() => "127.0.0.1"),
+    }));
+    vi.doMock("@/lib/api/query-params", () => ({
+      normalizeMatchesQueryParams: vi.fn(() => ({ days: 7, limit: 50 })),
+    }));
+    const { jsonError } = mockApiResponsesModule();
+
+    const { GET } = await import("../src/app/api/matches/route");
+    const req = { nextUrl: { searchParams: new URLSearchParams() } } as never;
+    const response = await GET(req);
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(500);
+    expect(body).toEqual({ error: "Failed to fetch matches" });
+    expect(jsonError).toHaveBeenCalledWith("Failed to fetch matches", 500);
+    expect(logError).toHaveBeenCalledWith("[/api/matches] list failed", dbError);
   });
 });
