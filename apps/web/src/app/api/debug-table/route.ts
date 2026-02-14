@@ -7,6 +7,7 @@ import { formatDateTime } from "@/lib/format/date";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizeDebugTableQueryParams } from "@/lib/api/query-params";
 import { jsonError, jsonRateLimited } from "@/lib/api/responses";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ function toSafeError(err: unknown, includeDetails: boolean) {
 }
 
 export async function GET(request: Request) {
-  console.log("[DEBUG TABLE] Starting...");
+  logger.debug("[DEBUG TABLE] Starting");
 
   const ip = getClientIp(request);
   const rl = checkRateLimit(`debug-table:${ip}`, { limit: 10, windowSec: 60 });
@@ -57,10 +58,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const debugParams = normalizeDebugTableQueryParams(searchParams);
     const line = Number.isFinite(DEFAULT_LINE) ? debugParams.line : 1.5;
-    console.log("[DEBUG TABLE] Using line:", line);
+    logger.debug("[DEBUG TABLE] Using line", { line });
 
     // Fetch players and upcoming match
-    console.log("[DEBUG TABLE] Fetching players and match from DB...");
+    logger.debug("[DEBUG TABLE] Fetching players and match from DB");
 
     // Get players with their match stats count
     const playersWithCount = await prisma.player.findMany({
@@ -86,7 +87,9 @@ export async function GET(request: Request) {
       .sort((a, b) => b._count.matchStats - a._count.matchStats)
       .slice(0, debugParams.limit);
 
-    console.log("[DEBUG TABLE] Top player IDs:", topPlayers.length);
+    logger.debug("[DEBUG TABLE] Top player IDs", {
+      count: topPlayers.length,
+    });
 
     const [dbPlayers, upcomingMatch] = await Promise.all([
       Promise.resolve(topPlayers),
@@ -96,7 +99,7 @@ export async function GET(request: Request) {
       }),
     ]);
 
-    console.log("[DEBUG TABLE] DB fetch success:", {
+    logger.debug("[DEBUG TABLE] DB fetch success", {
       playerCount: dbPlayers.length,
       hasMatch: !!upcomingMatch,
     });
@@ -105,19 +108,17 @@ export async function GET(request: Request) {
     let enriched = new Map<string, EtlEnrichResult>();
     let etlError = null;
     try {
-      console.log("[DEBUG TABLE] Attempting ETL enrichment...");
+      logger.debug("[DEBUG TABLE] Attempting ETL enrichment");
       enriched = await batchEnrichPlayers(
         dbPlayers.map((p) => ({ sofascoreId: p.sofascoreId })),
         line,
       );
-      console.log(
-        "[DEBUG TABLE] ETL enrichment success:",
-        enriched.size,
-        "players",
-      );
+      logger.debug("[DEBUG TABLE] ETL enrichment success", {
+        playerCount: enriched.size,
+      });
     } catch (etlErr: unknown) {
       etlError = toSafeError(etlErr, !isProduction || verboseErrors);
-      console.log("[DEBUG TABLE] ETL enrichment failed:", etlErr);
+      logger.warn("[DEBUG TABLE] ETL enrichment failed", etlErr);
     }
 
     // Fetch odds
@@ -130,16 +131,16 @@ export async function GET(request: Request) {
         select: { playerId: true, odds: true },
       });
       oddsMap = new Map(analyses.map((a) => [a.playerId, a.odds]));
-      console.log("[DEBUG TABLE] Odds fetched:", oddsMap.size);
+      logger.debug("[DEBUG TABLE] Odds fetched", { count: oddsMap.size });
     } catch (err: unknown) {
-      console.error("[DEBUG TABLE] Odds fetch failed:", err);
+      logger.error("[DEBUG TABLE] Odds fetch failed", err);
     }
 
     // Check ETL data
     const hasEtlData = Array.from(enriched.values()).some(
       (e) => e.stats !== null,
     );
-    console.log("[DEBUG TABLE] Has ETL data:", hasEtlData);
+    logger.debug("[DEBUG TABLE] Has ETL data", { hasEtlData });
 
     // Fetch PlayerMatchStats for fallback
     let allStats: Array<{
@@ -149,20 +150,18 @@ export async function GET(request: Request) {
     }> = [];
     let statsError = null;
     try {
-      console.log("[DEBUG TABLE] Fetching PlayerMatchStats...");
+      logger.debug("[DEBUG TABLE] Fetching PlayerMatchStats");
       allStats = await prisma.playerMatchStats.findMany({
         where: { playerId: { in: dbPlayers.map((p) => p.id) } },
         orderBy: { match: { matchDate: "desc" } },
         select: { playerId: true, shots: true, minutesPlayed: true },
       });
-      console.log(
-        "[DEBUG TABLE] PlayerMatchStats fetch success:",
-        allStats.length,
-        "records",
-      );
+      logger.debug("[DEBUG TABLE] PlayerMatchStats fetch success", {
+        count: allStats.length,
+      });
     } catch (err: unknown) {
       statsError = toSafeError(err, !isProduction || verboseErrors);
-      console.error("[DEBUG TABLE] PlayerMatchStats fetch failed:", err);
+      logger.error("[DEBUG TABLE] PlayerMatchStats fetch failed", err);
     }
 
     // Format match data
@@ -179,7 +178,7 @@ export async function GET(request: Request) {
       }
     } catch (err: unknown) {
       matchError = toSafeError(err, !isProduction || verboseErrors);
-      console.error("[DEBUG TABLE] Match formatting error:", err);
+      logger.error("[DEBUG TABLE] Match formatting error", err);
     }
 
     // Return debug info
@@ -212,7 +211,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (err: unknown) {
-    console.error("[DEBUG TABLE] Unexpected error:", err);
+    logger.error("[DEBUG TABLE] Unexpected error", err);
     return jsonError("Debug table failed", 500);
   }
 }
