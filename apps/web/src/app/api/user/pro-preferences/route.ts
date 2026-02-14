@@ -6,6 +6,7 @@ import {
   sanitizeProPreferencesPayload,
 } from "@/lib/preferences/sanitize";
 import { jsonError } from "@/lib/api/responses";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   const appUserId = await resolveOrCreateAppUserId();
@@ -62,7 +63,8 @@ export async function GET() {
         headers: { "Cache-Control": "no-store" },
       },
     );
-  } catch {
+  } catch (error) {
+    logger.error("[/api/user/pro-preferences] load failed", error);
     return NextResponse.json(DEFAULT_PRO_PREFERENCES, {
       status: 200,
       headers: { "Cache-Control": "no-store" },
@@ -76,8 +78,15 @@ export async function PUT(request: Request) {
     return jsonError("Unauthorized", 401);
   }
 
+  let body: unknown;
   try {
-    const body = (await request.json()) as unknown;
+    body = await request.json();
+  } catch (error) {
+    logger.error("[/api/user/pro-preferences] invalid json", error);
+    return jsonError("Invalid JSON body", 400);
+  }
+
+  try {
     const payload = sanitizeProPreferencesPayload(body);
 
     type PreferenceRow = {
@@ -138,9 +147,13 @@ export async function PUT(request: Request) {
         minEv: saved.minEv,
         searchQuery: saved.searchQuery,
       },
-      { status: 200 },
+      {
+        status: 200,
+        headers: { "Cache-Control": "no-store" },
+      },
     );
-  } catch {
-    return jsonError("Failed to save pro preferences", 400);
+  } catch (error) {
+    logger.error("[/api/user/pro-preferences] save failed", error);
+    return jsonError("Failed to save pro preferences", 500);
   }
 }

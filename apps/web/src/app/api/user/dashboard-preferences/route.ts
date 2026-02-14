@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { resolveOrCreateAppUserId } from "@/lib/auth/resolveAppUserId";
 import { jsonError } from "@/lib/api/responses";
+import { logger } from "@/lib/logger";
 import {
   type DashboardPreferencePayload,
   DEFAULT_DASHBOARD_PREFERENCES,
@@ -59,7 +60,8 @@ export async function GET() {
       status: 200,
       headers: { "Cache-Control": "no-store" },
     });
-  } catch {
+  } catch (error) {
+    logger.error("[/api/user/dashboard-preferences] load failed", error);
     return NextResponse.json(DEFAULT_DASHBOARD_PREFERENCES, {
       status: 200,
       headers: { "Cache-Control": "no-store" },
@@ -73,8 +75,15 @@ export async function PUT(request: Request) {
     return jsonError("Unauthorized", 401);
   }
 
+  let body: unknown;
   try {
-    const body = (await request.json()) as unknown;
+    body = await request.json();
+  } catch (error) {
+    logger.error("[/api/user/dashboard-preferences] invalid json", error);
+    return jsonError("Invalid JSON body", 400);
+  }
+
+  try {
     const payload = sanitizeDashboardPreferencePayload(body);
 
     type PreferenceRow = {
@@ -123,9 +132,13 @@ export async function PUT(request: Request) {
         searchQuery: saved.searchQuery,
         view: saved.viewMode,
       },
-      { status: 200 },
+      {
+        status: 200,
+        headers: { "Cache-Control": "no-store" },
+      },
     );
-  } catch {
-    return jsonError("Failed to save preferences", 400);
+  } catch (error) {
+    logger.error("[/api/user/dashboard-preferences] save failed", error);
+    return jsonError("Failed to save preferences", 500);
   }
 }

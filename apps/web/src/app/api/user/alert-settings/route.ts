@@ -6,6 +6,7 @@ import {
   sanitizeAlertSettingsPayload,
 } from "@/lib/preferences/sanitize";
 import { jsonError } from "@/lib/api/responses";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   const appUserId = await resolveOrCreateAppUserId();
@@ -47,7 +48,8 @@ export async function GET() {
         headers: { "Cache-Control": "no-store" },
       },
     );
-  } catch {
+  } catch (error) {
+    logger.error("[/api/user/alert-settings] load failed", error);
     return NextResponse.json(DEFAULT_ALERT_SETTINGS, {
       status: 200,
       headers: { "Cache-Control": "no-store" },
@@ -61,8 +63,15 @@ export async function PUT(request: Request) {
     return jsonError("Unauthorized", 401);
   }
 
+  let body: unknown;
   try {
-    const body = (await request.json()) as unknown;
+    body = await request.json();
+  } catch (error) {
+    logger.error("[/api/user/alert-settings] invalid json", error);
+    return jsonError("Invalid JSON body", 400);
+  }
+
+  try {
     const payload = sanitizeAlertSettingsPayload(body);
 
     const saved = await prisma.alertSettings.upsert({
@@ -103,9 +112,13 @@ export async function PUT(request: Request) {
         silentMode: saved.silentMode,
         leagues: saved.leagues,
       },
-      { status: 200 },
+      {
+        status: 200,
+        headers: { "Cache-Control": "no-store" },
+      },
     );
-  } catch {
-    return jsonError("Failed to save alert settings", 400);
+  } catch (error) {
+    logger.error("[/api/user/alert-settings] save failed", error);
+    return jsonError("Failed to save alert settings", 500);
   }
 }
