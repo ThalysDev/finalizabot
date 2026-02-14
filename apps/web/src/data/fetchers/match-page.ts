@@ -56,12 +56,57 @@ export async function fetchMatchPageData(
   try {
     dbMatch = await prisma.match.findUnique({
       where: { id: matchId },
-      include: {
+      select: {
+        id: true,
+        homeTeam: true,
+        awayTeam: true,
+        competition: true,
+        matchDate: true,
+        status: true,
+        homeScore: true,
+        awayScore: true,
+        minute: true,
+        homeTeamImageId: true,
+        homeTeamImageUrl: true,
+        homeTeamSofascoreId: true,
+        awayTeamImageId: true,
+        awayTeamImageUrl: true,
+        awayTeamSofascoreId: true,
         marketAnalyses: {
-          include: { player: true },
+          select: {
+            odds: true,
+            probability: true,
+            player: {
+              select: {
+                id: true,
+                name: true,
+                position: true,
+                sofascoreId: true,
+                imageId: true,
+                imageUrl: true,
+                teamImageId: true,
+                teamImageUrl: true,
+                teamName: true,
+              },
+            },
+          },
         },
         playerStats: {
-          include: { player: true },
+          select: {
+            player: {
+              select: {
+                id: true,
+                name: true,
+                position: true,
+                sofascoreId: true,
+                imageId: true,
+                imageUrl: true,
+                teamImageId: true,
+                teamImageUrl: true,
+                teamName: true,
+              },
+            },
+          },
         },
       },
     });
@@ -170,6 +215,17 @@ export async function fetchMatchPageData(
         },
         take: 50,
         orderBy: { updatedAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          position: true,
+          sofascoreId: true,
+          imageId: true,
+          imageUrl: true,
+          teamImageId: true,
+          teamImageUrl: true,
+          teamName: true,
+        },
       });
 
       for (const p of allPlayers) {
