@@ -4,6 +4,7 @@ import { etlPlayerShots } from "@/lib/etl/client";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateId } from "@/lib/validation";
 import { logger } from "@/lib/logger";
+import { normalizePlayerShotsDateRangeQueryParams } from "@/lib/api/query-params";
 
 export async function GET(
   request: Request,
@@ -26,8 +27,7 @@ export async function GET(
       return NextResponse.json({ error: "Invalid player ID" }, { status: 400 });
     }
     const { searchParams } = new URL(request.url);
-    const from = searchParams.get("from") ?? undefined;
-    const to = searchParams.get("to") ?? undefined;
+    const { from, to } = normalizePlayerShotsDateRangeQueryParams(searchParams);
 
     const player = await prisma.player.findUnique({
       where: { id },

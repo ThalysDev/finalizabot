@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   normalizeMatchesQueryParams,
+  normalizePlayerShotsDateRangeQueryParams,
   normalizeSearchQueryParams,
 } from "../src/lib/api/query-params";
 
@@ -55,5 +56,33 @@ describe("normalizeMatchesQueryParams()", () => {
 
     expect(result.days).toBe(7);
     expect(result.limit).toBe(50);
+  });
+});
+
+describe("normalizePlayerShotsDateRangeQueryParams()", () => {
+  it("returns undefined values when params are absent", () => {
+    const result = normalizePlayerShotsDateRangeQueryParams(
+      new URLSearchParams(),
+    );
+
+    expect(result).toEqual({ from: undefined, to: undefined });
+  });
+
+  it("drops invalid date values", () => {
+    const result = normalizePlayerShotsDateRangeQueryParams(
+      new URLSearchParams({ from: "invalid-date", to: "2026-02-10" }),
+    );
+
+    expect(result.from).toBeUndefined();
+    expect(result.to).toBe("2026-02-10T00:00:00.000Z");
+  });
+
+  it("swaps range when from is greater than to", () => {
+    const result = normalizePlayerShotsDateRangeQueryParams(
+      new URLSearchParams({ from: "2026-02-15", to: "2026-02-10" }),
+    );
+
+    expect(result.from).toBe("2026-02-10T00:00:00.000Z");
+    expect(result.to).toBe("2026-02-15T00:00:00.000Z");
   });
 });

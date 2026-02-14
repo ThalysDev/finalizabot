@@ -8,6 +8,11 @@ export interface MatchesQueryParams {
   limit: number;
 }
 
+export interface PlayerShotsDateRangeQueryParams {
+  from?: string;
+  to?: string;
+}
+
 const DEFAULT_SEARCH_LIMIT = 8;
 const MAX_SEARCH_LIMIT = 20;
 
@@ -21,6 +26,17 @@ function sanitizeInt(value: string | null, fallback: number): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.trunc(parsed);
+}
+
+function sanitizeDate(value: string | null): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > 40) return undefined;
+
+  const timestamp = Date.parse(trimmed);
+  if (!Number.isFinite(timestamp)) return undefined;
+
+  return new Date(timestamp).toISOString();
 }
 
 export function normalizeSearchQueryParams(
@@ -49,4 +65,17 @@ export function normalizeMatchesQueryParams(
     days: Math.max(1, Math.min(MAX_MATCHES_DAYS, daysRaw)),
     limit: Math.max(1, Math.min(MAX_MATCHES_LIMIT, limitRaw)),
   };
+}
+
+export function normalizePlayerShotsDateRangeQueryParams(
+  searchParams: URLSearchParams,
+): PlayerShotsDateRangeQueryParams {
+  let from = sanitizeDate(searchParams.get("from"));
+  let to = sanitizeDate(searchParams.get("to"));
+
+  if (from && to && Date.parse(from) > Date.parse(to)) {
+    [from, to] = [to, from];
+  }
+
+  return { from, to };
 }
