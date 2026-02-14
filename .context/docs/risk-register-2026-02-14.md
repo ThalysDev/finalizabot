@@ -9,7 +9,8 @@
 
 - ✅ Web API risk reduced: no remaining `$queryRawUnsafe` usage in `apps/web/src`.
 - ✅ ETL bridge risk reduced: no remaining `$queryRawUnsafe` usage in `apps/etl/src`.
-- ⚠️ ETL bridge has heavy in-memory processing hotspots that can become bottlenecks with larger datasets.
+- ✅ ETL bridge now emits stage-level timing logs and uses stricter payload selection in key reads.
+- ⚠️ ETL bridge still has potential bottlenecks under larger datasets and needs timing-baseline follow-up.
 
 ## Prioritized Risks
 
@@ -17,15 +18,15 @@
 
 - **Location**: `apps/etl/src/bridge/etl-to-public.ts`
 - **Pattern**:
-  - large `findMany(... include ...)` loops;
+  - large `findMany(...)` loops even after first-pass payload reduction;
   - in-memory aggregation across all players/matches before batch writes.
 - **Impact**:
   - risk of degraded sync performance and long-running jobs under data growth;
   - potential timeout/resource pressure in constrained runtime.
 - **Recommendation**:
-  1. Introduce tighter `select` fields for high-volume queries.
+  1. Collect p50/p95 timings per bridge stage over multiple sync runs.
   2. Move more aggregation logic to SQL windows/CTEs where practical.
-  3. Add lightweight timing logs per stage (`syncMatches`, `syncPlayers`, `generateMarketAnalysis`).
+  3. Apply pagination/windowing refinements in the heaviest remaining stage.
 - **Priority**: Next cycle (P1)
 
 ### R3 — Route-level perf observability gaps (Medium)
@@ -48,6 +49,11 @@
   - `apps/web/src/app/api/user/pro-preferences/route.ts`
 - Migrated ETL bridge raw SQL calls from `$queryRawUnsafe` to `$queryRaw` in:
   - `apps/etl/src/bridge/etl-to-public.ts`
+- Reduced payload in ETL bridge high-volume reads:
+  - team/player `include` narrowed to strict `select`
+  - market-analysis player stats now read only `playerId`
+- Added stage-level timing logs in ETL bridge:
+  - `syncMatches`, `syncPlayers`, `syncPlayerMatchStats`, `generateMarketAnalysis`
 - Updated contract tests accordingly:
   - `apps/web/__tests__/api-responses.test.ts`
   - `apps/web/__tests__/user-preferences-routes.test.ts`
@@ -56,6 +62,6 @@
 
 ## Exit Criteria for closing current risk items
 
-- Add ETL stage-level timing metrics and track baseline over sync runs.
-- Reduce high-volume ETL query payloads using stricter `select` in hotspots.
+- Capture ETL stage timing baseline (p50/p95) across representative sync runs.
+- Optimize the top remaining ETL hotspot identified by those timing baselines.
 - Post-deploy smoke (`scripts/verify-deployment.ps1 -Detailed`) green.

@@ -43,6 +43,19 @@ const BRIDGE_PAGE_SIZE = Math.max(
 export async function runBridge(): Promise<void> {
   logger.info("[Bridge] Iniciando sincronização ETL → Public...");
 
+  const runTimed = async <T>(
+    stage: string,
+    action: () => Promise<T>,
+  ): Promise<T> => {
+    const start = Date.now();
+    try {
+      return await action();
+    } finally {
+      const elapsedMs = Date.now() - start;
+      logger.info(`[Bridge] ${stage} concluída em ${elapsedMs}ms`);
+    }
+  };
+
   // Acquire advisory lock to prevent concurrent syncs
   const [lockResult] = await prisma.$queryRaw<{ acquired: boolean }[]>`
     SELECT pg_try_advisory_lock(${BRIDGE_LOCK_ID}) as acquired
@@ -55,19 +68,23 @@ export async function runBridge(): Promise<void> {
 
   try {
     // 1. Sync matches (ETL → Public)
-    const matchCount = await syncMatches();
+    const matchCount = await runTimed("syncMatches", () => syncMatches());
     logger.info(`[Bridge] ${matchCount} partidas sincronizadas`);
 
     // 2. Sync players (ETL → Public)
-    const playerCount = await syncPlayers();
+    const playerCount = await runTimed("syncPlayers", () => syncPlayers());
     logger.info(`[Bridge] ${playerCount} jogadores sincronizados`);
 
     // 3. Sync player match stats
-    const statsCount = await syncPlayerMatchStats();
+    const statsCount = await runTimed("syncPlayerMatchStats", () =>
+      syncPlayerMatchStats(),
+    );
     logger.info(`[Bridge] ${statsCount} estatísticas sincronizadas`);
 
     // 4. Generate market analysis from stats
-    const analysisCount = await generateMarketAnalysis();
+    const analysisCount = await runTimed("generateMarketAnalysis", () =>
+      generateMarketAnalysis(),
+    );
     logger.info(`[Bridge] ${analysisCount} análises de mercado geradas`);
 
     // 5. Download and cache images
@@ -121,8 +138,18 @@ async function syncMatches(): Promise<number> {
     const etlMatches = await prisma.etlMatch.findMany({
       where: matchCutoff ? { startTime: { gte: matchCutoff } } : undefined,
       include: {
-        homeTeam: true,
-        awayTeam: true,
+        homeTeam: {
+          select: {
+            name: true,
+            imageUrl: true,
+          },
+        },
+        awayTeam: {
+          select: {
+            name: true,
+            imageUrl: true,
+          },
+        },
       },
       orderBy: { id: "asc" },
       take: BRIDGE_PAGE_SIZE,
@@ -237,7 +264,12 @@ async function syncPlayers(): Promise<number> {
         },
       },
       include: {
-        currentTeam: true,
+        currentTeam: {
+          select: {
+            name: true,
+            imageUrl: true,
+          },
+        },
       },
       orderBy: { id: "asc" },
       take: BRIDGE_PAGE_SIZE,
@@ -426,9 +458,14 @@ async function generateMarketAnalysis(): Promise<number> {
         { matchDate: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
       ],
     },
-    include: {
+    select: {
+      id: true,
+      homeTeam: true,
+      awayTeam: true,
       playerStats: {
-        include: { player: true },
+        select: {
+          playerId: true,
+        },
       },
     },
   });
@@ -442,8 +479,8 @@ async function generateMarketAnalysis(): Promise<number> {
   for (const match of scheduledMatches) {
     const pids = new Set<string>();
     for (const ps of match.playerStats) {
-      pids.add(ps.player.id);
-      allPlayerIds.add(ps.player.id);
+      pids.add(ps.playerId);
+      allPlayerIds.add(ps.playerId);
     }
     matchPlayerMap.set(match.id, pids);
   }
