@@ -12,6 +12,7 @@
     "build": "npm -w @finalizabot/shared run build && npm -w @finalizabot/web run build",
     "build:shared": "npm -w @finalizabot/shared run build",
     "build:web": "npm -w @finalizabot/web run build",
+    "build:vercel": "npm run db:generate && npm run build:shared && npm -w @finalizabot/web run build && node scripts/vercel-fix.mjs",
     "build:etl": "npm -w @finalizabot/etl run build",
     "sync": "npm -w @finalizabot/etl run sync",
     "sync:bridge": "npm -w @finalizabot/etl run bridge",
