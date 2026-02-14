@@ -94,7 +94,9 @@ export async function GET(
 
     return NextResponse.json(
       { match, etlShots },
-      { headers: { "Cache-Control": "s-maxage=120, stale-while-revalidate=60" } },
+      {
+        headers: { "Cache-Control": "s-maxage=120, stale-while-revalidate=60" },
+      },
     );
   } catch (error) {
     logger.error("[/api/matches/:id] fetch failed", error);

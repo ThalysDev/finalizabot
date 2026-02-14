@@ -520,7 +520,7 @@ describe("GET /api/health", () => {
 
   it("hides detailed errors in production when dependencies fail", async () => {
     process.env.NODE_ENV = "production";
-    const queryRaw = vi.fn().mockRejectedValue(new Error("db down"));
+    const queryRaw = vi.fn().mockResolvedValue([{ "?column?": 1 }]);
     const etlHealth = vi
       .fn()
       .mockResolvedValue({ data: null, error: "etl down" });
@@ -535,10 +535,35 @@ describe("GET /api/health", () => {
     const response = await GET();
     const body = (await response.json()) as Record<string, unknown>;
 
+    expect(response.status).toBe(200);
+    expect(body.status).toBe("degraded");
+    expect(body.db).toBe("ok");
+    expect(body.etl).toBe("unavailable");
+    expect(body).not.toHaveProperty("dbError");
+    expect(body).not.toHaveProperty("etlError");
+  });
+
+  it("returns unhealthy when db is unavailable even if etl is available", async () => {
+    process.env.NODE_ENV = "production";
+    const queryRaw = vi.fn().mockRejectedValue(new Error("db down"));
+    const etlHealth = vi
+      .fn()
+      .mockResolvedValue({ data: { ok: true }, error: null });
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { $queryRawUnsafe: queryRaw },
+    }));
+    vi.doMock("@/lib/etl/client", () => ({ etlHealth }));
+    vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
+
+    const { GET } = await import("../src/app/api/health/route");
+    const response = await GET();
+    const body = (await response.json()) as Record<string, unknown>;
+
     expect(response.status).toBe(503);
     expect(body.status).toBe("unhealthy");
     expect(body.db).toBe("unavailable");
-    expect(body.etl).toBe("unavailable");
+    expect(body.etl).toBe("ok");
     expect(body).not.toHaveProperty("dbError");
     expect(body).not.toHaveProperty("etlError");
   });

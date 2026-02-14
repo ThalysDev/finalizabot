@@ -36,12 +36,22 @@ export async function GET() {
     logger.error("[/api/health] etl check failed", err);
   }
 
-  const allOk = dbStatus === "ok" && etlStatus === "ok";
-  const statusCode = allOk ? 200 : 503;
+  const isDbOk = dbStatus === "ok";
+  const isEtlOk = etlStatus === "ok";
+
+  let overallStatus: "healthy" | "degraded" | "unhealthy" = "healthy";
+  let statusCode = 200;
+
+  if (!isDbOk) {
+    overallStatus = "unhealthy";
+    statusCode = 503;
+  } else if (!isEtlOk) {
+    overallStatus = "degraded";
+  }
 
   return NextResponse.json(
     {
-      status: allOk ? "healthy" : "unhealthy",
+      status: overallStatus,
       db: dbStatus,
       etl: etlStatus,
       ...(exposeErrors ? { dbError, etlError } : {}),

@@ -74,6 +74,44 @@ function Test-Warning {
     }
 }
 
+function Invoke-HealthCheck {
+    param([string]$Url)
+
+    $result = [ordered]@{
+        StatusCode = $null
+        Json = $null
+        BodyText = $null
+        IsSsoBlocked = $false
+    }
+
+    try {
+        $response = Invoke-WebRequest -Uri $Url -TimeoutSec 10
+        $result.StatusCode = [int]$response.StatusCode
+        $result.BodyText = $response.Content
+    } catch {
+        if ($_.Exception.Response) {
+            $resp = $_.Exception.Response
+            $result.StatusCode = [int]$resp.StatusCode
+            $setCookie = $resp.Headers["Set-Cookie"]
+            $result.IsSsoBlocked = $result.StatusCode -eq 401 -and $setCookie -match "_vercel_sso_nonce"
+            $reader = New-Object IO.StreamReader($resp.GetResponseStream())
+            $result.BodyText = $reader.ReadToEnd()
+        } else {
+            throw
+        }
+    }
+
+    if ($result.BodyText) {
+        try {
+            $result.Json = $result.BodyText | ConvertFrom-Json
+        } catch {
+            $result.Json = $null
+        }
+    }
+
+    return [pscustomobject]$result
+}
+
 Write-Header "FinalizaBOT - Post-deploy verification"
 
 Write-Host "[1/6] Checking files and code..." -ForegroundColor Yellow
@@ -148,16 +186,25 @@ if ($Detailed) {
     }
 
     $null = Test-Check "Health endpoint responds" {
-        try {
-            $response = Invoke-WebRequest -Uri "$DeployUrl/api/health" -TimeoutSec 10
-            $response.StatusCode -ge 200 -and $response.StatusCode -lt 500
-        } catch {
-            if ($_.Exception.Response) {
-                $code = [int]$_.Exception.Response.StatusCode
-                return ($code -ge 200 -and $code -lt 500)
-            }
-            return $false
+        $health = Invoke-HealthCheck -Url "$DeployUrl/api/health"
+
+        if ($health.IsSsoBlocked) {
+            throw "Health endpoint blocked by Vercel Deployment Protection (SSO). Disable protection or use an authenticated/bypass check."
         }
+
+        if ($health.StatusCode -eq 200) {
+            return $true
+        }
+
+        if ($health.StatusCode -eq 503 -and $health.Json -and $health.Json.status -eq "degraded" -and $health.Json.db -eq "ok") {
+            throw "Health returned 503 with degraded/db=ok. This indicates legacy health semantics are still deployed. Publish the latest web build that maps degraded to HTTP 200."
+        }
+
+        if ($health.Json -and $health.Json.status) {
+            throw "Health returned HTTP $($health.StatusCode) with status=$($health.Json.status), db=$($health.Json.db), etl=$($health.Json.etl)."
+        }
+
+        throw "Health returned HTTP $($health.StatusCode)."
     }
 } else {
     Write-Host "  [SKIP] Use -Detailed to run remote checks." -ForegroundColor DarkGray
