@@ -59,7 +59,9 @@ describe("checkRateLimit()", () => {
 
 describe("validateId()", () => {
   it("accepts CUID format", () => {
-    expect(validateId("clx1234567890abcdefghijklm")).toBe("clx1234567890abcdefghijklm");
+    expect(validateId("clx1234567890abcdefghijklm")).toBe(
+      "clx1234567890abcdefghijklm",
+    );
   });
 
   it("accepts numeric IDs", () => {

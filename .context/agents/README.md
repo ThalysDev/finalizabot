@@ -3,6 +3,7 @@
 This directory contains ready-to-customize playbooks for AI agents collaborating on the repository.
 
 ## Available Agents
+
 - [Code Reviewer](./code-reviewer.md) — Review code changes for quality, style, and best practices
 - [Bug Fixer](./bug-fixer.md) — Analyze bug reports and error messages
 - [Feature Developer](./feature-developer.md) — Implement new features according to specifications
@@ -19,12 +20,14 @@ This directory contains ready-to-customize playbooks for AI agents collaborating
 - [Mobile Specialist](./mobile-specialist.md) — Develop native and cross-platform mobile applications
 
 ## How To Use These Playbooks
+
 1. Pick the agent that matches your task.
 2. Enrich the template with project-specific context or links.
 3. Share the final prompt with your AI assistant.
 4. Capture learnings in the relevant documentation file so future runs improve.
 
 ## Related Resources
+
 - [Documentation Index](../docs/README.md)
 - [Handoff Técnico Atual (2026-02-14)](../docs/handoff-2026-02-14.md)
 - [Agent Knowledge Base](../../AGENTS.md)
