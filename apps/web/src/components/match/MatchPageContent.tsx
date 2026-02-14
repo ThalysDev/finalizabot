@@ -114,7 +114,7 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
             className="inline-flex items-center gap-1.5 text-fb-text-muted hover:text-fb-text text-sm transition-colors"
           >
             <ArrowLeft className="size-4" />
-            Voltar ao Painel
+            Voltar ao painel
           </Link>
         </div>
 

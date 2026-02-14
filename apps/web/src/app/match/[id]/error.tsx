@@ -38,7 +38,7 @@ export default function MatchError({
             className="w-full py-2.5 rounded-xl border border-fb-border text-fb-text-secondary font-medium text-sm hover:bg-fb-surface transition-colors flex items-center justify-center gap-2"
           >
             <ArrowLeft className="size-4" />
-            Voltar ao Painel
+            Voltar ao painel
           </Link>
         </div>
       </div>

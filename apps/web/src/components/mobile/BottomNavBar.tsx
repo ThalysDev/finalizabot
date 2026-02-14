@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Trophy, Bell, Activity, Crown } from "lucide-react";
 
 const tabs = [
-  { href: "/dashboard", label: "Início", icon: LayoutDashboard, soon: false },
+  { href: "/dashboard", label: "Painel", icon: LayoutDashboard, soon: false },
   { href: "/dashboard/table", label: "Tabela", icon: Trophy, soon: false },
   { href: "/live", label: "Ao Vivo", icon: Activity, soon: true },
   { href: "/alerts", label: "Alertas", icon: Bell, soon: false },

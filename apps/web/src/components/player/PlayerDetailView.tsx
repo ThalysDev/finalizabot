@@ -283,7 +283,7 @@ export function PlayerDetailView({
           href="/dashboard"
           className="hover:text-fb-primary transition-colors"
         >
-          Início
+          Painel
         </Link>
         <ChevronRight className="size-3.5" />
         {player.nextMatch?.competition && (
