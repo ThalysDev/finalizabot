@@ -151,6 +151,7 @@ model User {
   favorites     UserFavorite[]
   alertSettings AlertSettings?
   dashboardPreference DashboardPreference?
+  proTablePreference ProTablePreference?
 
   @@schema("public")
 }
@@ -213,6 +214,23 @@ model AlertSettings {
   leagues      String[] @default(["Premier League", "La Liga", "Champions League"])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+model ProTablePreference {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  positionFilter String   @default("Todos")
+  sortKey        String   @default("ev")
+  sortDir        String   @default("desc")
+  minMatches     Int      @default(0)
+  minEv          Int      @default(0)
+  searchQuery    String   @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

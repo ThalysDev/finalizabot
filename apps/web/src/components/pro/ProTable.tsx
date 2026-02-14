@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import type { ProPlayerRow } from "@/data/types";
 
@@ -24,9 +24,122 @@ const positionFilters = [
 ];
 
 export function ProTable({ players }: { players: ProPlayerRow[] }) {
+  const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [sortKey, setSortKey] = useState<string | null>("ev");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [posFilter, setPosFilter] = useState("Todos");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [minMatches, setMinMatches] = useState(0);
+  const [minEv, setMinEv] = useState(0);
+  const [serverPrefsEnabled, setServerPrefsEnabled] = useState(false);
+  const [serverPrefsLoaded, setServerPrefsLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPreferences() {
+      try {
+        const response = await fetch("/api/user/pro-preferences", {
+          method: "GET",
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          if (!cancelled) setServerPrefsEnabled(false);
+          return;
+        }
+
+        if (!response.ok) {
+          if (!cancelled) setServerPrefsEnabled(false);
+          return;
+        }
+
+        const payload = (await response.json()) as {
+          positionFilter?: string;
+          sortKey?: string;
+          sortDir?: "asc" | "desc";
+          minMatches?: number;
+          minEv?: number;
+          searchQuery?: string;
+        };
+
+        if (cancelled) return;
+
+        if (typeof payload.positionFilter === "string") {
+          setPosFilter(payload.positionFilter);
+        }
+        if (typeof payload.sortKey === "string") {
+          setSortKey(payload.sortKey);
+        }
+        if (payload.sortDir === "asc" || payload.sortDir === "desc") {
+          setSortDir(payload.sortDir);
+        }
+        if (typeof payload.minMatches === "number") {
+          setMinMatches(payload.minMatches);
+        }
+        if (typeof payload.minEv === "number") {
+          setMinEv(payload.minEv);
+        }
+        if (typeof payload.searchQuery === "string") {
+          setSearchQuery(payload.searchQuery);
+        }
+
+        setServerPrefsEnabled(true);
+      } catch {
+        if (!cancelled) setServerPrefsEnabled(false);
+      } finally {
+        if (!cancelled) setServerPrefsLoaded(true);
+      }
+    }
+
+    loadPreferences();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!serverPrefsEnabled || !serverPrefsLoaded) return;
+
+    if (saveDebounceRef.current) {
+      clearTimeout(saveDebounceRef.current);
+    }
+
+    saveDebounceRef.current = setTimeout(() => {
+      void fetch("/api/user/pro-preferences", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          positionFilter: posFilter,
+          sortKey: sortKey ?? "ev",
+          sortDir,
+          minMatches,
+          minEv,
+          searchQuery,
+        }),
+      });
+    }, 600);
+
+    return () => {
+      if (saveDebounceRef.current) {
+        clearTimeout(saveDebounceRef.current);
+      }
+    };
+  }, [
+    posFilter,
+    sortKey,
+    sortDir,
+    minMatches,
+    minEv,
+    searchQuery,
+    serverPrefsEnabled,
+    serverPrefsLoaded,
+  ]);
 
   const toggleSort = (key: string) => {
     if (sortKey === key) {
@@ -39,8 +152,18 @@ export function ProTable({ players }: { players: ProPlayerRow[] }) {
 
   // Filter by position
   const filtered = useMemo(() => {
-    if (posFilter === "Todos") return players;
     return players.filter((p) => {
+      if (p.matches < minMatches) return false;
+      if (p.ev < minEv) return false;
+
+      const term = searchQuery.trim().toLowerCase();
+      if (term) {
+        const haystack = `${p.name} ${p.team}`.toLowerCase();
+        if (!haystack.includes(term)) return false;
+      }
+
+      if (posFilter === "Todos") return true;
+
       const pos = p.pos.toLowerCase();
       switch (posFilter) {
         case "Atacante":
@@ -90,7 +213,7 @@ export function ProTable({ players }: { players: ProPlayerRow[] }) {
           return true;
       }
     });
-  }, [players, posFilter]);
+  }, [players, posFilter, minMatches, minEv, searchQuery]);
 
   // Sort by selected column
   const sorted = useMemo(() => {
@@ -117,6 +240,14 @@ export function ProTable({ players }: { players: ProPlayerRow[] }) {
   return (
     <>
       <div className="px-5 py-3 border-y border-fb-border bg-fb-surface/50 flex flex-wrap gap-3 items-center">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Buscar jogador/time"
+          className="px-3 py-1.5 rounded-lg text-xs bg-fb-surface border border-fb-border text-fb-text placeholder:text-fb-text-muted w-48"
+        />
+
         <div className="flex gap-2">
           {positionFilters.map((p) => (
             <button
@@ -132,6 +263,51 @@ export function ProTable({ players }: { players: ProPlayerRow[] }) {
             </button>
           ))}
         </div>
+
+        <label className="flex items-center gap-2 text-xs text-fb-text-secondary">
+          Min jogos
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={minMatches}
+            onChange={(e) =>
+              setMinMatches(Math.max(0, Number(e.target.value) || 0))
+            }
+            className="w-16 px-2 py-1 rounded bg-fb-surface border border-fb-border text-fb-text"
+          />
+        </label>
+
+        <label className="flex items-center gap-2 text-xs text-fb-text-secondary">
+          Min EV
+          <input
+            type="number"
+            min={-100}
+            max={100}
+            value={minEv}
+            onChange={(e) =>
+              setMinEv(
+                Math.max(-100, Math.min(100, Number(e.target.value) || 0)),
+              )
+            }
+            className="w-16 px-2 py-1 rounded bg-fb-surface border border-fb-border text-fb-text"
+          />
+        </label>
+
+        <button
+          onClick={() => {
+            setPosFilter("Todos");
+            setSortKey("ev");
+            setSortDir("desc");
+            setMinMatches(0);
+            setMinEv(0);
+            setSearchQuery("");
+          }}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-fb-surface text-fb-text-secondary hover:text-fb-text border border-fb-border"
+        >
+          Limpar
+        </button>
+
         <div className="ml-auto text-sm text-fb-text-muted">
           Exibindo {sorted.length} jogadores
         </div>

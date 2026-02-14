@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth, currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/db/prisma";
+import { resolveOrCreateAppUserId } from "@/lib/auth/resolveAppUserId";
 
 type ViewMode = "grid" | "list";
 type DayFilter = "all" | "today" | "tomorrow";
@@ -18,42 +18,6 @@ const DEFAULT_PREFERENCES: DashboardPreferencePayload = {
   searchQuery: "",
   view: "grid",
 };
-
-async function resolveOrCreateUserId(): Promise<string | null> {
-  const { userId } = await auth();
-  if (!userId) return null;
-
-  const existing = await prisma.user.findUnique({
-    where: { clerkId: userId },
-    select: { id: true },
-  });
-  if (existing) return existing.id;
-
-  const clerkUser = await currentUser();
-  const email = clerkUser?.emailAddresses?.[0]?.emailAddress?.trim();
-  if (!email) return null;
-
-  const fullName = [clerkUser?.firstName, clerkUser?.lastName]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
-
-  const created = await prisma.user.upsert({
-    where: { clerkId: userId },
-    update: {
-      email,
-      name: fullName || undefined,
-    },
-    create: {
-      clerkId: userId,
-      email,
-      name: fullName || null,
-    },
-    select: { id: true },
-  });
-
-  return created.id;
-}
 
 function sanitizePayload(input: unknown): DashboardPreferencePayload {
   const data = (input ?? {}) as Partial<DashboardPreferencePayload>;
@@ -80,7 +44,7 @@ function sanitizePayload(input: unknown): DashboardPreferencePayload {
 }
 
 export async function GET() {
-  const appUserId = await resolveOrCreateUserId();
+  const appUserId = await resolveOrCreateAppUserId();
   if (!appUserId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -139,7 +103,7 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const appUserId = await resolveOrCreateUserId();
+  const appUserId = await resolveOrCreateAppUserId();
   if (!appUserId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

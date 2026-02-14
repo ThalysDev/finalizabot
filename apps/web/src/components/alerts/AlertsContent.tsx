@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Diamond,
   Radio,
@@ -32,10 +32,20 @@ interface AlertsContentProps {
   alerts: AlertData[];
 }
 
+interface AlertSettingsPayload {
+  minRoi: number;
+  maxCv: number;
+  pushEnabled: boolean;
+  emailEnabled: boolean;
+  silentMode: boolean;
+  leagues: string[];
+}
+
 /* ============================================================================
    COMPONENT
    ============================================================================ */
 export function AlertsContent({ alerts }: AlertsContentProps) {
+  const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [minROI, setMinROI] = useState(0);
   const [maxCV, setMaxCV] = useState(1.0);
   const [selectedLeagues, setSelectedLeagues] = useState<Set<string>>(
@@ -45,6 +55,113 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
   const [emailEnabled, setEmailEnabled] = useState(false);
   const [silentMode, setSilentMode] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [serverSettingsEnabled, setServerSettingsEnabled] = useState(false);
+  const [serverSettingsLoaded, setServerSettingsLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSettings() {
+      try {
+        const response = await fetch("/api/user/alert-settings", {
+          method: "GET",
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          if (!cancelled) setServerSettingsEnabled(false);
+          return;
+        }
+
+        if (!response.ok) {
+          if (!cancelled) setServerSettingsEnabled(false);
+          return;
+        }
+
+        const payload =
+          (await response.json()) as Partial<AlertSettingsPayload>;
+        if (cancelled) return;
+
+        if (typeof payload.minRoi === "number") setMinROI(payload.minRoi);
+        if (typeof payload.maxCv === "number") setMaxCV(payload.maxCv);
+        if (typeof payload.pushEnabled === "boolean") {
+          setPushEnabled(payload.pushEnabled);
+        }
+        if (typeof payload.emailEnabled === "boolean") {
+          setEmailEnabled(payload.emailEnabled);
+        }
+        if (typeof payload.silentMode === "boolean") {
+          setSilentMode(payload.silentMode);
+        }
+        if (Array.isArray(payload.leagues)) {
+          const safeLeagues = payload.leagues.filter((league) =>
+            ALL_LEAGUES.includes(league),
+          );
+          setSelectedLeagues(
+            safeLeagues.length > 0
+              ? new Set(safeLeagues)
+              : new Set(ALL_LEAGUES),
+          );
+        }
+
+        setServerSettingsEnabled(true);
+      } catch {
+        if (!cancelled) setServerSettingsEnabled(false);
+      } finally {
+        if (!cancelled) setServerSettingsLoaded(true);
+      }
+    }
+
+    loadSettings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!serverSettingsEnabled || !serverSettingsLoaded) return;
+
+    if (saveDebounceRef.current) {
+      clearTimeout(saveDebounceRef.current);
+    }
+
+    const payload: AlertSettingsPayload = {
+      minRoi: minROI,
+      maxCv: maxCV,
+      pushEnabled,
+      emailEnabled,
+      silentMode,
+      leagues: Array.from(selectedLeagues),
+    };
+
+    saveDebounceRef.current = setTimeout(() => {
+      void fetch("/api/user/alert-settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    }, 600);
+
+    return () => {
+      if (saveDebounceRef.current) {
+        clearTimeout(saveDebounceRef.current);
+      }
+    };
+  }, [
+    minROI,
+    maxCV,
+    pushEnabled,
+    emailEnabled,
+    silentMode,
+    selectedLeagues,
+    serverSettingsEnabled,
+    serverSettingsLoaded,
+  ]);
 
   function toggleLeague(league: string) {
     setSelectedLeagues((prev) => {
@@ -175,9 +292,11 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
       <div className="mb-5">
         <label className="text-[10px] text-fb-text-muted uppercase tracking-wider font-medium block mb-3">
           Notificações
-          <span className="ml-1 text-[9px] text-fb-accent-gold font-normal normal-case">(em breve)</span>
+          <span className="ml-1 text-[9px] text-fb-accent-gold font-normal normal-case">
+            (em breve)
+          </span>
         </label>
-        <div className="space-y-2 opacity-50 pointer-events-none">
+        <div className="space-y-2">
           <NotifToggle
             icon={Bell}
             label="Notificações Push"
