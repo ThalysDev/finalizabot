@@ -646,3 +646,33 @@ select:focus-visible,
 .table-scroll-hint.scrolled-end::after {
   opacity: 0;
 }
+
+/* ============================================================================
+   ACCESSIBILITY — reduced motion
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-scale-in,
+  .animate-slide-right,
+  .animate-shimmer,
+  .animate-pulse-fast,
+  .animate-flash-green,
+  .animate-value-glow,
+  .animate-gold-glow,
+  .animate-blue-glow,
+  .animate-bar-grow,
+  .animate-count {
+    animation: none !important;
+    transform: none !important;
+  }
+}

@@ -217,7 +217,7 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
             value={minROI}
             onChange={(e) => setMinROI(Number(e.target.value))}
             aria-label="EV mínimo"
-            className="flex-1 accent-[#f2cc0d] h-1"
+            className="flex-1 accent-fb-primary h-1"
           />
           <span className="text-fb-text text-xs">30%</span>
         </div>
@@ -238,7 +238,7 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
             value={maxCV}
             onChange={(e) => setMaxCV(Number(e.target.value))}
             aria-label="CV máximo"
-            className="flex-1 accent-[#f2cc0d] h-1"
+            className="flex-1 accent-fb-primary h-1"
           />
           <span className="text-fb-text text-xs">1.0</span>
         </div>
@@ -256,6 +256,7 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
               className="flex items-center gap-2 cursor-pointer group"
             >
               <button
+                type="button"
                 onClick={() => toggleLeague(league)}
                 className={`size-4 rounded border transition-colors flex items-center justify-center ${
                   selectedLeagues.has(league)
@@ -330,15 +331,16 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
 
         {/* Mobile filter sheet */}
         {mobileFiltersOpen && (
-          <div className="fixed inset-0 z-50 md:hidden">
+          <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Filtros de alertas">
             <div
               className="absolute inset-0 bg-black/60"
               onClick={() => setMobileFiltersOpen(false)}
             />
-            <div className="absolute bottom-0 left-0 right-0 bg-fb-bg rounded-t-2xl max-h-[80vh] overflow-y-auto p-5">
+            <div id="alerts-mobile-filters" className="absolute bottom-0 left-0 right-0 bg-fb-bg rounded-t-2xl max-h-[80vh] overflow-y-auto p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-fb-text font-semibold">Filtros</h3>
                 <button
+                  type="button"
                   onClick={() => setMobileFiltersOpen(false)}
                   className="text-fb-text-muted hover:text-fb-text"
                   aria-label="Fechar filtros"
@@ -373,8 +375,11 @@ export function AlertsContent({ alerts }: AlertsContentProps) {
               </p>
             </div>
             <button
+              type="button"
               onClick={() => setMobileFiltersOpen(true)}
               className="md:hidden flex items-center gap-2 px-3 py-2 bg-fb-surface rounded-lg text-fb-text-secondary text-xs"
+              aria-expanded={mobileFiltersOpen}
+              aria-controls="alerts-mobile-filters"
             >
               <SlidersHorizontal className="size-4" />
               Filtros
@@ -427,6 +432,7 @@ function NotifToggle({
 }) {
   return (
     <button
+      type="button"
       onClick={() => onChange(!checked)}
       className="flex items-center justify-between w-full"
       role="switch"

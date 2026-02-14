@@ -132,6 +132,7 @@ export function AdvancedTableClient({ players }: AdvancedTableClientProps) {
     <DataTable
       columns={columns}
       data={players}
+      rowKey={(row, index) => `${row.player}-${row.team}-${row.position}-${index}`}
       searchPlaceholder="Buscar jogador por nome..."
       filterTabs={[{ label: "Todos", value: "all" }]}
       activeFilter="all"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ChevronUp,
   ChevronDown,
@@ -27,6 +27,7 @@ export interface Column<T> {
 export interface DataTableProps<T> {
   columns: Column<T>[];
   data: T[];
+  rowKey?: (row: T, index: number) => string;
   searchable?: boolean;
   searchPlaceholder?: string;
   pageSize?: number;
@@ -43,6 +44,7 @@ export interface DataTableProps<T> {
 export function DataTable<T extends Record<string, unknown>>({
   columns,
   data,
+  rowKey,
   searchable = true,
   searchPlaceholder = "Buscar jogador...",
   pageSize = 10,
@@ -57,50 +59,56 @@ export function DataTable<T extends Record<string, unknown>>({
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(0);
 
-  // Search filter
-  const filtered = data.filter((row) => {
-    if (!search) return true;
+  const filtered = useMemo(() => {
+    if (!search) return data;
     const term = search.toLowerCase();
-    return Object.values(row).some((val) => {
-      // Buscar em strings
-      if (typeof val === "string") {
-        return val.toLowerCase().includes(term);
-      }
-      // Buscar em números convertendo para string
-      if (typeof val === "number") {
-        return val.toString().includes(term);
-      }
-      return false;
+    return data.filter((row) => {
+      return Object.values(row).some((val) => {
+        if (typeof val === "string") {
+          return val.toLowerCase().includes(term);
+        }
+        if (typeof val === "number") {
+          return val.toString().includes(term);
+        }
+        return false;
+      });
     });
-  });
+  }, [data, search]);
 
-  // Sort
-  const sorted = [...filtered].sort((a, b) => {
-    if (!sortKey) return 0;
-    const aVal = a[sortKey];
-    const bVal = b[sortKey];
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      if (!sortKey) return 0;
+      const aVal = a[sortKey];
+      const bVal = b[sortKey];
 
-    // Tratar null/undefined (nulls vão para o final)
-    if (aVal == null && bVal == null) return 0;
-    if (aVal == null) return 1;
-    if (bVal == null) return -1;
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
 
-    // Comparação type-safe
-    if (typeof aVal === "number" && typeof bVal === "number") {
-      const cmp = aVal - bVal;
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        const cmp = aVal - bVal;
+        return sortDir === "asc" ? cmp : -cmp;
+      }
+
+      const aStr = String(aVal);
+      const bStr = String(bVal);
+      const cmp = aStr.localeCompare(bStr, undefined, { numeric: true });
       return sortDir === "asc" ? cmp : -cmp;
-    }
+    });
+  }, [filtered, sortKey, sortDir]);
 
-    // Fallback para string comparison (com suporte a numeric strings)
-    const aStr = String(aVal);
-    const bStr = String(bVal);
-    const cmp = aStr.localeCompare(bStr, undefined, { numeric: true });
-    return sortDir === "asc" ? cmp : -cmp;
-  });
-
-  // Paginate
   const totalPages = Math.ceil(sorted.length / pageSize);
-  const paginated = sorted.slice(page * pageSize, (page + 1) * pageSize);
+  const paginated = useMemo(
+    () => sorted.slice(page * pageSize, (page + 1) * pageSize),
+    [sorted, page, pageSize],
+  );
+
+  const visiblePages = useMemo(() => {
+    return Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+      const p = page < 3 ? i : page - 2 + i;
+      return p >= totalPages ? null : p;
+    }).filter((p): p is number => p !== null);
+  }, [totalPages, page]);
 
   function handleSort(key: string) {
     if (sortKey === key) {
@@ -110,6 +118,20 @@ export function DataTable<T extends Record<string, unknown>>({
       setSortDir("desc");
     }
     setPage(0);
+  }
+
+  function buildFallbackRowKey(row: T, absoluteIndex: number): string {
+    const rowId = row["id"];
+    if (typeof rowId === "string" || typeof rowId === "number") {
+      return String(rowId);
+    }
+
+    const rowName = row["name"];
+    const rowPlayer = row["player"];
+    if (typeof rowName === "string") return `${rowName}-${absoluteIndex}`;
+    if (typeof rowPlayer === "string") return `${rowPlayer}-${absoluteIndex}`;
+
+    return String(absoluteIndex);
   }
 
   return (
@@ -138,6 +160,7 @@ export function DataTable<T extends Record<string, unknown>>({
             {filterTabs.map((tab) => (
               <button
                 key={tab.value}
+                type="button"
                 onClick={() => onFilterChange?.(tab.value)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
                   activeFilter === tab.value
@@ -160,6 +183,13 @@ export function DataTable<T extends Record<string, unknown>>({
               {columns.map((col) => (
                 <th
                   key={col.key}
+                  aria-sort={
+                    !col.sortable || sortKey !== col.key
+                      ? "none"
+                      : sortDir === "asc"
+                        ? "ascending"
+                        : "descending"
+                  }
                   className={`px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-fb-text-muted whitespace-nowrap ${
                     col.align === "center"
                       ? "text-center"
@@ -171,6 +201,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 >
                   {col.sortable ? (
                     <button
+                      type="button"
                       className="inline-flex items-center gap-1 hover:text-fb-text transition-colors"
                       onClick={() => handleSort(col.key)}
                     >
@@ -214,6 +245,7 @@ export function DataTable<T extends Record<string, unknown>>({
                         Nenhum resultado para &quot;{search}&quot;
                       </p>
                       <button
+                        type="button"
                         onClick={() => setSearch("")}
                         className="text-fb-primary text-xs hover:underline"
                       >
@@ -228,7 +260,11 @@ export function DataTable<T extends Record<string, unknown>>({
             ) : (
               paginated.map((row, idx) => (
                 <tr
-                  key={idx}
+                  key={
+                    rowKey
+                      ? rowKey(row, page * pageSize + idx)
+                      : buildFallbackRowKey(row, page * pageSize + idx)
+                  }
                   className="border-b border-fb-border/50 hover:bg-fb-surface/50 transition-colors"
                 >
                   {columns.map((col) => (
@@ -263,30 +299,29 @@ export function DataTable<T extends Record<string, unknown>>({
           </p>
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => setPage(Math.max(0, page - 1))}
               disabled={page === 0}
               className="p-1.5 rounded-lg bg-fb-surface text-fb-text-secondary hover:text-fb-text disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft className="size-4" />
             </button>
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-              const p = page < 3 ? i : page - 2 + i;
-              if (p >= totalPages) return null;
-              return (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  className={`size-8 rounded-lg text-xs font-medium transition-colors ${
-                    p === page
-                      ? "bg-fb-primary text-fb-primary-content"
-                      : "bg-fb-surface text-fb-text-secondary hover:text-fb-text"
-                  }`}
-                >
-                  {p + 1}
-                </button>
-              );
-            })}
+            {visiblePages.map((p) => (
+              <button
+                type="button"
+                key={p}
+                onClick={() => setPage(p)}
+                className={`size-8 rounded-lg text-xs font-medium transition-colors ${
+                  p === page
+                    ? "bg-fb-primary text-fb-primary-content"
+                    : "bg-fb-surface text-fb-text-secondary hover:text-fb-text"
+                }`}
+              >
+                {p + 1}
+              </button>
+            ))}
             <button
+              type="button"
               onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
               disabled={page === totalPages - 1}
               className="p-1.5 rounded-lg bg-fb-surface text-fb-text-secondary hover:text-fb-text disabled:opacity-30 disabled:cursor-not-allowed transition-colors"

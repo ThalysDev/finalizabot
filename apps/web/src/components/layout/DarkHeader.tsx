@@ -77,6 +77,12 @@ export function DarkHeader() {
     debounceRef.current = setTimeout(() => doSearch(value), 300);
   }
 
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
   function handleResultClick() {
     setSearchQuery("");
     setSearchResults([]);
@@ -190,7 +196,10 @@ export function DarkHeader() {
         {/* Auth */}
         <SignedOut>
           <SignInButton mode="modal">
-            <button className="px-4 py-2 text-sm font-medium text-fb-text border border-fb-border rounded-lg hover:bg-fb-surface transition-colors">
+            <button
+              type="button"
+              className="px-4 py-2 text-sm font-medium text-fb-text border border-fb-border rounded-lg hover:bg-fb-surface transition-colors"
+            >
               Entrar
             </button>
           </SignInButton>
@@ -208,9 +217,12 @@ export function DarkHeader() {
 
         {/* Mobile menu toggle */}
         <button
+          type="button"
           className="md:hidden text-fb-text-secondary hover:text-fb-text"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
+          aria-expanded={mobileOpen}
+          aria-controls="dark-header-mobile-nav"
         >
           {mobileOpen ? <X className="size-6" /> : <Menu className="size-6" />}
         </button>
@@ -218,7 +230,7 @@ export function DarkHeader() {
 
       {/* Mobile nav dropdown */}
       {mobileOpen && (
-        <div className="absolute top-full left-0 right-0 bg-fb-bg border-b border-fb-border p-4 md:hidden z-50">
+        <div id="dark-header-mobile-nav" className="absolute top-full left-0 right-0 bg-fb-bg border-b border-fb-border p-4 md:hidden z-50">
           <nav className="flex flex-col gap-3">
             {navLinks.map((link) => {
               const Icon = link.icon;
