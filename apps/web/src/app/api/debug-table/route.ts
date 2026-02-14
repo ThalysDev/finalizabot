@@ -4,6 +4,8 @@ import { batchEnrichPlayers } from "@/lib/etl/enricher";
 import type { EtlEnrichResult } from "@/lib/etl/enricher";
 import { DEFAULT_LINE } from "@/lib/etl/config";
 import { formatDateTime } from "@/lib/format/date";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { normalizeDebugTableQueryParams } from "@/lib/api/query-params";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +37,15 @@ function toSafeError(err: unknown, includeDetails: boolean) {
 export async function GET(request: Request) {
   console.log("[DEBUG TABLE] Starting...");
 
+  const ip = getClientIp(request);
+  const rl = checkRateLimit(`debug-table:${ip}`, { limit: 10, windowSec: 60 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { success: false, error: { message: "Too many requests" } },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+    );
+  }
+
   if (isProduction && !allowDebugInProd) {
     return NextResponse.json(
       { success: false, error: { message: "Not found" } },
@@ -53,7 +64,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const line = DEFAULT_LINE;
+    const { searchParams } = new URL(request.url);
+    const debugParams = normalizeDebugTableQueryParams(searchParams);
+    const line = Number.isFinite(DEFAULT_LINE) ? debugParams.line : 1.5;
     console.log("[DEBUG TABLE] Using line:", line);
 
     // Fetch players and upcoming match
@@ -75,9 +88,9 @@ export async function GET(request: Request) {
 
     // Sort by count and take top 50
     const topPlayers = playersWithCount
-      .filter((p) => p._count.matchStats >= 5)
+      .filter((p) => p._count.matchStats >= debugParams.minMatches)
       .sort((a, b) => b._count.matchStats - a._count.matchStats)
-      .slice(0, 50);
+      .slice(0, debugParams.limit);
 
     console.log("[DEBUG TABLE] Top player IDs:", topPlayers.length);
 
@@ -186,6 +199,8 @@ export async function GET(request: Request) {
         oddsCount: oddsMap.size,
         statsCount: allStats.length,
         line,
+        minMatches: debugParams.minMatches,
+        limit: debugParams.limit,
       },
       errors: {
         etlError,

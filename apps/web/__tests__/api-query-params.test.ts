@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  normalizeDebugTableQueryParams,
   normalizeMatchesQueryParams,
   normalizePlayerShotsDateRangeQueryParams,
   normalizeSearchQueryParams,
@@ -84,5 +85,47 @@ describe("normalizePlayerShotsDateRangeQueryParams()", () => {
 
     expect(result.from).toBe("2026-02-10T00:00:00.000Z");
     expect(result.to).toBe("2026-02-15T00:00:00.000Z");
+  });
+});
+
+describe("normalizeDebugTableQueryParams()", () => {
+  it("uses defaults when params are absent", () => {
+    const result = normalizeDebugTableQueryParams(new URLSearchParams());
+
+    expect(result).toEqual({
+      line: 1.5,
+      minMatches: 5,
+      limit: 50,
+    });
+  });
+
+  it("clamps out-of-range values", () => {
+    const result = normalizeDebugTableQueryParams(
+      new URLSearchParams({
+        line: "99",
+        minMatches: "0",
+        limit: "999",
+      }),
+    );
+
+    expect(result.line).toBe(10);
+    expect(result.minMatches).toBe(1);
+    expect(result.limit).toBe(200);
+  });
+
+  it("falls back on invalid values", () => {
+    const result = normalizeDebugTableQueryParams(
+      new URLSearchParams({
+        line: "abc",
+        minMatches: "NaN",
+        limit: "Infinity",
+      }),
+    );
+
+    expect(result).toEqual({
+      line: 1.5,
+      minMatches: 5,
+      limit: 50,
+    });
   });
 });
