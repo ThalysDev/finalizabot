@@ -16,6 +16,7 @@ import {
 import { calcCV } from "@finalizabot/shared/calc";
 import { PlayerHeroCard } from "./PlayerHeroCard";
 import { MatchHistoryTable } from "./MatchHistoryTable";
+import { NAV_COPY } from "@/lib/copy/navigation";
 
 const ShotBarChart = dynamic(
   () =>
@@ -283,7 +284,7 @@ export function PlayerDetailView({
           href="/dashboard"
           className="hover:text-fb-primary transition-colors"
         >
-          Painel
+          {NAV_COPY.dashboard}
         </Link>
         <ChevronRight className="size-3.5" />
         {player.nextMatch?.competition && (

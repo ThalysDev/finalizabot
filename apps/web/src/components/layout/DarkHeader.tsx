@@ -17,9 +17,10 @@ import {
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { LastSyncBadge } from "@/components/layout/LastSyncBadge";
+import { NAV_COPY, STATE_COPY } from "@/lib/copy/navigation";
 
 const navLinks = [
-  { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
+  { href: "/dashboard", label: NAV_COPY.dashboard, icon: LayoutDashboard },
   { href: "/dashboard/table", label: "Tabela Avançada", icon: BarChart3 },
   { href: "/live", label: "Ao Vivo", icon: Activity, comingSoon: true },
   { href: "/alerts", label: "Alertas", icon: Bell },
@@ -39,7 +40,7 @@ function HeaderSearchEmptyState({ className }: { className: string }) {
         <SearchX className="size-4 text-fb-text-muted" />
       </div>
       <p className="text-xs text-fb-text-muted text-center">
-        Nenhum jogador encontrado
+        {STATE_COPY.noPlayerFound}
       </p>
     </div>
   );

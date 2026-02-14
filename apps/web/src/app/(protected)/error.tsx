@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { NAV_COPY } from "@/lib/copy/navigation";
 import { logger } from "@/lib/logger";
 
 /**
@@ -32,7 +33,7 @@ export default function ProtectedError({
       onRetry={reset}
       secondaryAction={{
         href: "/dashboard",
-        label: "Voltar ao painel",
+        label: NAV_COPY.backToDashboard,
       }}
     />
   );

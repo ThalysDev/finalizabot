@@ -1,4 +1,5 @@
 import { NotFoundState } from "@/components/ui/NotFoundState";
+import { NAV_COPY, STATE_COPY } from "@/lib/copy/navigation";
 
 /**
  * 404 para rotas protegidas.
@@ -7,10 +8,10 @@ import { NotFoundState } from "@/components/ui/NotFoundState";
 export default function ProtectedNotFound() {
   return (
     <NotFoundState
-      description="A página que você procura não existe ou foi movida. Verifique a URL ou volte para o painel."
+      description={STATE_COPY.protectedNotFoundDescription}
       primaryAction={{
         href: "/dashboard",
-        label: "Ir para o painel",
+        label: NAV_COPY.goToDashboard,
         icon: "home",
       }}
       showBackAction

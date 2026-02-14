@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { NAV_COPY } from "@/lib/copy/navigation";
 import { logger } from "@/lib/logger";
 
 /**
@@ -59,7 +60,7 @@ export default function GlobalError({
                 className="flex items-center gap-2 px-6 py-3 bg-fb-surface border border-fb-border text-fb-text font-medium text-sm rounded-lg hover:bg-fb-surface-lighter transition-colors"
               >
                 <Home className="size-4" />
-                Voltar ao início
+                {NAV_COPY.backToHome}
               </Link>
             </div>
           </div>

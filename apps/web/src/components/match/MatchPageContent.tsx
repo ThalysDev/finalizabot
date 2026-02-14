@@ -12,6 +12,7 @@ import {
 import { SafeImage } from "@/components/ui/SafeImage";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { formatLine } from "@/lib/helpers";
+import { NAV_COPY } from "@/lib/copy/navigation";
 import type { PlayerCardData } from "@/data/types";
 
 /* ============================================================================
@@ -53,9 +54,36 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
     // Position filter
     if (posFilter !== "all") {
       const posMap: Record<string, string[]> = {
-        forward: ["atacante", "forward", "fw", "ponta", "centroavante", "ponta-direita", "ponta-esquerda", "segundo atacante"],
-        midfielder: ["meia", "midfielder", "mf", "meio-campo", "meio-campista", "volante", "meia-atacante", "armador"],
-        defender: ["zagueiro", "defender", "df", "lateral", "lateral-direito", "lateral-esquerdo", "ala", "líbero"],
+        forward: [
+          "atacante",
+          "forward",
+          "fw",
+          "ponta",
+          "centroavante",
+          "ponta-direita",
+          "ponta-esquerda",
+          "segundo atacante",
+        ],
+        midfielder: [
+          "meia",
+          "midfielder",
+          "mf",
+          "meio-campo",
+          "meio-campista",
+          "volante",
+          "meia-atacante",
+          "armador",
+        ],
+        defender: [
+          "zagueiro",
+          "defender",
+          "df",
+          "lateral",
+          "lateral-direito",
+          "lateral-esquerdo",
+          "ala",
+          "líbero",
+        ],
       };
       const accepted = posMap[posFilter] ?? [];
       result = result.filter((p) => {
@@ -81,9 +109,36 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
 
   const positionCounts = useMemo(() => {
     const posGroups: Record<string, string[]> = {
-      forward: ["atacante", "forward", "fw", "ponta", "centroavante", "ponta-direita", "ponta-esquerda", "segundo atacante"],
-      midfielder: ["meia", "midfielder", "mf", "meio-campo", "meio-campista", "volante", "meia-atacante", "armador"],
-      defender: ["zagueiro", "defender", "df", "lateral", "lateral-direito", "lateral-esquerdo", "ala", "líbero"],
+      forward: [
+        "atacante",
+        "forward",
+        "fw",
+        "ponta",
+        "centroavante",
+        "ponta-direita",
+        "ponta-esquerda",
+        "segundo atacante",
+      ],
+      midfielder: [
+        "meia",
+        "midfielder",
+        "mf",
+        "meio-campo",
+        "meio-campista",
+        "volante",
+        "meia-atacante",
+        "armador",
+      ],
+      defender: [
+        "zagueiro",
+        "defender",
+        "df",
+        "lateral",
+        "lateral-direito",
+        "lateral-esquerdo",
+        "ala",
+        "líbero",
+      ],
     };
     const counts = {
       all: players.length,
@@ -114,7 +169,7 @@ export function MatchPageContent({ match, players }: MatchPageContentProps) {
             className="inline-flex items-center gap-1.5 text-fb-text-muted hover:text-fb-text text-sm transition-colors"
           >
             <ArrowLeft className="size-4" />
-            Voltar ao painel
+            {NAV_COPY.backToDashboard}
           </Link>
         </div>
 

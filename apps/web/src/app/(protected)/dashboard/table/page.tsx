@@ -9,6 +9,7 @@ import prisma from "@/lib/db/prisma";
 import { calcCV, calcHits, mean } from "@finalizabot/shared/calc";
 import { formatDateTime } from "@/lib/format/date";
 import { logger } from "@/lib/logger";
+import { STATE_COPY } from "@/lib/copy/navigation";
 
 export const metadata: Metadata = {
   title: "Tabela Avançada - FinalizaBOT",
@@ -383,7 +384,7 @@ export default async function AdvancedTablePage() {
             </svg>
           </div>
           <h3 className="text-fb-text font-semibold text-lg mb-2">
-            Nenhum jogador encontrado
+            {STATE_COPY.noPlayerFound}
           </h3>
           <p className="text-fb-text-muted text-sm max-w-md">
             Execute o sync ETL para popular a tabela com jogadores e suas

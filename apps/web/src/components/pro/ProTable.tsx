@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { ChevronUp, ChevronDown, Search } from "lucide-react";
 import { StatePanel } from "@/components/ui/StatePanel";
+import { STATE_COPY } from "@/lib/copy/navigation";
 import type { ProPlayerRow } from "@/data/types";
 
 const headers = [
@@ -318,71 +319,71 @@ export function ProTable({ players }: { players: ProPlayerRow[] }) {
         {sorted.length === 0 ? (
           <StatePanel
             icon={Search}
-            title="Nenhum jogador encontrado"
+            title={STATE_COPY.noPlayerFound}
             description="Nenhum jogador atende aos filtros atuais. Ajuste os parâmetros para ampliar os resultados."
             className="py-14"
           />
         ) : (
-        <table className="w-full border-collapse text-left text-sm whitespace-nowrap">
-          <thead className="bg-fb-surface sticky top-0 z-10 text-[11px] font-semibold text-fb-text-muted uppercase tracking-wider">
-            <tr>
-              {headers.map((h) => (
-                <th
-                  key={h.key}
-                  onClick={() => h.sortable && toggleSort(h.key)}
-                  className={`p-4 border-b border-fb-border ${
-                    h.sortable
-                      ? "cursor-pointer hover:text-fb-text select-none"
-                      : ""
-                  } ${h.key === "xg" || h.key === "ev" ? "bg-fb-primary/5" : ""}`}
-                >
-                  <div className="flex items-center gap-1">
-                    {h.label}
-                    {h.sortable &&
-                      sortKey === h.key &&
-                      (sortDir === "asc" ? (
-                        <ChevronUp className="size-3" />
-                      ) : (
-                        <ChevronDown className="size-3" />
-                      ))}
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="text-fb-text divide-y divide-fb-border/50">
-            {sorted.map((p, idx) => (
-              <tr
-                key={`${p.name}-${idx}`}
-                className="hover:bg-fb-surface/50 transition-colors"
-              >
-                <td className="p-4 text-fb-text-muted text-center">
-                  {idx + 1}
-                </td>
-                <td className="p-4">
-                  <div>
-                    <span className="font-bold text-fb-text">{p.name}</span>
-                    <span className="block text-[11px] text-fb-text-muted">
-                      {p.team} • {p.pos}
-                    </span>
-                  </div>
-                </td>
-                <td className="p-4 text-right">{p.matches}</td>
-                <td className="p-4 text-right font-bold text-fb-accent-green">
-                  {p.goals}
-                </td>
-                <td className="p-4 text-right">{p.assists}</td>
-                <td className="p-4 text-right bg-fb-primary/5 font-medium">
-                  {p.xg.toFixed(1)}
-                </td>
-                <td className="p-4 text-right font-bold text-fb-accent-gold bg-fb-accent-gold/5">
-                  {p.ev.toFixed(1)}
-                </td>
-                <td className="p-4 text-right font-medium">{p.value}</td>
+          <table className="w-full border-collapse text-left text-sm whitespace-nowrap">
+            <thead className="bg-fb-surface sticky top-0 z-10 text-[11px] font-semibold text-fb-text-muted uppercase tracking-wider">
+              <tr>
+                {headers.map((h) => (
+                  <th
+                    key={h.key}
+                    onClick={() => h.sortable && toggleSort(h.key)}
+                    className={`p-4 border-b border-fb-border ${
+                      h.sortable
+                        ? "cursor-pointer hover:text-fb-text select-none"
+                        : ""
+                    } ${h.key === "xg" || h.key === "ev" ? "bg-fb-primary/5" : ""}`}
+                  >
+                    <div className="flex items-center gap-1">
+                      {h.label}
+                      {h.sortable &&
+                        sortKey === h.key &&
+                        (sortDir === "asc" ? (
+                          <ChevronUp className="size-3" />
+                        ) : (
+                          <ChevronDown className="size-3" />
+                        ))}
+                    </div>
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="text-fb-text divide-y divide-fb-border/50">
+              {sorted.map((p, idx) => (
+                <tr
+                  key={`${p.name}-${idx}`}
+                  className="hover:bg-fb-surface/50 transition-colors"
+                >
+                  <td className="p-4 text-fb-text-muted text-center">
+                    {idx + 1}
+                  </td>
+                  <td className="p-4">
+                    <div>
+                      <span className="font-bold text-fb-text">{p.name}</span>
+                      <span className="block text-[11px] text-fb-text-muted">
+                        {p.team} • {p.pos}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-4 text-right">{p.matches}</td>
+                  <td className="p-4 text-right font-bold text-fb-accent-green">
+                    {p.goals}
+                  </td>
+                  <td className="p-4 text-right">{p.assists}</td>
+                  <td className="p-4 text-right bg-fb-primary/5 font-medium">
+                    {p.xg.toFixed(1)}
+                  </td>
+                  <td className="p-4 text-right font-bold text-fb-accent-gold bg-fb-accent-gold/5">
+                    {p.ev.toFixed(1)}
+                  </td>
+                  <td className="p-4 text-right font-medium">{p.value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </>

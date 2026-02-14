@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Home, SearchX } from "lucide-react";
+import { STATE_COPY } from "@/lib/copy/navigation";
 
 type ActionIcon = "home" | "none";
 
@@ -19,7 +20,7 @@ type NotFoundStateProps = {
 };
 
 export function NotFoundState({
-  title = "Página não encontrada",
+  title = STATE_COPY.pageNotFoundTitle,
   description,
   primaryAction,
   showBackAction = false,

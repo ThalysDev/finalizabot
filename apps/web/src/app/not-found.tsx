@@ -1,4 +1,5 @@
 import { NotFoundState } from "@/components/ui/NotFoundState";
+import { NAV_COPY, STATE_COPY } from "@/lib/copy/navigation";
 
 /**
  * 404 global — Exibida quando nenhuma rota corresponde.
@@ -8,10 +9,10 @@ export default function GlobalNotFound() {
     <html lang="pt-BR">
       <body className="bg-fb-bg text-fb-text">
         <NotFoundState
-          description="A página que você procura não existe ou foi movida."
+          description={STATE_COPY.pageNotFoundDescription}
           primaryAction={{
             href: "/",
-            label: "Voltar ao início",
+            label: NAV_COPY.backToHome,
             icon: "home",
           }}
           className="flex min-h-screen items-center justify-center p-4"

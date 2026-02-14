@@ -3,6 +3,7 @@
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
+import { NAV_COPY } from "@/lib/copy/navigation";
 
 /**
  * AuthCTA — Componente unificado de Call-to-Action com auth.
@@ -61,7 +62,7 @@ export function AuthCTA({ variant = "inline" }: AuthCTAProps) {
           href="/dashboard"
           className={`${variant === "hero" ? "w-full sm:w-auto " : ""}${primaryClasses} ${padding}`}
         >
-          Ir para o painel
+          {NAV_COPY.goToDashboard}
           <ArrowRight className="size-4" />
         </Link>
       </SignedIn>
