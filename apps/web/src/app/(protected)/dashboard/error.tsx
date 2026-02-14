@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect } from "react";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { logger } from "@/lib/logger";
 
 export default function DashboardError({
@@ -21,30 +21,16 @@ export default function DashboardError({
   }, [error]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
-      <div className="max-w-md w-full bg-fb-surface border border-fb-border rounded-lg p-6">
-        <h2 className="text-fb-text font-bold text-xl mb-4">
-          Erro no Dashboard
-        </h2>
-        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded text-sm">
-          <p className="text-red-400 font-mono break-all">{error.message}</p>
-          {error.digest && (
-            <p className="text-red-400/60 text-xs mt-2">ID: {error.digest}</p>
-          )}
-        </div>
-        <button
-          onClick={() => reset()}
-          className="w-full bg-fb-primary text-white py-2 px-4 rounded hover:bg-fb-primary/90 transition-colors"
-        >
-          Tentar novamente
-        </button>
-        <Link
-          href="/"
-          className="block w-full text-center mt-3 text-fb-text-muted hover:text-fb-text transition-colors text-sm"
-        >
-          Voltar ao início
-        </Link>
-      </div>
-    </div>
+    <ErrorState
+      title="Erro no Dashboard"
+      description="Não foi possível carregar os dados do dashboard no momento. Tente novamente em instantes."
+      digest={error.digest}
+      onRetry={reset}
+      secondaryAction={{
+        href: "/dashboard",
+        label: "Voltar ao painel",
+      }}
+      className="flex flex-col items-center justify-center min-h-[60vh] p-8"
+    />
   );
 }
