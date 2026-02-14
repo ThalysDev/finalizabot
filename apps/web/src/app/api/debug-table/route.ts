@@ -23,9 +23,7 @@ function toSafeError(err: unknown, includeDetails: boolean) {
   if (includeDetails) {
     return {
       message: normalized?.message ?? "Unknown error",
-      stack: normalized?.stack,
       name: normalized?.name,
-      cause: normalized?.cause,
     };
   }
 
