@@ -21,7 +21,14 @@ export async function GET(req: NextRequest) {
     const q = validateSearchQuery(rawQuery);
 
     if (!q) {
-      return NextResponse.json({ results: [] });
+      return NextResponse.json(
+        { results: [] },
+        {
+          headers: {
+            "Cache-Control": "s-maxage=30, stale-while-revalidate=15",
+          },
+        },
+      );
     }
 
     const players = await prisma.player.findMany({
