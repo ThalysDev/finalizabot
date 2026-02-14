@@ -327,7 +327,10 @@ export async function fetchMatchPageData(
       prisma.playerMatchStats.findMany({
         where: { playerId: { in: playerIds } },
         orderBy: { match: { matchDate: "desc" } },
-        include: {
+        select: {
+          playerId: true,
+          shots: true,
+          shotsOnTarget: true,
           match: {
             select: { homeTeam: true, awayTeam: true, matchDate: true },
           },
@@ -442,7 +445,12 @@ async function batchEnrichFromPrisma(
     prisma.playerMatchStats.findMany({
       where: { playerId: { in: playerIds } },
       orderBy: { match: { matchDate: "desc" } },
-      include: { match: { select: { homeTeam: true, awayTeam: true } } },
+      select: {
+        playerId: true,
+        shots: true,
+        shotsOnTarget: true,
+        match: { select: { homeTeam: true, awayTeam: true } },
+      },
     });
   type EnrichRow = Awaited<ReturnType<typeof enrichQuery>>[number];
 
