@@ -23,8 +23,21 @@ export interface ShotBarChartProps {
   dataKey?: "shots" | "sot";
 }
 
+interface ChartPoint {
+  label: string;
+  shots: number;
+  sot?: number;
+  line: number;
+}
+
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: Array<{ payload?: ChartPoint }>;
+  label?: string | number;
+}
+
 /* ---------- Custom tooltip ---------- */
-function ChartTooltip({ active, payload, label }: any) {
+function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   if (!d) return null;
@@ -36,8 +49,7 @@ function ChartTooltip({ active, payload, label }: any) {
       </p>
       {d.sot != null && (
         <p className="text-fb-text-secondary">
-          No Alvo:{" "}
-          <span className="text-fb-text font-semibold">{d.sot}</span>
+          No Alvo: <span className="text-fb-text font-semibold">{d.sot}</span>
         </p>
       )}
       <p className="text-fb-text-muted mt-0.5">Linha: {d.line}+</p>
@@ -112,8 +124,7 @@ export function ShotBarChart({
           )}
           <Bar dataKey={dataKey} radius={[4, 4, 0, 0]} maxBarSize={40}>
             {data.map((entry, i) => {
-              const val =
-                dataKey === "sot" ? (entry.sot ?? 0) : entry.shots;
+              const val = dataKey === "sot" ? (entry.sot ?? 0) : entry.shots;
               const isOver = val >= entry.line;
               return (
                 <Cell
@@ -177,9 +188,7 @@ export function LineEvolutionChart({
 
   const points = data.map((d, i) => ({
     x: (i / (data.length - 1)) * chartWidth,
-    y:
-      padding +
-      (1 - (d.value - minVal) / range) * (chartHeight - padding * 2),
+    y: padding + (1 - (d.value - minVal) / range) * (chartHeight - padding * 2),
   }));
 
   const lineD = points

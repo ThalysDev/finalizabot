@@ -11,6 +11,7 @@ import { prisma } from "@finalizabot/shared";
 import { calcHits, mean, stdev, calcCV } from "@finalizabot/shared";
 import { logger } from "../lib/logger.js";
 import { syncAllImages } from "../services/imageDownloader.js";
+import { isNumericId, mapStatus } from "./utils.js";
 
 /* ============================================================================
    SofaScore image URL helpers
@@ -117,23 +118,7 @@ async function syncMatches(): Promise<number> {
   for (let i = 0; i < etlMatches.length; i += BATCH_SIZE) {
     const batch = etlMatches.slice(i, i + BATCH_SIZE);
     const ops = batch.map((em) => {
-      const resolvedStatus = mapStatus(em.statusType, em.statusCode, em.startTime);
-      const homeTeamId = isNumericId(em.homeTeamId) ? em.homeTeamId : undefined;
-      const awayTeamId = isNumericId(em.awayTeamId) ? em.awayTeamId : undefined;
-      const data = {
-        homeTeam: em.homeTeam.name,
-        awayTeam: em.awayTeam.name,
-        competition: em.tournament ?? "Unknown",
-        matchDate: em.startTime,
-        status: resolvedStatus,
-        homeScore: em.homeScore ?? null,
-        awayScore: em.awayScore ?? null,
-        minute: em.minute ?? null,
-        homeTeamImageUrl: em.homeTeam.imageUrl ?? (homeTeamId ? teamImageUrl(homeTeamId) : null),
-        awayTeamImageUrl: em.awayTeam.imageUrl ?? (awayTeamId ? teamImageUrl(awayTeamId) : null),
-        homeTeamSofascoreId: homeTeamId ?? null,
-        awayTeamSofascoreId: awayTeamId ?? null,
-      };
+      const data = buildMatchUpsertData(em);
       return prisma.match.upsert({
         where: { sofascoreId: em.id },
         create: { sofascoreId: em.id, ...data },
@@ -151,23 +136,7 @@ async function syncMatches(): Promise<number> {
       // Fallback: try individually for this failed batch
       for (const em of batch) {
         try {
-          const resolvedStatus = mapStatus(em.statusType, em.statusCode, em.startTime);
-          const homeTeamId = isNumericId(em.homeTeamId) ? em.homeTeamId : undefined;
-          const awayTeamId = isNumericId(em.awayTeamId) ? em.awayTeamId : undefined;
-          const data = {
-            homeTeam: em.homeTeam.name,
-            awayTeam: em.awayTeam.name,
-            competition: em.tournament ?? "Unknown",
-            matchDate: em.startTime,
-            status: resolvedStatus,
-            homeScore: em.homeScore ?? null,
-            awayScore: em.awayScore ?? null,
-            minute: em.minute ?? null,
-            homeTeamImageUrl: em.homeTeam.imageUrl ?? (homeTeamId ? teamImageUrl(homeTeamId) : null),
-            awayTeamImageUrl: em.awayTeam.imageUrl ?? (awayTeamId ? teamImageUrl(awayTeamId) : null),
-            homeTeamSofascoreId: homeTeamId ?? null,
-            awayTeamSofascoreId: awayTeamId ?? null,
-          };
+          const data = buildMatchUpsertData(em);
           await prisma.match.upsert({
             where: { sofascoreId: em.id },
             create: { sofascoreId: em.id, ...data },
@@ -185,23 +154,39 @@ async function syncMatches(): Promise<number> {
   return count;
 }
 
-function isNumericId(value: string): boolean {
-  return /^\d+$/.test(value);
-}
+function buildMatchUpsertData(em: {
+  statusType: string | null;
+  statusCode: number | null;
+  startTime: Date;
+  tournament: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  minute: number | null;
+  homeTeamId: string;
+  awayTeamId: string;
+  homeTeam: { name: string; imageUrl: string | null };
+  awayTeam: { name: string; imageUrl: string | null };
+}) {
+  const resolvedStatus = mapStatus(em.statusType, em.statusCode, em.startTime);
+  const homeTeamId = isNumericId(em.homeTeamId) ? em.homeTeamId : undefined;
+  const awayTeamId = isNumericId(em.awayTeamId) ? em.awayTeamId : undefined;
 
-function mapStatus(
-  statusType: string | null,
-  statusCode: number | null,
-  startTime: Date,
-): string {
-  const type = statusType?.toLowerCase();
-  if (type === "finished") return "finished";
-  if (type === "inprogress" || type === "live") return "live";
-  if (type === "notstarted") return "scheduled";
-  if (statusCode === 100) return "finished";
-  if (statusCode === 0 || statusCode === 1) return "scheduled";
-  if (statusCode === 2 || statusCode === 3) return "live";
-  return startTime < new Date() ? "finished" : "scheduled";
+  return {
+    homeTeam: em.homeTeam.name,
+    awayTeam: em.awayTeam.name,
+    competition: em.tournament ?? "Unknown",
+    matchDate: em.startTime,
+    status: resolvedStatus,
+    homeScore: em.homeScore ?? null,
+    awayScore: em.awayScore ?? null,
+    minute: em.minute ?? null,
+    homeTeamImageUrl:
+      em.homeTeam.imageUrl ?? (homeTeamId ? teamImageUrl(homeTeamId) : null),
+    awayTeamImageUrl:
+      em.awayTeam.imageUrl ?? (awayTeamId ? teamImageUrl(awayTeamId) : null),
+    homeTeamSofascoreId: homeTeamId ?? null,
+    awayTeamSofascoreId: awayTeamId ?? null,
+  };
 }
 
 /* ============================================================================
@@ -536,19 +521,39 @@ async function generateMarketAnalysis(): Promise<number> {
 
   if (allPlayerIds.size === 0) return 0;
 
-  // ── Query last 10 stats per player with DB-level LIMIT (optimized) ────
-  const statsByPlayer = new Map<string, number[]>();
-  for (const playerId of allPlayerIds) {
-    const stats = await prisma.playerMatchStats.findMany({
-      where: {
-        playerId,
-        match: { status: "finished" },
-      },
-      orderBy: { match: { matchDate: "desc" } },
-      take: 10,
-      select: { shots: true },
-    });
-    statsByPlayer.set(playerId, stats.map(s => s.shots));
+  // ── Query last 10 stats per player in one DB roundtrip (avoid N+1) ─────
+  const playerIds = [...allPlayerIds];
+  const statsByPlayer = new Map<string, number[]>(
+    playerIds.map((playerId) => [playerId, []]),
+  );
+
+  type PlayerShotRow = { playerId: string; shots: number };
+  const recentShots = await prisma.$queryRawUnsafe<PlayerShotRow[]>(
+    `
+      SELECT ranked."playerId" as "playerId", ranked."shots" as "shots"
+      FROM (
+        SELECT
+          pms."playerId",
+          pms."shots",
+          ROW_NUMBER() OVER (
+            PARTITION BY pms."playerId"
+            ORDER BY m."matchDate" DESC
+          ) as rn
+        FROM "PlayerMatchStats" pms
+        INNER JOIN "Match" m ON m."id" = pms."matchId"
+        WHERE pms."playerId" = ANY($1::text[])
+          AND m."status" = 'finished'
+      ) ranked
+      WHERE ranked.rn <= 10
+      ORDER BY ranked."playerId", ranked.rn
+    `,
+    playerIds,
+  );
+
+  for (const row of recentShots) {
+    const shots = statsByPlayer.get(row.playerId);
+    if (!shots) continue;
+    shots.push(row.shots);
   }
 
   // ── Build analysis data in-memory, then batch upsert ───────────

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 
 export default function DashboardError({
@@ -20,13 +21,9 @@ export default function DashboardError({
           Erro no Dashboard
         </h2>
         <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded text-sm">
-          <p className="text-red-400 font-mono break-all">
-            {error.message}
-          </p>
+          <p className="text-red-400 font-mono break-all">{error.message}</p>
           {error.digest && (
-            <p className="text-red-400/60 text-xs mt-2">
-              ID: {error.digest}
-            </p>
+            <p className="text-red-400/60 text-xs mt-2">ID: {error.digest}</p>
           )}
         </div>
         <button
@@ -35,12 +32,12 @@ export default function DashboardError({
         >
           Tentar novamente
         </button>
-        <a
+        <Link
           href="/"
           className="block w-full text-center mt-3 text-fb-text-muted hover:text-fb-text transition-colors text-sm"
         >
           Voltar ao início
-        </a>
+        </Link>
       </div>
     </div>
   );

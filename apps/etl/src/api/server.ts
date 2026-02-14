@@ -11,6 +11,11 @@ const PORT = rawPort
 const prisma = getPrisma();
 
 const ETL_API_KEY = process.env.SOFASCORE_ETL_API_KEY?.trim() ?? "";
+const NODE_ENV = process.env.NODE_ENV?.trim() ?? "development";
+const ALLOW_UNAUTHENTICATED =
+  process.env.SOFASCORE_ETL_ALLOW_UNAUTHENTICATED !== "false";
+
+let unauthWarningLogged = false;
 
 const server = Fastify({ logger: false });
 
@@ -19,9 +24,19 @@ server.addHook("onRequest", async (request, reply) => {
   if (request.url === "/health") return;
 
   if (!ETL_API_KEY) {
-    logger.warn(
-      "SOFASCORE_ETL_API_KEY not set — all requests allowed (dev mode)",
-    );
+    if (ALLOW_UNAUTHENTICATED) {
+      if (!unauthWarningLogged) {
+        logger.warn(
+          `SOFASCORE_ETL_API_KEY not set — unauthenticated requests enabled (NODE_ENV=${NODE_ENV})`,
+        );
+        unauthWarningLogged = true;
+      }
+      return;
+    }
+
+    await reply.status(503).send({
+      error: "Service misconfigured — missing SOFASCORE_ETL_API_KEY",
+    });
     return;
   }
 
@@ -165,10 +180,7 @@ server.get<{
     where: {
       playerId,
       match: {
-        OR: [
-          { statusCode: STATUS_FINISHED },
-          { statusType: "finished" },
-        ],
+        OR: [{ statusCode: STATUS_FINISHED }, { statusType: "finished" }],
       },
     },
     include: {

@@ -80,7 +80,12 @@ export async function fetchPlayerPageData(
 
   const now = new Date();
   const playerTeam = dbPlayer.teamName ?? "";
-  let nextMatch: { homeTeam: string; awayTeam: string; competition: string; matchDate: Date } | null = null;
+  let nextMatch: {
+    homeTeam: string;
+    awayTeam: string;
+    competition: string;
+    matchDate: Date;
+  } | null = null;
   try {
     nextMatch = await prisma.match.findFirst({
       where: {
@@ -116,8 +121,6 @@ export async function fetchPlayerPageData(
   } catch {
     // nextMatch unavailable — continue without it
   }
-  const cutoffDate = nextMatch?.matchDate ?? now;
-
   // Busca ETL (somente se configurado)
   const etlConfigured = !!getEtlBaseUrl();
 
@@ -125,21 +128,37 @@ export async function fetchPlayerPageData(
   let shotsRes: Awaited<ReturnType<typeof etlPlayerShots>>;
 
   // Validar sofascoreId antes de chamar ETL
-  const hasSofascoreId = dbPlayer.sofascoreId && dbPlayer.sofascoreId.trim() !== '';
+  const hasSofascoreId =
+    dbPlayer.sofascoreId && dbPlayer.sofascoreId.trim() !== "";
 
   try {
-    [lastMatchesRes, shotsRes] = etlConfigured && hasSofascoreId
-      ? await Promise.all([
-          etlPlayerLastMatches(dbPlayer.sofascoreId, 10),
-          etlPlayerShots(dbPlayer.sofascoreId, { limit: 100 }),
-        ])
-      : [
-          { data: null, error: hasSofascoreId ? "ETL not configured" : "Player missing sofascoreId" } as Awaited<ReturnType<typeof etlPlayerLastMatches>>,
-          { data: null, error: hasSofascoreId ? "ETL not configured" : "Player missing sofascoreId" } as Awaited<ReturnType<typeof etlPlayerShots>>,
-        ];
+    [lastMatchesRes, shotsRes] =
+      etlConfigured && hasSofascoreId
+        ? await Promise.all([
+            etlPlayerLastMatches(dbPlayer.sofascoreId, 10),
+            etlPlayerShots(dbPlayer.sofascoreId, { limit: 100 }),
+          ])
+        : [
+            {
+              data: null,
+              error: hasSofascoreId
+                ? "ETL not configured"
+                : "Player missing sofascoreId",
+            } as Awaited<ReturnType<typeof etlPlayerLastMatches>>,
+            {
+              data: null,
+              error: hasSofascoreId
+                ? "ETL not configured"
+                : "Player missing sofascoreId",
+            } as Awaited<ReturnType<typeof etlPlayerShots>>,
+          ];
   } catch {
-    lastMatchesRes = { data: null, error: "ETL request failed" } as Awaited<ReturnType<typeof etlPlayerLastMatches>>;
-    shotsRes = { data: null, error: "ETL request failed" } as Awaited<ReturnType<typeof etlPlayerShots>>;
+    lastMatchesRes = { data: null, error: "ETL request failed" } as Awaited<
+      ReturnType<typeof etlPlayerLastMatches>
+    >;
+    shotsRes = { data: null, error: "ETL request failed" } as Awaited<
+      ReturnType<typeof etlPlayerShots>
+    >;
   }
 
   const etlPlayerImage =
@@ -155,10 +174,6 @@ export async function fetchPlayerPageData(
       )
     : undefined;
 
-  // Resolve cached image URLs from DB
-  const dbPlayerAvatar = cachedImageUrl(dbPlayer.imageId) ?? undefined;
-  const dbPlayerTeamBadge = cachedImageUrl(dbPlayer.teamImageId) ?? undefined;
-
   // Se ETL falhar, tenta fallback para PlayerMatchStats do Prisma
   if (lastMatchesRes.error || !lastMatchesRes.data) {
     // Fallback: usar PlayerMatchStats locais
@@ -167,8 +182,8 @@ export async function fetchPlayerPageData(
         where: {
           playerId: dbPlayer.id,
           match: {
-            matchDate: { lt: now },     // Exclude current/future matches
-            status: "finished",          // Only finished matches
+            matchDate: { lt: now }, // Exclude current/future matches
+            status: "finished", // Only finished matches
           },
         },
         orderBy: { match: { matchDate: "desc" } },
@@ -348,21 +363,24 @@ export async function fetchPlayerPageData(
 
   // Include today's matches + last 10 historical
   const today = new Date();
-  today.setHours(0, 0, 0, 0);  // Start of today
+  today.setHours(0, 0, 0, 0); // Start of today
 
-  const items = lastMatchesRes.data.items
-    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+  const items = lastMatchesRes.data.items.sort(
+    (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
+  );
 
   // Separate today's matches from historical
-  const todayMatches = items.filter(item => {
+  const todayMatches = items.filter((item) => {
     const matchDate = new Date(item.startTime);
-    return matchDate >= today;  // All matches from today (past, present, future)
+    return matchDate >= today; // All matches from today (past, present, future)
   });
 
-  const pastMatches = items.filter(item => {
-    const matchDate = new Date(item.startTime);
-    return matchDate < today;  // Historical matches (before today)
-  }).slice(0, 10);  // Last 10 historical
+  const pastMatches = items
+    .filter((item) => {
+      const matchDate = new Date(item.startTime);
+      return matchDate < today; // Historical matches (before today)
+    })
+    .slice(0, 10); // Last 10 historical
 
   // Combine: today's matches + last 10 historical (max 15 total)
   const recentItems = [...todayMatches, ...pastMatches].slice(0, 15);

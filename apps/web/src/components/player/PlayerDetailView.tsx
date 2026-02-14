@@ -51,7 +51,6 @@ import type {
   ExternalLinkItem,
 } from "@/data/types";
 import type { LineHitIndicator, WindowStats } from "@/lib/etl/transformers";
-import type { LineHitIndicatorData } from "@/lib/helpers";
 
 const LINK_ICONS: Record<string, typeof BarChart3> = {
   BarChart3,
@@ -132,11 +131,12 @@ function WindowStatsSection({
   formattedLine?: string;
 }) {
   const midLabel = lineLabel ?? "Over 1.5";
-  const midIndicator = lineIndicator ?? stats?.over15 ?? {
-    hits: 0,
-    total: 0,
-    percent: 0,
-  };
+  const midIndicator = lineIndicator ??
+    stats?.over15 ?? {
+      hits: 0,
+      total: 0,
+      percent: 0,
+    };
   const cvValue = dynamicCV !== undefined ? dynamicCV : stats.cv;
 
   return (
@@ -176,7 +176,11 @@ function WindowStatsSection({
                   ? "text-fb-accent-gold"
                   : "text-fb-accent-red"
             }`}
-            title={formattedLine ? `CV calculado apenas com jogos que bateram ${formattedLine}+` : undefined}
+            title={
+              formattedLine
+                ? `CV calculado apenas com jogos que bateram ${formattedLine}+`
+                : undefined
+            }
           >
             {cvValue != null ? cvValue.toFixed(2) : "—"}
           </p>
@@ -257,27 +261,17 @@ export function PlayerDetailView({
     [shotValues, line],
   );
 
-  // CV dinâmico: calcula apenas com jogos que bateram a linha selecionada
-  const dynamicCV = useMemo(() => {
-    if (!shotValues || shotValues.length < 2) return null;
-    // Filtrar apenas chutes que bateram a linha
-    const shotsAboveLine = shotValues.filter(s => s >= line);
-    if (shotsAboveLine.length < 2) return null;
-    // Calcular CV apenas dos jogos bem-sucedidos
-    return calcCV(shotsAboveLine);
-  }, [shotValues, line]);
-
   const dynamicCVL5 = useMemo(() => {
     if (!shotValues || shotValues.length < 5) return null;
     const last5 = shotValues.slice(-5);
-    const above = last5.filter(s => s >= line);
+    const above = last5.filter((s) => s >= line);
     return above.length >= 2 ? calcCV(above) : null;
   }, [shotValues, line]);
 
   const dynamicCVL10 = useMemo(() => {
     if (!shotValues || shotValues.length < 10) return null;
     const last10 = shotValues.slice(-10);
-    const above = last10.filter(s => s >= line);
+    const above = last10.filter((s) => s >= line);
     return above.length >= 2 ? calcCV(above) : null;
   }, [shotValues, line]);
 

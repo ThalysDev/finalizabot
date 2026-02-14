@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Lock, Filter, Download, BarChart3, Inbox } from "lucide-react";
 import { GatedOverlay } from "@/components/subscription/PricingCard";
 import prisma from "@/lib/db/prisma";

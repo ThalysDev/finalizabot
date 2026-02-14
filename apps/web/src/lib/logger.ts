@@ -3,8 +3,7 @@
  * Same pattern as apps/etl — zero dependencies, JSON-serialised extras.
  */
 
-const levels = ["debug", "info", "warn", "error"] as const;
-type Level = (typeof levels)[number];
+type Level = "debug" | "info" | "warn" | "error";
 
 function serialize(data: unknown): string {
   if (data instanceof Error) {

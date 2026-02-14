@@ -207,14 +207,11 @@ export function DataTable<T extends Record<string, unknown>>({
           <tbody>
             {paginated.length === 0 ? (
               <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-4 py-12 text-center"
-                >
+                <td colSpan={columns.length} className="px-4 py-12 text-center">
                   {search ? (
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-fb-text-muted text-sm">
-                        Nenhum resultado para "{search}"
+                        Nenhum resultado para &quot;{search}&quot;
                       </p>
                       <button
                         onClick={() => setSearch("")}

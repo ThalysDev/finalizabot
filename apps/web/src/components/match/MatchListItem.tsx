@@ -52,9 +52,15 @@ export function MatchListItem(match: MatchCardData) {
       {/* Time/Score */}
       <div className="text-xs text-fb-text-muted shrink-0">
         {match.status === "live" && match.minute != null ? (
-          <span className="text-fb-accent-red font-bold">{match.minute}'</span>
-        ) : match.status === "finished" && match.homeScore != null && match.awayScore != null ? (
-          <span>{match.homeScore} - {match.awayScore}</span>
+          <span className="text-fb-accent-red font-bold">
+            {match.minute}&apos;
+          </span>
+        ) : match.status === "finished" &&
+          match.homeScore != null &&
+          match.awayScore != null ? (
+          <span>
+            {match.homeScore} - {match.awayScore}
+          </span>
         ) : (
           <span>{match.matchTime}</span>
         )}
