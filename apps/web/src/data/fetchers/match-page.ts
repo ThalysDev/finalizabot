@@ -18,6 +18,7 @@ import {
 } from "@/lib/helpers";
 import prisma from "@/lib/db/prisma";
 import { formatDate, formatTime } from "@/lib/format/date";
+import { logger } from "@/lib/logger";
 
 /* ============================================================================
    Types
@@ -65,7 +66,7 @@ export async function fetchMatchPageData(
       },
     });
   } catch (err) {
-    console.error("[fetchMatchPageData] DB error:", err);
+    logger.error("[fetchMatchPageData] DB error", err);
     return { match: null, players: [] };
   }
 

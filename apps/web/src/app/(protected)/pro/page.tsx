@@ -8,6 +8,7 @@ import { ProTable } from "@/components/pro/ProTable";
 import { isPro } from "@/lib/auth/subscription";
 import type { ProPlayerRow } from "@/data/types";
 import type { EtlEnrichResult } from "@/lib/etl/enricher";
+import { logger } from "@/lib/logger";
 
 export const metadata: Metadata = {
   title: "Tabela PRO - FinalizaBOT",
@@ -32,7 +33,7 @@ async function fetchProPlayers(): Promise<ProPlayerRow[]> {
       },
     });
   } catch (err) {
-    console.error("[fetchProPlayers] DB error:", err);
+    logger.error("[fetchProPlayers] DB error", err);
     return [];
   }
 

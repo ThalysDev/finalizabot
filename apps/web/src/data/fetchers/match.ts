@@ -9,6 +9,7 @@
 import { etlMatchShots } from "@/lib/etl/client";
 import type { EtlShotsResponse } from "@/lib/etl/types";
 import { normalizeMatchShotsInput } from "@/lib/fetchers/match-shots";
+import { logger } from "@/lib/logger";
 
 /* ============================================================================
    fetchMatchShots
@@ -31,9 +32,10 @@ export async function fetchMatchShots(
   const res = await etlMatchShots(normalized.matchId, normalized.params);
 
   if (res.error || !res.data) {
-    console.warn(
-      `[ETL] Falha match-shots p/ ${normalized.matchId}: ${res.error}`,
-    );
+    logger.warn("[ETL] Falha match-shots", {
+      matchId: normalized.matchId,
+      error: res.error,
+    });
     return { shots: null };
   }
 

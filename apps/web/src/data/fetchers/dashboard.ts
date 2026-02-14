@@ -11,6 +11,7 @@ import type { MatchCardData } from "@/data/types";
 import { cachedImageUrl } from "@/lib/helpers";
 import { formatDate, formatTime } from "@/lib/format/date";
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 
 /* ============================================================================
    Dashboard data — match-first
@@ -26,7 +27,7 @@ export interface DashboardPageData {
 
 export async function fetchDashboardData(): Promise<DashboardPageData> {
   try {
-    console.log("[fetchDashboardData] Starting...");
+    logger.debug("[fetchDashboardData] Starting");
     // Calcula o range "hoje" usando o timezone do Brasil (America/Sao_Paulo)
     const now = new Date();
     const formatter = new Intl.DateTimeFormat("sv-SE", {
@@ -60,7 +61,7 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
     let fallbackLabel: string | undefined;
 
     // 1. Busca partidas de hoje e amanhã
-    console.log("[fetchDashboardData] Querying today/tomorrow matches...", {
+    logger.debug("[fetchDashboardData] Querying today/tomorrow matches", {
       rangeStart,
       rangeEnd,
     });
@@ -143,23 +144,14 @@ export async function fetchDashboardData(): Promise<DashboardPageData> {
 
     const todayCount = matches.filter((m) => m.dayKey === "today").length;
     const tomorrowCount = matches.filter((m) => m.dayKey === "tomorrow").length;
-    console.log("[fetchDashboardData] SUCCESS!", {
+    logger.info("[fetchDashboardData] Success", {
       matchesCount: matches.length,
       todayCount,
       tomorrowCount,
     });
     return { matches, todayCount, tomorrowCount, fallbackLabel };
   } catch (err) {
-    console.error("[fetchDashboardData] CRITICAL ERROR:", err);
-    console.error("[fetchDashboardData] Error type:", err?.constructor?.name);
-    console.error(
-      "[fetchDashboardData] Error message:",
-      err instanceof Error ? err.message : String(err),
-    );
-    console.error(
-      "[fetchDashboardData] Error stack:",
-      err instanceof Error ? err.stack : undefined,
-    );
+    logger.error("[fetchDashboardData] Critical error", err);
     // Re-throw error to expose it in error boundary instead of swallowing it
     throw new Error(
       `Dashboard fetch failed: ${err instanceof Error ? err.message : String(err)}`,
