@@ -7,7 +7,7 @@
 
 param(
     [switch]$Detailed = $false,
-    [string]$DeployUrl = "https://finalizabot-d6rro1djx-thalys-rodrigues-projects.vercel.app"
+    [string]$DeployUrl = "https://finalizabot.vercel.app"
 )
 
 $script:passCount = 0
