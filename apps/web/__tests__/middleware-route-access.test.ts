@@ -7,6 +7,7 @@ describe("isPublicPath()", () => {
     expect(isPublicPath("/sign-in")).toBe(true);
     expect(isPublicPath("/sign-up")).toBe(true);
     expect(isPublicPath("/match/abc")).toBe(true);
+    expect(isPublicPath("/player/abc")).toBe(true);
   });
 
   it("allows configured public API routes", () => {
@@ -26,6 +27,8 @@ describe("isPublicPath()", () => {
 
   it("normalizes trailing slash and whitespace", () => {
     expect(isPublicPath(" /api/health/ ")).toBe(true);
+    expect(isPublicPath("player/abc///")).toBe(true);
+    expect(isPublicPath(" /api/health/?check=1#ok ")).toBe(true);
     expect(isPublicPath(" /dashboard/ ")).toBe(false);
   });
 });

@@ -50,6 +50,7 @@ const PUBLIC_ROUTE_PATTERNS: RegExp[] = [
   /^\/sign-in(?:\/.*)?$/,
   /^\/sign-up(?:\/.*)?$/,
   /^\/match(?:\/.*)?$/,
+  /^\/player(?:\/.*)?$/,
   /^\/api\/health$/,
   /^\/api\/image-proxy$/,
   /^\/api\/images(?:\/.*)?$/,
@@ -59,8 +60,15 @@ const PUBLIC_ROUTE_PATTERNS: RegExp[] = [
 function normalizePathname(pathname: string): string {
   const trimmed = pathname.trim();
   if (trimmed.length === 0) return "/";
-  if (trimmed === "/") return "/";
-  return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
+
+  const withoutQuery = trimmed.split(/[?#]/, 1)[0] ?? "";
+  if (withoutQuery.length === 0 || withoutQuery === "/") return "/";
+
+  const withLeadingSlash = withoutQuery.startsWith("/")
+    ? withoutQuery
+    : `/${withoutQuery}`;
+
+  return withLeadingSlash.replace(/\/+$/, "") || "/";
 }
 
 export function isPublicPath(pathname: string): boolean {
