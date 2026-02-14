@@ -342,145 +342,76 @@ async function syncPlayerMatchStats(): Promise<number> {
   const matchCutoff = Number.isFinite(matchDaysEnv)
     ? new Date(Date.now() - matchDaysEnv * 24 * 60 * 60 * 1000)
     : null;
-  // Get all ETL match-player records
-  const matchPlayers = await prisma.etlMatchPlayer.findMany({
-    where: matchCutoff
-      ? { match: { startTime: { gte: matchCutoff } } }
-      : undefined,
-    include: {
-      match: true,
-      player: true,
-    },
-    orderBy: { match: { startTime: "desc" } },
-  });
+  type CountRow = { count: number | bigint | string };
 
-  if (matchPlayers.length === 0) return 0;
+  const result = await prisma.$queryRawUnsafe<CountRow[]>(
+    `
+      WITH aggregated AS (
+        SELECT
+          p."id" AS "playerId",
+          m."id" AS "matchId",
+          COUNT(se."id")::int AS "shots",
+          COUNT(*) FILTER (
+            WHERE se."outcome" IN ('goal', 'on_target')
+          )::int AS "shotsOnTarget",
+          COUNT(*) FILTER (
+            WHERE se."outcome" = 'goal'
+          )::int AS "goals",
+          COALESCE(mp."minutesPlayed", 0)::int AS "minutesPlayed"
+        FROM etl."MatchPlayer" mp
+        INNER JOIN etl."Match" em
+          ON em."id" = mp."matchId"
+        INNER JOIN "Match" m
+          ON m."sofascoreId" = mp."matchId"
+        INNER JOIN "Player" p
+          ON p."sofascoreId" = mp."playerId"
+        LEFT JOIN etl."ShotEvent" se
+          ON se."matchId" = mp."matchId"
+          AND se."playerId" = mp."playerId"
+        WHERE ($1::timestamptz IS NULL OR em."startTime" >= $1)
+        GROUP BY
+          p."id",
+          m."id",
+          mp."minutesPlayed"
+      ),
+      upserted AS (
+        INSERT INTO "PlayerMatchStats" (
+          "playerId",
+          "matchId",
+          "shots",
+          "shotsOnTarget",
+          "goals",
+          "assists",
+          "minutesPlayed"
+        )
+        SELECT
+          a."playerId",
+          a."matchId",
+          a."shots",
+          a."shotsOnTarget",
+          a."goals",
+          0,
+          a."minutesPlayed"
+        FROM aggregated a
+        ON CONFLICT ("playerId", "matchId")
+        DO UPDATE SET
+          "shots" = EXCLUDED."shots",
+          "shotsOnTarget" = EXCLUDED."shotsOnTarget",
+          "goals" = EXCLUDED."goals",
+          "minutesPlayed" = EXCLUDED."minutesPlayed",
+          "updatedAt" = NOW()
+        RETURNING 1
+      )
+      SELECT COUNT(*)::int AS count
+      FROM upserted
+    `,
+    matchCutoff,
+  );
 
-  // ── Pre-load lookup maps (eliminates N+1) ─────────────────────
-  const etlMatchIds = [...new Set(matchPlayers.map((mp) => mp.matchId))];
-  const etlPlayerIds = [...new Set(matchPlayers.map((mp) => mp.playerId))];
-
-  // Load all public matches by sofascoreId
-  const publicMatches = await prisma.match.findMany({
-    where: { sofascoreId: { in: etlMatchIds } },
-    select: { id: true, sofascoreId: true },
-  });
-  const matchMap = new Map(publicMatches.map((m) => [m.sofascoreId, m.id]));
-
-  // Load all public players by sofascoreId
-  const publicPlayers = await prisma.player.findMany({
-    where: { sofascoreId: { in: etlPlayerIds } },
-    select: { id: true, sofascoreId: true },
-  });
-  const playerMap = new Map(publicPlayers.map((p) => [p.sofascoreId, p.id]));
-
-  // Pre-load ALL shot events for these matches/players in a single query
-  const allShotEvents = await prisma.etlShotEvent.findMany({
-    where: {
-      matchId: { in: etlMatchIds },
-      playerId: { in: etlPlayerIds },
-    },
-    select: { matchId: true, playerId: true, outcome: true },
-  });
-
-  // Group shot events by matchId+playerId
-  const shotMap = new Map<string, typeof allShotEvents>();
-  for (const shot of allShotEvents) {
-    const key = `${shot.matchId}:${shot.playerId}`;
-    const arr = shotMap.get(key) ?? [];
-    arr.push(shot);
-    shotMap.set(key, arr);
-  }
-
-  // ── Build stat data in-memory ───────────────────────────────────
-  const BATCH_SIZE = 50;
-  let count = 0;
-
-  interface StatData {
-    playerId: string;
-    matchId: string;
-    shots: number;
-    shotsOnTarget: number;
-    goals: number;
-    minutesPlayed: number;
-  }
-
-  const statItems: StatData[] = [];
-
-  for (const mp of matchPlayers) {
-    const publicMatchId = matchMap.get(mp.matchId);
-    const publicPlayerId = playerMap.get(mp.playerId);
-    if (!publicMatchId || !publicPlayerId) continue;
-
-    const shotEvents = shotMap.get(`${mp.matchId}:${mp.playerId}`) ?? [];
-    const totalShots = shotEvents.length;
-    const shotsOnTarget = shotEvents.filter(
-      (s) => s.outcome === "goal" || s.outcome === "on_target",
-    ).length;
-    const goals = shotEvents.filter((s) => s.outcome === "goal").length;
-
-    statItems.push({
-      playerId: publicPlayerId,
-      matchId: publicMatchId,
-      shots: totalShots,
-      shotsOnTarget,
-      goals,
-      minutesPlayed: mp.minutesPlayed ?? 0,
-    });
-  }
-
-  // Helper to create a fresh upsert promise from data
-  function buildStatUpsert(item: StatData) {
-    return prisma.playerMatchStats.upsert({
-      where: {
-        playerId_matchId: {
-          playerId: item.playerId,
-          matchId: item.matchId,
-        },
-      },
-      create: {
-        playerId: item.playerId,
-        matchId: item.matchId,
-        shots: item.shots,
-        shotsOnTarget: item.shotsOnTarget,
-        goals: item.goals,
-        assists: 0,
-        minutesPlayed: item.minutesPlayed,
-      },
-      update: {
-        shots: item.shots,
-        shotsOnTarget: item.shotsOnTarget,
-        goals: item.goals,
-        minutesPlayed: item.minutesPlayed,
-      },
-    });
-  }
-
-  // Execute in batched transactions
-  for (let i = 0; i < statItems.length; i += BATCH_SIZE) {
-    const batchData = statItems.slice(i, i + BATCH_SIZE);
-    try {
-      await prisma.$transaction(batchData.map(buildStatUpsert));
-      count += batchData.length;
-    } catch (err) {
-      logger.warn(
-        `[Bridge] Erro ao sync stats batch (offset ${i}): ${err instanceof Error ? err.message : err}`,
-      );
-      // Fallback: try individually (fresh promise per item)
-      for (const item of batchData) {
-        try {
-          await buildStatUpsert(item);
-          count++;
-        } catch (innerErr) {
-          logger.warn(
-            `[Bridge] Erro ao sync stat individual: ${innerErr instanceof Error ? innerErr.message : innerErr}`,
-          );
-        }
-      }
-    }
-  }
-
-  return count;
+  const total = result[0]?.count;
+  if (typeof total === "number") return total;
+  if (typeof total === "bigint") return Number(total);
+  return total != null ? parseInt(String(total), 10) || 0 : 0;
 }
 
 /* ============================================================================

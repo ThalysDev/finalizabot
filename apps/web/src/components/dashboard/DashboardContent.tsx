@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Calendar, Search, Trophy, ArrowRight } from "lucide-react";
 import { MatchCard } from "@/components/match/MatchCard";
 import { MatchListItem } from "@/components/match/MatchListItem";
@@ -18,6 +18,13 @@ interface DashboardContentProps {
   fallbackLabel?: string;
 }
 
+interface DashboardPreferencePayload {
+  dayFilter?: "all" | "today" | "tomorrow";
+  compFilter?: string;
+  searchQuery?: string;
+  view?: "grid" | "list";
+}
+
 /* ============================================================================
    COMPONENT
    ============================================================================ */
@@ -28,12 +35,16 @@ export function DashboardContent({
   fallbackLabel,
 }: DashboardContentProps) {
   const STORAGE_KEY = "fb:dashboard:preferences";
+  const hasHydrated = useRef(false);
+  const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [dayFilter, setDayFilter] = useState<"all" | "today" | "tomorrow">(
     "all",
   );
   const [compFilter, setCompFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [serverPreferenceEnabled, setServerPreferenceEnabled] = useState(false);
+  const [serverPreferenceLoaded, setServerPreferenceLoaded] = useState(false);
 
   useEffect(() => {
     try {
@@ -52,10 +63,61 @@ export function DashboardContent({
       if (parsed.view) setView(parsed.view);
     } catch {
       // ignore invalid localStorage payload
+    } finally {
+      hasHydrated.current = true;
     }
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function loadServerPreferences() {
+      try {
+        const response = await fetch("/api/user/dashboard-preferences", {
+          method: "GET",
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          if (!cancelled) setServerPreferenceEnabled(false);
+          return;
+        }
+
+        if (!response.ok) {
+          if (!cancelled) setServerPreferenceEnabled(false);
+          return;
+        }
+
+        const payload = (await response.json()) as DashboardPreferencePayload;
+        if (cancelled) return;
+
+        if (payload.dayFilter) setDayFilter(payload.dayFilter);
+        if (typeof payload.compFilter === "string") {
+          setCompFilter(payload.compFilter);
+        }
+        if (typeof payload.searchQuery === "string") {
+          setSearchQuery(payload.searchQuery);
+        }
+        if (payload.view) setView(payload.view);
+
+        setServerPreferenceEnabled(true);
+      } catch {
+        if (!cancelled) setServerPreferenceEnabled(false);
+      } finally {
+        if (!cancelled) setServerPreferenceLoaded(true);
+      }
+    }
+
+    loadServerPreferences();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated.current) return;
     try {
       window.localStorage.setItem(
         STORAGE_KEY,
@@ -65,6 +127,45 @@ export function DashboardContent({
       // storage may be unavailable in private mode
     }
   }, [dayFilter, compFilter, searchQuery, view]);
+
+  useEffect(() => {
+    if (!serverPreferenceLoaded || !serverPreferenceEnabled) return;
+
+    if (saveDebounceRef.current) {
+      clearTimeout(saveDebounceRef.current);
+    }
+
+    const payload: DashboardPreferencePayload = {
+      dayFilter,
+      compFilter,
+      searchQuery,
+      view,
+    };
+
+    saveDebounceRef.current = setTimeout(() => {
+      void fetch("/api/user/dashboard-preferences", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    }, 600);
+
+    return () => {
+      if (saveDebounceRef.current) {
+        clearTimeout(saveDebounceRef.current);
+      }
+    };
+  }, [
+    dayFilter,
+    compFilter,
+    searchQuery,
+    view,
+    serverPreferenceLoaded,
+    serverPreferenceEnabled,
+  ]);
 
   // Unique competitions for filter tabs
   const competitions = useMemo(() => {
