@@ -50,7 +50,6 @@ export async function GET(
             id: true,
             odds: true,
             probability: true,
-            line: true,
             createdAt: true,
             player: {
               select: {
