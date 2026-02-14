@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPublicPath } from "../src/lib/auth/route-access";
+import { isPublicPath } from "../src/lib/validation";
 
 describe("isPublicPath()", () => {
   it("allows configured public pages", () => {

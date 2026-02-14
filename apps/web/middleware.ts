@@ -1,5 +1,5 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
-import { isPublicPath } from "@/lib/auth/route-access";
+import { isPublicPath } from "@/lib/validation";
 
 export default clerkMiddleware(async (auth, request) => {
   if (!isPublicPath(request.nextUrl.pathname)) {
