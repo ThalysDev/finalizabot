@@ -103,15 +103,15 @@ export function sanitizeAlertSettingsPayload(
 ): AlertSettingsPayload {
   const data = (input ?? {}) as Partial<AlertSettingsPayload>;
 
-  const minRoi =
-    typeof data.minRoi === "number"
-      ? Math.max(0, Math.min(100, data.minRoi))
-      : DEFAULT_ALERT_SETTINGS.minRoi;
+  const minRoiValue = Number(data.minRoi);
+  const minRoi = Number.isFinite(minRoiValue)
+    ? Math.max(0, Math.min(100, minRoiValue))
+    : DEFAULT_ALERT_SETTINGS.minRoi;
 
-  const maxCv =
-    typeof data.maxCv === "number"
-      ? Math.max(0, Math.min(2, data.maxCv))
-      : DEFAULT_ALERT_SETTINGS.maxCv;
+  const maxCvValue = Number(data.maxCv);
+  const maxCv = Number.isFinite(maxCvValue)
+    ? Math.max(0, Math.min(2, maxCvValue))
+    : DEFAULT_ALERT_SETTINGS.maxCv;
 
   const leagues = Array.isArray(data.leagues)
     ? data.leagues
@@ -157,18 +157,19 @@ export function sanitizeProPreferencesPayload(
     ? sortKeyInput
     : DEFAULT_PRO_PREFERENCES.sortKey;
 
+  const minMatchesValue = Number(data.minMatches);
+  const minEvValue = Number(data.minEv);
+
   return {
     positionFilter,
     sortKey,
     sortDir: data.sortDir === "asc" ? "asc" : "desc",
-    minMatches:
-      typeof data.minMatches === "number"
-        ? Math.max(0, Math.min(100, Math.trunc(data.minMatches)))
-        : DEFAULT_PRO_PREFERENCES.minMatches,
-    minEv:
-      typeof data.minEv === "number"
-        ? Math.max(-100, Math.min(100, Math.trunc(data.minEv)))
-        : DEFAULT_PRO_PREFERENCES.minEv,
+    minMatches: Number.isFinite(minMatchesValue)
+      ? Math.max(0, Math.min(100, Math.trunc(minMatchesValue)))
+      : DEFAULT_PRO_PREFERENCES.minMatches,
+    minEv: Number.isFinite(minEvValue)
+      ? Math.max(-100, Math.min(100, Math.trunc(minEvValue)))
+      : DEFAULT_PRO_PREFERENCES.minEv,
     searchQuery:
       typeof data.searchQuery === "string"
         ? data.searchQuery.trim().slice(0, 120)

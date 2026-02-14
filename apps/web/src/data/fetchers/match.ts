@@ -8,6 +8,7 @@
 
 import { etlMatchShots } from "@/lib/etl/client";
 import type { EtlShotsResponse } from "@/lib/etl/types";
+import { normalizeMatchShotsInput } from "@/lib/fetchers/match-shots";
 
 /* ============================================================================
    fetchMatchShots
@@ -21,15 +22,17 @@ export async function fetchMatchShots(
   sofascoreMatchId: string | null,
   params?: { limit?: number; offset?: number },
 ): Promise<MatchShotsData> {
-  if (!sofascoreMatchId) {
+  const normalized = normalizeMatchShotsInput(sofascoreMatchId, params);
+
+  if (!normalized.matchId) {
     return { shots: null };
   }
 
-  const res = await etlMatchShots(sofascoreMatchId, params);
+  const res = await etlMatchShots(normalized.matchId, normalized.params);
 
   if (res.error || !res.data) {
     console.warn(
-      `[ETL] Falha match-shots p/ ${sofascoreMatchId}: ${res.error}`,
+      `[ETL] Falha match-shots p/ ${normalized.matchId}: ${res.error}`,
     );
     return { shots: null };
   }

@@ -59,6 +59,16 @@ describe("sanitizeAlertSettingsPayload()", () => {
 
     expect(payload.leagues).toEqual(DEFAULT_ALERT_SETTINGS.leagues);
   });
+
+  it("falls back to defaults when numeric values are non-finite", () => {
+    const payload = sanitizeAlertSettingsPayload({
+      minRoi: Number.NaN,
+      maxCv: Number.POSITIVE_INFINITY,
+    });
+
+    expect(payload.minRoi).toBe(DEFAULT_ALERT_SETTINGS.minRoi);
+    expect(payload.maxCv).toBe(DEFAULT_ALERT_SETTINGS.maxCv);
+  });
 });
 
 describe("sanitizeProPreferencesPayload()", () => {
@@ -94,5 +104,15 @@ describe("sanitizeProPreferencesPayload()", () => {
     expect(payload.sortDir).toBe("desc");
     expect(payload.minMatches).toBe(100);
     expect(payload.minEv).toBe(-100);
+  });
+
+  it("falls back for non-finite numeric values", () => {
+    const payload = sanitizeProPreferencesPayload({
+      minMatches: Number.NaN,
+      minEv: Number.NEGATIVE_INFINITY,
+    });
+
+    expect(payload.minMatches).toBe(DEFAULT_PRO_PREFERENCES.minMatches);
+    expect(payload.minEv).toBe(DEFAULT_PRO_PREFERENCES.minEv);
   });
 });
