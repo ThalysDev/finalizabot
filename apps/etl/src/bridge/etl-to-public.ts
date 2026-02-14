@@ -37,6 +37,10 @@ const BRIDGE_PAGE_SIZE = Math.max(
   100,
   parseInt(process.env.BRIDGE_PAGE_SIZE ?? "500", 10) || 500,
 );
+const BRIDGE_STATS_MATCH_BATCH_SIZE = Math.max(
+  50,
+  parseInt(process.env.BRIDGE_STATS_MATCH_BATCH_SIZE ?? "200", 10) || 200,
+);
 const BRIDGE_TIMINGS_FILE =
   process.env.BRIDGE_TIMINGS_FILE?.trim() ||
   resolve(process.cwd(), "logs", "bridge-timings.jsonl");
@@ -62,9 +66,7 @@ function percentile(values: number[], p: number): number | null {
   return sorted[index] ?? null;
 }
 
-async function persistTimingBaseline(
-  run: BridgeTimingRun,
-): Promise<{
+async function persistTimingBaseline(run: BridgeTimingRun): Promise<{
   runs: number;
   totals: { p50: number | null; p95: number | null };
   stages: Record<string, { p50: number | null; p95: number | null }>;
@@ -89,7 +91,9 @@ async function persistTimingBaseline(
     })
     .filter((entry): entry is BridgeTimingRun => Boolean(entry));
 
-  const totalValues = history.map((entry) => entry.totalMs).filter(Number.isFinite);
+  const totalValues = history
+    .map((entry) => entry.totalMs)
+    .filter(Number.isFinite);
   const stageValues = new Map<string, number[]>();
 
   for (const entry of history) {
@@ -101,7 +105,10 @@ async function persistTimingBaseline(
     }
   }
 
-  const stageSummary: Record<string, { p50: number | null; p95: number | null }> = {};
+  const stageSummary: Record<
+    string,
+    { p50: number | null; p95: number | null }
+  > = {};
   for (const [stage, values] of stageValues.entries()) {
     stageSummary[stage] = {
       p50: percentile(values, 0.5),
@@ -493,7 +500,29 @@ async function syncPlayerMatchStats(): Promise<number> {
     : null;
   type CountRow = { count: number | bigint | string };
 
-  const result = await prisma.$queryRaw<CountRow[]>`
+  let totalUpserted = 0;
+  let batchCount = 0;
+  let cursorId: string | undefined;
+
+  while (true) {
+    const etlMatchBatch = await prisma.etlMatch.findMany({
+      where: matchCutoff ? { startTime: { gte: matchCutoff } } : undefined,
+      select: { id: true },
+      orderBy: { id: "asc" },
+      take: BRIDGE_STATS_MATCH_BATCH_SIZE,
+      ...(cursorId
+        ? {
+            cursor: { id: cursorId },
+            skip: 1,
+          }
+        : {}),
+    });
+
+    if (etlMatchBatch.length === 0) break;
+
+    const matchIds = etlMatchBatch.map((item) => item.id);
+
+    const result = await prisma.$queryRaw<CountRow[]>`
       WITH aggregated AS (
         SELECT
           p."id" AS "playerId",
@@ -507,8 +536,6 @@ async function syncPlayerMatchStats(): Promise<number> {
           )::int AS "goals",
           COALESCE(mp."minutesPlayed", 0)::int AS "minutesPlayed"
         FROM etl."MatchPlayer" mp
-        INNER JOIN etl."Match" em
-          ON em."id" = mp."matchId"
         INNER JOIN "Match" m
           ON m."sofascoreId" = mp."matchId"
         INNER JOIN "Player" p
@@ -516,7 +543,7 @@ async function syncPlayerMatchStats(): Promise<number> {
         LEFT JOIN etl."ShotEvent" se
           ON se."matchId" = mp."matchId"
           AND se."playerId" = mp."playerId"
-        WHERE (${matchCutoff}::timestamptz IS NULL OR em."startTime" >= ${matchCutoff}::timestamptz)
+        WHERE mp."matchId" = ANY(${matchIds}::text[])
         GROUP BY
           p."id",
           m."id",
@@ -554,10 +581,28 @@ async function syncPlayerMatchStats(): Promise<number> {
       FROM upserted
     `;
 
-  const total = result[0]?.count;
-  if (typeof total === "number") return total;
-  if (typeof total === "bigint") return Number(total);
-  return total != null ? parseInt(String(total), 10) || 0 : 0;
+    const batchTotal = result[0]?.count;
+    const upsertedInBatch =
+      typeof batchTotal === "number"
+        ? batchTotal
+        : typeof batchTotal === "bigint"
+          ? Number(batchTotal)
+          : batchTotal != null
+            ? parseInt(String(batchTotal), 10) || 0
+            : 0;
+
+    totalUpserted += upsertedInBatch;
+    batchCount += 1;
+    cursorId = etlMatchBatch[etlMatchBatch.length - 1]?.id;
+  }
+
+  logger.info("[Bridge] syncPlayerMatchStats em batches concluído", {
+    batchSize: BRIDGE_STATS_MATCH_BATCH_SIZE,
+    batches: batchCount,
+    upserted: totalUpserted,
+  });
+
+  return totalUpserted;
 }
 
 /* ============================================================================

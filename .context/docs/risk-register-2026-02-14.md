@@ -11,7 +11,8 @@
 - ✅ ETL bridge risk reduced: no remaining `$queryRawUnsafe` usage in `apps/etl/src`.
 - ✅ ETL bridge now emits stage-level timing logs and uses stricter payload selection in key reads.
 - ✅ ETL bridge now persists timing history with p50/p95 baseline aggregation per run.
-- ⚠️ ETL bridge still has potential bottlenecks under larger datasets and needs optimization on the top hotspot.
+- ✅ ETL `syncPlayerMatchStats` now runs in batches by match window, reducing single-query workload.
+- ⚠️ ETL bridge still has potential bottlenecks under larger datasets and needs follow-up based on live p95 evolution.
 
 ## Prioritized Risks
 
@@ -25,9 +26,9 @@
   - risk of degraded sync performance and long-running jobs under data growth;
   - potential timeout/resource pressure in constrained runtime.
 - **Recommendation**:
-  1. Track the stage with highest p95 for a representative sample window.
+  1. Track p95 evolution after batch rollout to confirm sustained improvement.
   2. Move more aggregation logic to SQL windows/CTEs where practical.
-  3. Apply pagination/windowing refinements in the heaviest remaining stage.
+  3. Apply further pagination/windowing in next heaviest remaining stage if needed.
 - **Priority**: Next cycle (P1)
 
 ### R3 — Route-level perf observability gaps (Medium)
@@ -57,6 +58,9 @@
   - `syncMatches`, `syncPlayers`, `syncPlayerMatchStats`, `generateMarketAnalysis`
 - Added persisted baseline file with percentile aggregation:
   - `logs/bridge-timings.jsonl` (rolling history with p50/p95 summaries)
+- Optimized `syncPlayerMatchStats` execution model:
+  - processes ETL matches in configurable batches (`BRIDGE_STATS_MATCH_BATCH_SIZE`)
+  - applies upsert CTE per batch instead of one large global upsert
 - Updated contract tests accordingly:
   - `apps/web/__tests__/api-responses.test.ts`
   - `apps/web/__tests__/user-preferences-routes.test.ts`
@@ -66,5 +70,6 @@
 ## Exit Criteria for closing current risk items
 
 - Capture ETL stage timing baseline (p50/p95) across representative sync runs.
-- Optimize the top remaining ETL hotspot identified by current p95 baseline.
+- Confirm p95 improvement for `syncPlayerMatchStats` over representative runs.
+- Optimize the next highest p95 stage when justified by baseline data.
 - Post-deploy smoke (`scripts/verify-deployment.ps1 -Detailed`) green.
