@@ -1,8 +1,9 @@
 import { LoadingState } from "@/components/ui/LoadingState";
+import { LOADING_COPY } from "@/lib/copy/navigation";
 
 export default function PlayerLoading() {
   return (
-    <LoadingState title="Carregando jogador">
+    <LoadingState title={LOADING_COPY.player}>
       <div className="max-w-4xl mx-auto animate-pulse">
         <div className="bg-fb-surface rounded-2xl border border-fb-border/40 p-6 mb-6">
           <div className="flex items-center gap-4 mb-4">

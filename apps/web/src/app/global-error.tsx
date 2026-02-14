@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
-import { NAV_COPY } from "@/lib/copy/navigation";
+import { ERROR_COPY, NAV_COPY } from "@/lib/copy/navigation";
 import { logger } from "@/lib/logger";
 
 /**
@@ -35,10 +35,10 @@ export default function GlobalError({
             </div>
 
             <h1 className="text-fb-text text-2xl font-bold mb-2">
-              Algo deu errado
+              {ERROR_COPY.genericTitle}
             </h1>
             <p className="text-fb-text-muted text-sm mb-6 leading-relaxed">
-              Ocorreu um erro inesperado. Tente recarregar a página.
+              {ERROR_COPY.globalDescription}
             </p>
 
             {error.digest && (
@@ -53,7 +53,7 @@ export default function GlobalError({
                 className="flex items-center gap-2 px-6 py-3 bg-fb-primary text-fb-primary-content font-bold text-sm rounded-lg hover:brightness-110 transition-all"
               >
                 <RefreshCw className="size-4" />
-                Tentar novamente
+                {ERROR_COPY.retry}
               </button>
               <Link
                 href="/"

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { ERROR_COPY } from "@/lib/copy/navigation";
 
 type ErrorStateProps = {
   title: string;
@@ -24,7 +25,7 @@ export function ErrorState({
   description,
   digest,
   onRetry,
-  retryLabel = "Tentar novamente",
+  retryLabel = ERROR_COPY.retry,
   secondaryAction,
   className,
   contentClassName,

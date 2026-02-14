@@ -1,8 +1,9 @@
 import { LoadingState } from "@/components/ui/LoadingState";
+import { LOADING_COPY } from "@/lib/copy/navigation";
 
 export default function AlertsLoading() {
   return (
-    <LoadingState title="Carregando alertas">
+    <LoadingState title={LOADING_COPY.alerts}>
       <div className="animate-pulse">
         <div className="flex items-center justify-between mb-6">
           <div className="h-7 w-48 bg-fb-surface rounded-lg" />

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AlertTriangle, RefreshCw, ArrowLeft } from "lucide-react";
-import { NAV_COPY } from "@/lib/copy/navigation";
+import { ERROR_COPY, NAV_COPY } from "@/lib/copy/navigation";
 
 export default function MatchError({
   error,
@@ -20,11 +20,10 @@ export default function MatchError({
           <AlertTriangle className="size-8 text-fb-accent-red" />
         </div>
         <h2 className="text-fb-text font-bold text-xl mb-2">
-          Erro ao carregar partida
+          {ERROR_COPY.matchTitle}
         </h2>
         <p className="text-fb-text-muted text-sm mb-6">
-          Não foi possível carregar os dados desta partida. Isso pode ser
-          temporário — tente novamente.
+          {ERROR_COPY.matchDescription}
         </p>
         <div className="flex flex-col gap-3">
           <button

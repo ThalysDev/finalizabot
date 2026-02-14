@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { NAV_COPY } from "@/lib/copy/navigation";
+import { ERROR_COPY, NAV_COPY } from "@/lib/copy/navigation";
 import { logger } from "@/lib/logger";
 
 /**
@@ -27,8 +27,8 @@ export default function ProtectedError({
 
   return (
     <ErrorState
-      title="Algo deu errado"
-      description="Ocorreu um erro inesperado ao carregar esta página. Nossa equipe foi notificada automaticamente."
+      title={ERROR_COPY.genericTitle}
+      description={ERROR_COPY.protectedDescription}
       digest={error.digest}
       onRetry={reset}
       secondaryAction={{

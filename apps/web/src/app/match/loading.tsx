@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { LOADING_COPY } from "@/lib/copy/navigation";
 
 /**
  * Loading state para página de partida (/match/[id]).
@@ -57,7 +58,7 @@ export default function MatchLoading() {
             className="size-5 object-contain"
           />
         </div>
-        <span className="text-xs text-fb-text-muted">Carregando partida…</span>
+        <span className="text-xs text-fb-text-muted">{LOADING_COPY.match}</span>
       </div>
     </div>
   );

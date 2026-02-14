@@ -1,8 +1,9 @@
 import { GridCardsLoading, LoadingState } from "@/components/ui/LoadingState";
+import { LOADING_COPY } from "@/lib/copy/navigation";
 
 export default function DashboardLoading() {
   return (
-    <LoadingState title="Carregando dashboard">
+    <LoadingState title={LOADING_COPY.dashboard}>
       <div className="animate-pulse">
         <div className="flex gap-2 mb-6">
           <div className="h-9 w-24 bg-fb-surface rounded-lg" />

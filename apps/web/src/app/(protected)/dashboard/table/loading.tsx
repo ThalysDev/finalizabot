@@ -1,5 +1,6 @@
 import { LoadingState } from "@/components/ui/LoadingState";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LOADING_COPY } from "@/lib/copy/navigation";
 
 /**
  * Loading skeleton for the advanced analytics table page.
@@ -7,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export default function TableLoading() {
   return (
-    <LoadingState title="Carregando tabela avançada">
+    <LoadingState title={LOADING_COPY.advancedTable}>
       <div className="max-w-[1400px] mx-auto animate-pulse">
         <div className="rounded-xl bg-fb-surface p-4 mb-6">
           <div className="flex items-center justify-between">

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { NAV_COPY } from "@/lib/copy/navigation";
+import { ERROR_COPY, NAV_COPY } from "@/lib/copy/navigation";
 import { logger } from "@/lib/logger";
 
 export default function DashboardError({
@@ -23,8 +23,8 @@ export default function DashboardError({
 
   return (
     <ErrorState
-      title="Erro no Dashboard"
-      description="Não foi possível carregar os dados do dashboard no momento. Tente novamente em instantes."
+      title={ERROR_COPY.dashboardTitle}
+      description={ERROR_COPY.dashboardDescription}
       digest={error.digest}
       onRetry={reset}
       secondaryAction={{

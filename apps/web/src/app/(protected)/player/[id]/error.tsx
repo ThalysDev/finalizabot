@@ -1,7 +1,7 @@
 "use client";
 
 import { ErrorState } from "@/components/ui/ErrorState";
-import { NAV_COPY } from "@/lib/copy/navigation";
+import { ERROR_COPY, NAV_COPY } from "@/lib/copy/navigation";
 
 export default function PlayerError({
   error,
@@ -14,8 +14,8 @@ export default function PlayerError({
 
   return (
     <ErrorState
-      title="Erro ao carregar jogador"
-      description="Não foi possível carregar os dados deste jogador. Isso pode ser temporário — tente novamente."
+      title={ERROR_COPY.playerTitle}
+      description={ERROR_COPY.playerDescription}
       onRetry={reset}
       secondaryAction={{
         href: "/dashboard",

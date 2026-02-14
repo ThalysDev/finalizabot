@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { ERROR_COPY } from "@/lib/copy/navigation";
 import { logger } from "@/lib/logger";
 
 export default function TableError({
@@ -23,8 +24,8 @@ export default function TableError({
 
   return (
     <ErrorState
-      title="Erro ao carregar a tabela avançada"
-      description="Ocorreu um erro ao processar os dados. Isso pode acontecer quando o serviço ETL está indisponível ou existem dados inconsistentes."
+      title={ERROR_COPY.advancedTableTitle}
+      description={ERROR_COPY.advancedTableDescription}
       digest={error.digest}
       onRetry={reset}
       className="p-4 md:p-6 max-w-[1400px] mx-auto flex flex-col items-center justify-center py-20"
