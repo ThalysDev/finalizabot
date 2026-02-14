@@ -189,7 +189,11 @@ export async function fetchPlayerPageData(
         },
         orderBy: { match: { matchDate: "desc" } },
         take: 10,
-        include: {
+        select: {
+          shots: true,
+          shotsOnTarget: true,
+          minutesPlayed: true,
+          createdAt: true,
           match: {
             select: {
               matchDate: true,
