@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import {
@@ -33,13 +33,36 @@ interface SearchResult {
 
 export function DarkHeader() {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [activeResultIndex, setActiveResultIndex] = useState<number>(-1);
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const initialSearchParam = searchParams.get("playerSearch") ?? "";
+
+  const syncSearchParam = useCallback(
+    (value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value.trim().length >= 2) {
+        params.set("playerSearch", value.trim());
+      } else {
+        params.delete("playerSearch");
+      }
+
+      const nextQuery = params.toString();
+      if (nextQuery === searchParams.toString()) return;
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+        scroll: false,
+      });
+    },
+    [pathname, router, searchParams],
+  );
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -56,25 +79,87 @@ export function DarkHeader() {
     if (q.length < 2) {
       setSearchResults([]);
       setSearchOpen(false);
+      setActiveResultIndex(-1);
       return;
     }
     setSearching(true);
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
       const data = await res.json();
-      setSearchResults(data.results ?? []);
-      setSearchOpen(true);
+      const results = (data.results ?? []) as SearchResult[];
+      setSearchResults(results);
+      setSearchOpen(results.length > 0);
+      setActiveResultIndex(results.length > 0 ? 0 : -1);
     } catch {
       setSearchResults([]);
+      setSearchOpen(false);
+      setActiveResultIndex(-1);
     } finally {
       setSearching(false);
     }
   }, []);
 
+  useEffect(() => {
+    setSearchQuery(initialSearchParam);
+    if (initialSearchParam.length >= 2) {
+      void doSearch(initialSearchParam);
+    } else {
+      setSearchResults([]);
+      setSearchOpen(false);
+      setActiveResultIndex(-1);
+    }
+  }, [doSearch, initialSearchParam]);
+
   function handleSearchChange(value: string) {
     setSearchQuery(value);
+    syncSearchParam(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => doSearch(value), 300);
+  }
+
+  function selectSearchResult(index: number) {
+    const selected = searchResults[index];
+    if (!selected) return;
+    router.push(`/player/${selected.id}`);
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchOpen(false);
+    setActiveResultIndex(-1);
+    setMobileOpen(false);
+    syncSearchParam("");
+  }
+
+  function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      setSearchOpen(false);
+      setActiveResultIndex(-1);
+      return;
+    }
+
+    if (!searchOpen || searchResults.length === 0) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveResultIndex((prev) =>
+        prev < 0 ? 0 : Math.min(prev + 1, searchResults.length - 1),
+      );
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveResultIndex((prev) =>
+        prev <= 0 ? 0 : Math.max(prev - 1, 0),
+      );
+      return;
+    }
+
+    if (event.key === "Enter") {
+      if (activeResultIndex >= 0 && activeResultIndex < searchResults.length) {
+        event.preventDefault();
+        selectSearchResult(activeResultIndex);
+      }
+    }
   }
 
   useEffect(() => {
@@ -87,7 +172,9 @@ export function DarkHeader() {
     setSearchQuery("");
     setSearchResults([]);
     setSearchOpen(false);
+    setActiveResultIndex(-1);
     setMobileOpen(false);
+    syncSearchParam("");
   }
 
   return (
@@ -128,7 +215,10 @@ export function DarkHeader() {
               >
                 {link.label}
                 {"comingSoon" in link && link.comingSoon && (
-                  <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-fb-accent-gold" title="Em breve" />
+                  <span
+                    className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-fb-accent-gold"
+                    title="Em breve"
+                  />
                 )}
                 {isActive && (
                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-fb-primary" />
@@ -154,9 +244,21 @@ export function DarkHeader() {
               autoComplete="off"
               placeholder="Buscar jogador..."
               aria-label="Buscar jogador"
+              aria-controls="header-search-results"
+              aria-expanded={searchOpen}
+              aria-autocomplete="list"
+              aria-activedescendant={
+                activeResultIndex >= 0
+                  ? `header-search-option-${activeResultIndex}`
+                  : undefined
+              }
+              role="combobox"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              onFocus={() => searchResults.length > 0 && setSearchOpen(true)}
+              onFocus={() => {
+                if (searchResults.length > 0) setSearchOpen(true);
+              }}
+              onKeyDown={handleSearchKeyDown}
               className="bg-transparent text-sm text-fb-text placeholder:text-fb-text-muted outline-none w-full"
             />
             {searching && (
@@ -165,13 +267,25 @@ export function DarkHeader() {
           </div>
           {/* Search results dropdown */}
           {searchOpen && searchResults.length > 0 && (
-            <div className="absolute top-full mt-1 left-0 right-0 bg-fb-bg border border-fb-border rounded-xl shadow-xl z-50 overflow-hidden">
-              {searchResults.map((r) => (
+            <div
+              id="header-search-results"
+              role="listbox"
+              className="absolute top-full mt-1 left-0 right-0 bg-fb-bg border border-fb-border rounded-xl shadow-xl z-50 overflow-hidden"
+            >
+              {searchResults.map((r, index) => (
                 <Link
                   key={r.id}
+                  id={`header-search-option-${index}`}
+                  role="option"
+                  aria-selected={activeResultIndex === index}
                   href={`/player/${r.id}`}
                   onClick={handleResultClick}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-fb-surface transition-colors"
+                  className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                    activeResultIndex === index
+                      ? "bg-fb-surface"
+                      : "hover:bg-fb-surface"
+                  }`}
+                  onMouseEnter={() => setActiveResultIndex(index)}
                 >
                   <div className="size-8 rounded-full bg-fb-primary/10 flex items-center justify-center text-fb-primary text-sm font-bold">
                     {r.name.charAt(0)}
@@ -184,13 +298,16 @@ export function DarkHeader() {
               ))}
             </div>
           )}
-          {searchOpen && searchQuery.length >= 2 && searchResults.length === 0 && !searching && (
-            <div className="absolute top-full mt-1 left-0 right-0 bg-fb-bg border border-fb-border rounded-xl shadow-xl z-50 p-4">
-              <p className="text-xs text-fb-text-muted text-center">
-                Nenhum jogador encontrado
-              </p>
-            </div>
-          )}
+          {searchOpen &&
+            searchQuery.length >= 2 &&
+            searchResults.length === 0 &&
+            !searching && (
+              <div className="absolute top-full mt-1 left-0 right-0 bg-fb-bg border border-fb-border rounded-xl shadow-xl z-50 p-4">
+                <p className="text-xs text-fb-text-muted text-center">
+                  Nenhum jogador encontrado
+                </p>
+              </div>
+            )}
         </div>
 
         {/* Auth */}
@@ -230,7 +347,10 @@ export function DarkHeader() {
 
       {/* Mobile nav dropdown */}
       {mobileOpen && (
-        <div id="dark-header-mobile-nav" className="absolute top-full left-0 right-0 bg-fb-bg border-b border-fb-border p-4 md:hidden z-50">
+        <div
+          id="dark-header-mobile-nav"
+          className="absolute top-full left-0 right-0 bg-fb-bg border-b border-fb-border p-4 md:hidden z-50"
+        >
           <nav className="flex flex-col gap-3">
             {navLinks.map((link) => {
               const Icon = link.icon;
@@ -261,6 +381,7 @@ export function DarkHeader() {
               autoComplete="off"
               placeholder="Buscar jogador..."
               aria-label="Buscar jogador"
+              onKeyDown={handleSearchKeyDown}
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="bg-transparent text-sm text-fb-text placeholder:text-fb-text-muted outline-none w-full"
@@ -284,13 +405,15 @@ export function DarkHeader() {
               ))}
             </div>
           )}
-          {searchQuery.length >= 2 && searchResults.length === 0 && !searching && (
-            <div className="mt-2 bg-fb-surface rounded-lg p-3">
-              <p className="text-xs text-fb-text-muted text-center">
-                Nenhum jogador encontrado
-              </p>
-            </div>
-          )}
+          {searchQuery.length >= 2 &&
+            searchResults.length === 0 &&
+            !searching && (
+              <div className="mt-2 bg-fb-surface rounded-lg p-3">
+                <p className="text-xs text-fb-text-muted text-center">
+                  Nenhum jogador encontrado
+                </p>
+              </div>
+            )}
         </div>
       )}
     </header>
