@@ -11,6 +11,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { validateImageProxyUrl } from "@/lib/validation";
+import { jsonError } from "@/lib/api/responses";
 
 const CACHE_TTL = 60 * 60 * 24 * 7; // 7 days
 
@@ -18,10 +19,7 @@ export async function GET(req: NextRequest) {
   const validation = validateImageProxyUrl(req.nextUrl.searchParams.get("url"));
 
   if (!validation.ok) {
-    return NextResponse.json(
-      { error: validation.error },
-      { status: validation.status },
-    );
+    return jsonError(validation.error, validation.status);
   }
 
   try {
@@ -52,6 +50,6 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch {
-    return new NextResponse(null, { status: 502 });
+    return jsonError("Image upstream unavailable", 502);
   }
 }

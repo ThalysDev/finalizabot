@@ -6,7 +6,7 @@ import { DEFAULT_LINE } from "@/lib/etl/config";
 import { formatDateTime } from "@/lib/format/date";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizeDebugTableQueryParams } from "@/lib/api/query-params";
-import { jsonRateLimited } from "@/lib/api/responses";
+import { jsonError, jsonRateLimited } from "@/lib/api/responses";
 
 export const dynamic = "force-dynamic";
 
@@ -45,19 +45,13 @@ export async function GET(request: Request) {
   }
 
   if (isProduction && !allowDebugInProd) {
-    return NextResponse.json(
-      { success: false, error: { message: "Not found" } },
-      { status: 404 },
-    );
+    return jsonError("Not found", 404);
   }
 
   if (debugApiKey) {
     const provided = request.headers.get("x-debug-key")?.trim();
     if (!provided || provided !== debugApiKey) {
-      return NextResponse.json(
-        { success: false, error: { message: "Unauthorized" } },
-        { status: 401 },
-      );
+      return jsonError("Unauthorized", 401);
     }
   }
 
@@ -217,12 +211,6 @@ export async function GET(request: Request) {
     });
   } catch (err: unknown) {
     console.error("[DEBUG TABLE] Unexpected error:", err);
-    return NextResponse.json(
-      {
-        success: false,
-        error: toSafeError(err, !isProduction || verboseErrors),
-      },
-      { status: 500 },
-    );
+    return jsonError("Debug table failed", 500);
   }
 }
