@@ -67,6 +67,19 @@
 - Validation gate passed after migration:
   - `npm run quality:ci`
 
+## Operational Status (2026-02-14)
+
+- Attempted post-optimization baseline collection twice with:
+  - `npm run sync:bridge`
+  - `npm run report:bridge-timings`
+- Result:
+  - bridge run aborted by advisory lock contention (`Outra instância já está rodando — abortando`)
+  - no `logs/bridge-timings.jsonl` sample generated yet in this environment
+- Next action when lock is released:
+  1. run `npm run sync:bridge`
+  2. run `npm run report:bridge-timings`
+  3. record p95 comparison and pick next hotspot stage
+
 ## Exit Criteria for closing current risk items
 
 - Capture ETL stage timing baseline (p50/p95) across representative sync runs.
