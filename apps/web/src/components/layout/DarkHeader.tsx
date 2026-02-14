@@ -10,6 +10,7 @@ import {
   Bell,
   LayoutDashboard,
   Search,
+  SearchX,
   Zap,
   Menu,
   X,
@@ -29,6 +30,19 @@ interface SearchResult {
   id: string;
   name: string;
   position: string;
+}
+
+function HeaderSearchEmptyState({ className }: { className: string }) {
+  return (
+    <div className={className}>
+      <div className="mx-auto size-8 rounded-full bg-fb-surface flex items-center justify-center mb-2">
+        <SearchX className="size-4 text-fb-text-muted" />
+      </div>
+      <p className="text-xs text-fb-text-muted text-center">
+        Nenhum jogador encontrado
+      </p>
+    </div>
+  );
 }
 
 export function DarkHeader() {
@@ -148,9 +162,7 @@ export function DarkHeader() {
 
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      setActiveResultIndex((prev) =>
-        prev <= 0 ? 0 : Math.max(prev - 1, 0),
-      );
+      setActiveResultIndex((prev) => (prev <= 0 ? 0 : Math.max(prev - 1, 0)));
       return;
     }
 
@@ -302,11 +314,7 @@ export function DarkHeader() {
             searchQuery.length >= 2 &&
             searchResults.length === 0 &&
             !searching && (
-              <div className="absolute top-full mt-1 left-0 right-0 bg-fb-bg border border-fb-border rounded-xl shadow-xl z-50 p-4">
-                <p className="text-xs text-fb-text-muted text-center">
-                  Nenhum jogador encontrado
-                </p>
-              </div>
+              <HeaderSearchEmptyState className="absolute top-full mt-1 left-0 right-0 bg-fb-bg border border-fb-border rounded-xl shadow-xl z-50 p-4" />
             )}
         </div>
 
@@ -408,11 +416,7 @@ export function DarkHeader() {
           {searchQuery.length >= 2 &&
             searchResults.length === 0 &&
             !searching && (
-              <div className="mt-2 bg-fb-surface rounded-lg p-3">
-                <p className="text-xs text-fb-text-muted text-center">
-                  Nenhum jogador encontrado
-                </p>
-              </div>
+              <HeaderSearchEmptyState className="mt-2 bg-fb-surface rounded-lg p-3" />
             )}
         </div>
       )}
