@@ -44,9 +44,9 @@ export async function runBridge(): Promise<void> {
   logger.info("[Bridge] Iniciando sincronização ETL → Public...");
 
   // Acquire advisory lock to prevent concurrent syncs
-  const [lockResult] = await prisma.$queryRawUnsafe<{ acquired: boolean }[]>(
-    `SELECT pg_try_advisory_lock(${BRIDGE_LOCK_ID}) as acquired`,
-  );
+  const [lockResult] = await prisma.$queryRaw<{ acquired: boolean }[]>`
+    SELECT pg_try_advisory_lock(${BRIDGE_LOCK_ID}) as acquired
+  `;
 
   if (!lockResult?.acquired) {
     logger.warn("[Bridge] Outra instância já está rodando — abortando.");
@@ -96,9 +96,9 @@ export async function runBridge(): Promise<void> {
 
     logger.info("[Bridge] Sincronização concluída!");
   } finally {
-    await prisma.$queryRawUnsafe(
-      `SELECT pg_advisory_unlock(${BRIDGE_LOCK_ID})`,
-    );
+    await prisma.$queryRaw`
+      SELECT pg_advisory_unlock(${BRIDGE_LOCK_ID})
+    `;
     logger.info("[Bridge] Advisory lock released.");
   }
 }
@@ -344,8 +344,7 @@ async function syncPlayerMatchStats(): Promise<number> {
     : null;
   type CountRow = { count: number | bigint | string };
 
-  const result = await prisma.$queryRawUnsafe<CountRow[]>(
-    `
+  const result = await prisma.$queryRaw<CountRow[]>`
       WITH aggregated AS (
         SELECT
           p."id" AS "playerId",
@@ -368,7 +367,7 @@ async function syncPlayerMatchStats(): Promise<number> {
         LEFT JOIN etl."ShotEvent" se
           ON se."matchId" = mp."matchId"
           AND se."playerId" = mp."playerId"
-        WHERE ($1::timestamptz IS NULL OR em."startTime" >= $1)
+        WHERE (${matchCutoff}::timestamptz IS NULL OR em."startTime" >= ${matchCutoff}::timestamptz)
         GROUP BY
           p."id",
           m."id",
@@ -404,9 +403,7 @@ async function syncPlayerMatchStats(): Promise<number> {
       )
       SELECT COUNT(*)::int AS count
       FROM upserted
-    `,
-    matchCutoff,
-  );
+    `;
 
   const total = result[0]?.count;
   if (typeof total === "number") return total;
@@ -498,8 +495,7 @@ async function generateMarketAnalysis(): Promise<number> {
   );
 
   type PlayerShotRow = { playerId: string; shots: number };
-  const recentShots = await prisma.$queryRawUnsafe<PlayerShotRow[]>(
-    `
+  const recentShots = await prisma.$queryRaw<PlayerShotRow[]>`
       SELECT ranked."playerId" as "playerId", ranked."shots" as "shots"
       FROM (
         SELECT
@@ -511,14 +507,12 @@ async function generateMarketAnalysis(): Promise<number> {
           ) as rn
         FROM "PlayerMatchStats" pms
         INNER JOIN "Match" m ON m."id" = pms."matchId"
-        WHERE pms."playerId" = ANY($1::text[])
+        WHERE pms."playerId" = ANY(${playerIds}::text[])
           AND m."status" = 'finished'
       ) ranked
       WHERE ranked.rn <= 10
       ORDER BY ranked."playerId", ranked.rn
-    `,
-    playerIds,
-  );
+    `;
 
   for (const row of recentShots) {
     const shots = statsByPlayer.get(row.playerId);
