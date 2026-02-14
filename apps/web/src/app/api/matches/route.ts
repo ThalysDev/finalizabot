@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { logger } from "@/lib/logger";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { normalizeMatchesQueryParams } from "@/lib/api/query-params";
 
 export async function GET(req: NextRequest) {
   // Rate limit: 30 req/min per IP
@@ -15,16 +16,18 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const { days, limit } = normalizeMatchesQueryParams(req.nextUrl.searchParams);
+
     const matches = await prisma.match.findMany({
       where: {
         matchDate: {
-          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // last 7 days
+          gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000),
         },
       },
       orderBy: {
         matchDate: "desc",
       },
-      take: 50,
+      take: limit,
       select: {
         id: true,
         homeTeam: true,

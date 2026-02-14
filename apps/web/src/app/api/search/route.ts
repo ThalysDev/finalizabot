@@ -3,6 +3,7 @@ import prisma from "@/lib/db/prisma";
 import { logger } from "@/lib/logger";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateSearchQuery } from "@/lib/validation";
+import { normalizeSearchQueryParams } from "@/lib/api/query-params";
 
 export async function GET(req: NextRequest) {
   // Rate limit: 30 req/min per IP
@@ -16,7 +17,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const q = validateSearchQuery(req.nextUrl.searchParams.get("q"));
+    const { q: rawQuery, limit } = normalizeSearchQueryParams(
+      req.nextUrl.searchParams,
+    );
+    const q = validateSearchQuery(rawQuery);
 
     if (!q) {
       return NextResponse.json({ results: [] });
@@ -26,7 +30,7 @@ export async function GET(req: NextRequest) {
       where: {
         name: { contains: q, mode: "insensitive" },
       },
-      take: 8,
+      take: limit,
       select: {
         id: true,
         name: true,
