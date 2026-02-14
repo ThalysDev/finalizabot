@@ -88,6 +88,7 @@ npm run test
 - Auditoria: `.context/docs/audit.md`
 - Arquitetura: `.context/docs/architecture.md`
 - Estratégia de testes: `.context/docs/testing-strategy.md`
+- Changelog: `CHANGELOG.md`
 
 ## Segurança operacional
 
