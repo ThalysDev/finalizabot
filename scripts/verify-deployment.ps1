@@ -125,8 +125,8 @@ Write-Host "[4/6] Checking git status..." -ForegroundColor Yellow
 Write-Host ""
 
 $null = Test-Warning "Working tree has pending changes" {
-    $status = (git status --porcelain | Out-String).Trim()
-    $status.Length -gt 0
+    $statusLines = @(git status --porcelain --untracked-files=all)
+    $statusLines.Count -gt 0
 } "Local changes detected. Commit/stash before final release checks."
 
 Write-Host ""
