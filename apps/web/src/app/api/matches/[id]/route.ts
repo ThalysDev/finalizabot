@@ -28,10 +28,43 @@ export async function GET(
 
     const match = await prisma.match.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        sofascoreId: true,
+        homeTeam: true,
+        awayTeam: true,
+        competition: true,
+        matchDate: true,
+        status: true,
+        homeScore: true,
+        awayScore: true,
+        minute: true,
+        homeTeamImageId: true,
+        homeTeamImageUrl: true,
+        homeTeamSofascoreId: true,
+        awayTeamImageId: true,
+        awayTeamImageUrl: true,
+        awayTeamSofascoreId: true,
         marketAnalyses: {
-          include: {
-            player: true,
+          select: {
+            id: true,
+            odds: true,
+            probability: true,
+            line: true,
+            createdAt: true,
+            player: {
+              select: {
+                id: true,
+                name: true,
+                position: true,
+                teamName: true,
+                sofascoreId: true,
+                imageId: true,
+                imageUrl: true,
+                teamImageId: true,
+                teamImageUrl: true,
+              },
+            },
           },
         },
       },

@@ -633,6 +633,12 @@ describe("GET /api/players/[id]", () => {
     expect(body.player.id).toBe("p1");
     expect(body.etlShots).toEqual([]);
     expect(etlPlayerShots).not.toHaveBeenCalled();
+    expect(findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "p1" },
+        select: expect.any(Object),
+      }),
+    );
   });
 
   it("calls ETL when player has valid numeric sofascoreId", async () => {
@@ -682,5 +688,134 @@ describe("GET /api/players/[id]", () => {
       to: undefined,
     });
     expect(body.etlShots).toEqual([{ shotType: "goal" }]);
+    expect(response.headers.get("Cache-Control")).toBe(
+      "s-maxage=120, stale-while-revalidate=60",
+    );
+  });
+});
+
+describe("GET /api/matches/[id]", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  function mockApiResponsesModule() {
+    vi.doMock("@/lib/api/responses", () => ({
+      jsonError: (message: string, status: number) =>
+        new Response(JSON.stringify({ error: message }), {
+          status,
+          headers: { "Cache-Control": "no-store" },
+        }),
+      jsonRateLimited: (retryAfter: number) =>
+        new Response(JSON.stringify({ error: "Too many requests" }), {
+          status: 429,
+          headers: {
+            "Cache-Control": "no-store",
+            "Retry-After": String(retryAfter),
+          },
+        }),
+    }));
+  }
+
+  it("skips ETL shots call when match has invalid sofascoreId", async () => {
+    const findUnique = vi.fn().mockResolvedValue({
+      id: "m1",
+      sofascoreId: "invalid-id",
+      marketAnalyses: [],
+    });
+    const etlMatchShots = vi.fn();
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { match: { findUnique } },
+    }));
+    vi.doMock("@/lib/etl/client", () => ({ etlMatchShots }));
+    vi.doMock("@/lib/rate-limit", () => ({
+      checkRateLimit: vi.fn(() => ({ allowed: true })),
+      getClientIp: vi.fn(() => "127.0.0.1"),
+    }));
+    vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
+    vi.doMock("@/lib/validation", () => ({
+      validateId: vi.fn((id: string) => id),
+    }));
+    vi.doMock("@/lib/fetchers/match-shots", () => ({
+      normalizeMatchShotsInput: vi.fn(() => ({
+        matchId: null,
+        params: { limit: 100, offset: 0 },
+      })),
+    }));
+    mockApiResponsesModule();
+
+    const { GET } = await import("../src/app/api/matches/[id]/route");
+    const response = await GET(new Request("http://localhost/api/matches/m1"), {
+      params: Promise.resolve({ id: "m1" }),
+    });
+    const body = (await response.json()) as {
+      match: { id: string };
+      etlShots: { items: unknown[]; total: number; limit: number; offset: number };
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.match.id).toBe("m1");
+    expect(body.etlShots.items).toEqual([]);
+    expect(etlMatchShots).not.toHaveBeenCalled();
+    expect(findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "m1" },
+        select: expect.any(Object),
+      }),
+    );
+  });
+
+  it("calls ETL shots when match has valid sofascoreId", async () => {
+    const findUnique = vi.fn().mockResolvedValue({
+      id: "m1",
+      sofascoreId: "123456",
+      marketAnalyses: [],
+    });
+    const etlMatchShots = vi.fn().mockResolvedValue({
+      data: { items: [{ minute: 10 }], total: 1, limit: 25, offset: 5 },
+    });
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { match: { findUnique } },
+    }));
+    vi.doMock("@/lib/etl/client", () => ({ etlMatchShots }));
+    vi.doMock("@/lib/rate-limit", () => ({
+      checkRateLimit: vi.fn(() => ({ allowed: true })),
+      getClientIp: vi.fn(() => "127.0.0.1"),
+    }));
+    vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
+    vi.doMock("@/lib/validation", () => ({
+      validateId: vi.fn((id: string) => id),
+    }));
+    vi.doMock("@/lib/fetchers/match-shots", () => ({
+      normalizeMatchShotsInput: vi.fn(() => ({
+        matchId: "123456",
+        params: { limit: 25, offset: 5 },
+      })),
+    }));
+    mockApiResponsesModule();
+
+    const { GET } = await import("../src/app/api/matches/[id]/route");
+    const response = await GET(
+      new Request("http://localhost/api/matches/m1?limit=25&offset=5"),
+      {
+        params: Promise.resolve({ id: "m1" }),
+      },
+    );
+    const body = (await response.json()) as {
+      etlShots: { items: Array<{ minute: number }>; total: number; limit: number; offset: number };
+    };
+
+    expect(response.status).toBe(200);
+    expect(etlMatchShots).toHaveBeenCalledWith("123456", {
+      limit: 25,
+      offset: 5,
+    });
+    expect(body.etlShots.items).toEqual([{ minute: 10 }]);
+    expect(response.headers.get("Cache-Control")).toBe(
+      "s-maxage=120, stale-while-revalidate=60",
+    );
   });
 });

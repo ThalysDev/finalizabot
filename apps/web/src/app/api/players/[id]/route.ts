@@ -29,7 +29,16 @@ export async function GET(
 
     const player = await prisma.player.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        position: true,
+        teamName: true,
+        sofascoreId: true,
+        imageId: true,
+        imageUrl: true,
+        teamImageId: true,
+        teamImageUrl: true,
         matchStats: {
           orderBy: {
             createdAt: "desc",
@@ -51,8 +60,25 @@ export async function GET(
             createdAt: "desc",
           },
           take: 1,
-          include: {
-            match: true,
+          select: {
+            id: true,
+            odds: true,
+            probability: true,
+            line: true,
+            createdAt: true,
+            match: {
+              select: {
+                id: true,
+                homeTeam: true,
+                awayTeam: true,
+                competition: true,
+                matchDate: true,
+                status: true,
+                homeScore: true,
+                awayScore: true,
+                minute: true,
+              },
+            },
           },
         },
       },
@@ -78,7 +104,9 @@ export async function GET(
 
     return NextResponse.json(
       { player, etlShots },
-      { headers: { "Cache-Control": "s-maxage=120, stale-while-revalidate=60" } },
+      {
+        headers: { "Cache-Control": "s-maxage=120, stale-while-revalidate=60" },
+      },
     );
   } catch (error) {
     logger.error("[/api/players/:id] fetch failed", error);
