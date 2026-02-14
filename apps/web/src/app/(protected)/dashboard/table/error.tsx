@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { logger } from "@/lib/logger";
 
 export default function TableError({
   error,
@@ -10,11 +11,13 @@ export default function TableError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[AdvancedTable] error:", error);
-    console.error("[AdvancedTable] error.message:", error.message);
-    console.error("[AdvancedTable] error.stack:", error.stack);
-    console.error("[AdvancedTable] error.digest:", error.digest);
-    console.error("[AdvancedTable] error.cause:", error.cause);
+    logger.error("[AdvancedTable] Error", {
+      name: error.name,
+      message: error.message,
+      digest: error.digest,
+      stack: error.stack,
+      cause: error.cause,
+    });
   }, [error]);
 
   return (

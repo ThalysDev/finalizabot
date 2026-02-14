@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { logger } from "@/lib/logger";
 
 export default function DashboardError({
   error,
@@ -11,7 +12,12 @@ export default function DashboardError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[Dashboard Error]", error);
+    logger.error("[Dashboard Error]", {
+      name: error.name,
+      message: error.message,
+      digest: error.digest,
+      cause: error.cause,
+    });
   }, [error]);
 
   return (

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 /**
  * Error boundary global — captura erros em qualquer rota.
@@ -15,7 +16,12 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[FinalizaBOT Global Error]", error);
+    logger.error("[FinalizaBOT Global Error]", {
+      name: error.name,
+      message: error.message,
+      digest: error.digest,
+      cause: error.cause,
+    });
   }, [error]);
 
   return (

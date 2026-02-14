@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 /**
  * Error boundary para rotas protegidas.
@@ -16,8 +17,12 @@ export default function ProtectedError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Futuro: enviar para serviço de monitoramento (Sentry, etc.)
-    console.error("[FinalizaBOT Error]", error);
+    logger.error("[FinalizaBOT Error]", {
+      name: error.name,
+      message: error.message,
+      digest: error.digest,
+      cause: error.cause,
+    });
   }, [error]);
 
   return (
