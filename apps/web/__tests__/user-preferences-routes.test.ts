@@ -84,7 +84,7 @@ describe("User preference routes hardening", () => {
 
   describe("PUT /api/user/dashboard-preferences", () => {
     it("returns 400 for invalid JSON body", async () => {
-      const queryRawUnsafe = vi.fn();
+      const queryRaw = vi.fn();
       const logError = vi.fn();
 
       vi.doMock("@/lib/auth/resolveAppUserId", () => ({
@@ -92,7 +92,7 @@ describe("User preference routes hardening", () => {
       }));
       mockCommonUserPreferencesModules();
       vi.doMock("@/lib/db/prisma", () => ({
-        default: { $queryRawUnsafe: queryRawUnsafe },
+        default: { $queryRaw: queryRaw },
       }));
       vi.doMock("@/lib/logger", () => ({ logger: { error: logError } }));
 
@@ -107,7 +107,7 @@ describe("User preference routes hardening", () => {
 
       expect(response.status).toBe(400);
       expect(body.error).toBe("Invalid JSON body");
-      expect(queryRawUnsafe).not.toHaveBeenCalled();
+      expect(queryRaw).not.toHaveBeenCalled();
       expect(logError).toHaveBeenCalledWith(
         "[/api/user/dashboard-preferences] invalid json",
         expect.any(SyntaxError),
@@ -116,7 +116,7 @@ describe("User preference routes hardening", () => {
 
     it("returns 500 when persistence fails", async () => {
       const dbError = new Error("db write failed");
-      const queryRawUnsafe = vi.fn().mockRejectedValue(dbError);
+      const queryRaw = vi.fn().mockRejectedValue(dbError);
       const logError = vi.fn();
 
       vi.doMock("@/lib/auth/resolveAppUserId", () => ({
@@ -124,7 +124,7 @@ describe("User preference routes hardening", () => {
       }));
       mockCommonUserPreferencesModules();
       vi.doMock("@/lib/db/prisma", () => ({
-        default: { $queryRawUnsafe: queryRawUnsafe },
+        default: { $queryRaw: queryRaw },
       }));
       vi.doMock("@/lib/logger", () => ({ logger: { error: logError } }));
 
@@ -149,7 +149,7 @@ describe("User preference routes hardening", () => {
     });
 
     it("returns no-store on successful save", async () => {
-      const queryRawUnsafe = vi.fn().mockResolvedValue([
+      const queryRaw = vi.fn().mockResolvedValue([
         {
           dayFilter: "today",
           competitionFilter: "Premier League",
@@ -163,7 +163,7 @@ describe("User preference routes hardening", () => {
       }));
       mockCommonUserPreferencesModules();
       vi.doMock("@/lib/db/prisma", () => ({
-        default: { $queryRawUnsafe: queryRawUnsafe },
+        default: { $queryRaw: queryRaw },
       }));
       vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
 
@@ -250,7 +250,7 @@ describe("User preference routes hardening", () => {
 
   describe("PUT /api/user/pro-preferences", () => {
     it("returns 400 for invalid JSON body", async () => {
-      const queryRawUnsafe = vi.fn();
+      const queryRaw = vi.fn();
       const logError = vi.fn();
 
       vi.doMock("@/lib/auth/resolveAppUserId", () => ({
@@ -258,7 +258,7 @@ describe("User preference routes hardening", () => {
       }));
       mockCommonUserPreferencesModules();
       vi.doMock("@/lib/db/prisma", () => ({
-        default: { $queryRawUnsafe: queryRawUnsafe },
+        default: { $queryRaw: queryRaw },
       }));
       vi.doMock("@/lib/logger", () => ({ logger: { error: logError } }));
 
@@ -270,7 +270,7 @@ describe("User preference routes hardening", () => {
 
       expect(response.status).toBe(400);
       expect(body.error).toBe("Invalid JSON body");
-      expect(queryRawUnsafe).not.toHaveBeenCalled();
+      expect(queryRaw).not.toHaveBeenCalled();
       expect(logError).toHaveBeenCalledWith(
         "[/api/user/pro-preferences] invalid json",
         expect.any(SyntaxError),
@@ -279,7 +279,7 @@ describe("User preference routes hardening", () => {
 
     it("returns 500 when persistence fails", async () => {
       const dbError = new Error("db write failed");
-      const queryRawUnsafe = vi.fn().mockRejectedValue(dbError);
+      const queryRaw = vi.fn().mockRejectedValue(dbError);
       const logError = vi.fn();
 
       vi.doMock("@/lib/auth/resolveAppUserId", () => ({
@@ -287,7 +287,7 @@ describe("User preference routes hardening", () => {
       }));
       mockCommonUserPreferencesModules();
       vi.doMock("@/lib/db/prisma", () => ({
-        default: { $queryRawUnsafe: queryRawUnsafe },
+        default: { $queryRaw: queryRaw },
       }));
       vi.doMock("@/lib/logger", () => ({ logger: { error: logError } }));
 
@@ -313,7 +313,7 @@ describe("User preference routes hardening", () => {
     });
 
     it("returns no-store on successful save", async () => {
-      const queryRawUnsafe = vi.fn().mockResolvedValue([
+      const queryRaw = vi.fn().mockResolvedValue([
         {
           positionFilter: "Atacante",
           sortKey: "ev",
@@ -329,7 +329,7 @@ describe("User preference routes hardening", () => {
       }));
       mockCommonUserPreferencesModules();
       vi.doMock("@/lib/db/prisma", () => ({
-        default: { $queryRawUnsafe: queryRawUnsafe },
+        default: { $queryRaw: queryRaw },
       }));
       vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
 

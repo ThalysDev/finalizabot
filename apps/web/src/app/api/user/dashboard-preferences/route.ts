@@ -23,19 +23,16 @@ export async function GET() {
       viewMode: string;
     };
 
-    const rows = await prisma.$queryRawUnsafe<PreferenceRow[]>(
-      `
+    const rows = await prisma.$queryRaw<PreferenceRow[]>`
         SELECT
           "dayFilter",
           "competitionFilter",
           "searchQuery",
           "viewMode"
         FROM "DashboardPreference"
-        WHERE "userId" = $1
+        WHERE "userId" = ${appUserId}
         LIMIT 1
-      `,
-      appUserId,
-    );
+      `;
 
     const preference = rows[0];
 
@@ -93,8 +90,7 @@ export async function PUT(request: Request) {
       viewMode: string;
     };
 
-    const rows = await prisma.$queryRawUnsafe<PreferenceRow[]>(
-      `
+    const rows = await prisma.$queryRaw<PreferenceRow[]>`
         INSERT INTO "DashboardPreference" (
           "userId",
           "dayFilter",
@@ -102,7 +98,7 @@ export async function PUT(request: Request) {
           "searchQuery",
           "viewMode"
         )
-        VALUES ($1, $2, $3, $4, $5)
+        VALUES (${appUserId}, ${payload.dayFilter}, ${payload.compFilter}, ${payload.searchQuery}, ${payload.view})
         ON CONFLICT ("userId")
         DO UPDATE SET
           "dayFilter" = EXCLUDED."dayFilter",
@@ -115,13 +111,7 @@ export async function PUT(request: Request) {
           "competitionFilter",
           "searchQuery",
           "viewMode"
-      `,
-      appUserId,
-      payload.dayFilter,
-      payload.compFilter,
-      payload.searchQuery,
-      payload.view,
-    );
+      `;
 
     const saved = rows[0];
 

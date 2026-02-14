@@ -22,6 +22,7 @@ Welcome to the repository knowledge base. Start with the project overview, then 
 - [Tooling & Productivity Guide](./tooling.md)
 - [**System Audit (2026-02-11)**](./audit.md) — Auditoria completa: ETL, Web, Shared, Seguranca, Testes
 - [**Handoff Técnico (2026-02-14)**](./handoff-2026-02-14.md) — Backlog priorizado, riscos e plano de execução contínua
+- [**Risk Register (2026-02-14)**](./risk-register-2026-02-14.md) — Riscos remanescentes priorizados e plano de mitigação
 
 ## Status de Atualização (2026-02-13)
 

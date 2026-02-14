@@ -15,7 +15,7 @@ export async function GET() {
   let dbStatus: "ok" | "unavailable" = "unavailable";
   let dbError: string | null = null;
   try {
-    await prisma.$queryRawUnsafe("SELECT 1");
+    await prisma.$queryRaw`SELECT 1`;
     dbStatus = "ok";
   } catch (err) {
     dbError = err instanceof Error ? err.message : "DB connection failed";

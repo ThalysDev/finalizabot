@@ -24,8 +24,7 @@ export async function GET() {
       searchQuery: string;
     };
 
-    const rows = await prisma.$queryRawUnsafe<PreferenceRow[]>(
-      `
+    const rows = await prisma.$queryRaw<PreferenceRow[]>`
         SELECT
           "positionFilter",
           "sortKey",
@@ -34,11 +33,9 @@ export async function GET() {
           "minEv",
           "searchQuery"
         FROM "ProTablePreference"
-        WHERE "userId" = $1
+        WHERE "userId" = ${appUserId}
         LIMIT 1
-      `,
-      appUserId,
-    );
+      `;
 
     const preference = rows[0];
 
@@ -98,8 +95,7 @@ export async function PUT(request: Request) {
       searchQuery: string;
     };
 
-    const rows = await prisma.$queryRawUnsafe<PreferenceRow[]>(
-      `
+    const rows = await prisma.$queryRaw<PreferenceRow[]>`
         INSERT INTO "ProTablePreference" (
           "userId",
           "positionFilter",
@@ -109,7 +105,7 @@ export async function PUT(request: Request) {
           "minEv",
           "searchQuery"
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        VALUES (${appUserId}, ${payload.positionFilter}, ${payload.sortKey}, ${payload.sortDir}, ${payload.minMatches}, ${payload.minEv}, ${payload.searchQuery})
         ON CONFLICT ("userId")
         DO UPDATE SET
           "positionFilter" = EXCLUDED."positionFilter",
@@ -126,15 +122,7 @@ export async function PUT(request: Request) {
           "minMatches",
           "minEv",
           "searchQuery"
-      `,
-      appUserId,
-      payload.positionFilter,
-      payload.sortKey,
-      payload.sortDir,
-      payload.minMatches,
-      payload.minEv,
-      payload.searchQuery,
-    );
+      `;
 
     const saved = rows[0];
 

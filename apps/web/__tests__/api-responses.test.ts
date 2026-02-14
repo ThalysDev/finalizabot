@@ -496,7 +496,7 @@ describe("GET /api/health", () => {
       .mockResolvedValue({ data: { ok: true }, error: null });
 
     vi.doMock("@/lib/db/prisma", () => ({
-      default: { $queryRawUnsafe: queryRaw },
+      default: { $queryRaw: queryRaw },
     }));
     vi.doMock("@/lib/etl/client", () => ({ etlHealth }));
     vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
@@ -526,7 +526,7 @@ describe("GET /api/health", () => {
       .mockResolvedValue({ data: null, error: "etl down" });
 
     vi.doMock("@/lib/db/prisma", () => ({
-      default: { $queryRawUnsafe: queryRaw },
+      default: { $queryRaw: queryRaw },
     }));
     vi.doMock("@/lib/etl/client", () => ({ etlHealth }));
     vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
@@ -551,7 +551,7 @@ describe("GET /api/health", () => {
       .mockResolvedValue({ data: { ok: true }, error: null });
 
     vi.doMock("@/lib/db/prisma", () => ({
-      default: { $queryRawUnsafe: queryRaw },
+      default: { $queryRaw: queryRaw },
     }));
     vi.doMock("@/lib/etl/client", () => ({ etlHealth }));
     vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
@@ -576,7 +576,7 @@ describe("GET /api/health", () => {
       .mockResolvedValue({ data: null, error: "etl down" });
 
     vi.doMock("@/lib/db/prisma", () => ({
-      default: { $queryRawUnsafe: queryRaw },
+      default: { $queryRaw: queryRaw },
     }));
     vi.doMock("@/lib/etl/client", () => ({ etlHealth }));
     vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
