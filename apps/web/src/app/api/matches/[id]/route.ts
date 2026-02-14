@@ -49,12 +49,14 @@ export async function GET(
         offset: searchParams.get("offset"),
       });
 
-      const res = await etlMatchShots(match.sofascoreId, {
-        limit: normalized.params.limit,
-        offset: normalized.params.offset,
-      });
-      if (res.data) {
-        etlShots = res.data;
+      if (normalized.matchId) {
+        const res = await etlMatchShots(normalized.matchId, {
+          limit: normalized.params.limit,
+          offset: normalized.params.offset,
+        });
+        if (res.data) {
+          etlShots = res.data;
+        }
       }
     }
 

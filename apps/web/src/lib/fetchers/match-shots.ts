@@ -15,6 +15,7 @@ const DEFAULT_LIMIT = 100;
 const DEFAULT_OFFSET = 0;
 const MAX_LIMIT = 200;
 const MAX_OFFSET = 5000;
+const SOFASCORE_ID_RE = /^\d{1,12}$/;
 
 function sanitizeInt(value: unknown, fallback: number): number {
   const parsed = Number(value);
@@ -27,6 +28,7 @@ export function normalizeMatchShotsInput(
   params?: MatchShotsQueryParams,
 ): NormalizedMatchShotsInput {
   const trimmedId = (sofascoreMatchId ?? "").trim();
+  const matchId = SOFASCORE_ID_RE.test(trimmedId) ? trimmedId : null;
 
   const limit = Math.max(
     1,
@@ -38,7 +40,7 @@ export function normalizeMatchShotsInput(
   );
 
   return {
-    matchId: trimmedId.length > 0 ? trimmedId : null,
+    matchId,
     params: { limit, offset },
   };
 }

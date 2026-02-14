@@ -12,6 +12,11 @@ describe("normalizeMatchShotsInput()", () => {
     expect(normalized.matchId).toBe("12345");
   });
 
+  it("rejects non-numeric or overlong ids", () => {
+    expect(normalizeMatchShotsInput("abc123").matchId).toBeNull();
+    expect(normalizeMatchShotsInput("1234567890123").matchId).toBeNull();
+  });
+
   it("uses defaults for invalid params", () => {
     const normalized = normalizeMatchShotsInput("123", {
       limit: Number.NaN,

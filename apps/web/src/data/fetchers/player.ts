@@ -29,6 +29,7 @@ import type { PlayerStatsFromEtl } from "@/lib/etl/transformers";
 import prisma from "@/lib/db/prisma";
 import { proxySofascoreUrl, cachedImageUrl } from "@/lib/helpers";
 import { formatDate, formatTime } from "@/lib/format/date";
+import { logger } from "@/lib/logger";
 
 /* ============================================================================
    fetchPlayerDetail
@@ -58,7 +59,7 @@ export async function fetchPlayerPageData(
       where: { id: playerId },
     });
   } catch (err) {
-    console.error("[fetchPlayerPageData] DB error:", err);
+    logger.error("[fetchPlayerPageData] DB error", err);
     return {
       player: null,
       shotHistory: [],
