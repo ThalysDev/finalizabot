@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { etlPlayerShots } from "@/lib/etl/client";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
-import { validateId } from "@/lib/validation";
+import { validateId, validateSofascoreId } from "@/lib/validation";
 import { logger } from "@/lib/logger";
 import { normalizePlayerShotsDateRangeQueryParams } from "@/lib/api/query-params";
 import { jsonError, jsonRateLimited } from "@/lib/api/responses";
@@ -64,8 +64,9 @@ export async function GET(
 
     // Busca shots via ETL API HTTP (não mais via Prisma etl schema)
     let etlShots: unknown[] = [];
-    if (player.sofascoreId) {
-      const res = await etlPlayerShots(player.sofascoreId, {
+    const sofascoreId = validateSofascoreId(player.sofascoreId);
+    if (sofascoreId) {
+      const res = await etlPlayerShots(sofascoreId, {
         limit: 50,
         from,
         to,

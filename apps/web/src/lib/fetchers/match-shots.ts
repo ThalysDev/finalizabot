@@ -1,3 +1,5 @@
+import { validateSofascoreId } from "../validation";
+
 export interface MatchShotsQueryParams {
   limit?: unknown;
   offset?: unknown;
@@ -15,7 +17,6 @@ const DEFAULT_LIMIT = 100;
 const DEFAULT_OFFSET = 0;
 const MAX_LIMIT = 200;
 const MAX_OFFSET = 5000;
-const SOFASCORE_ID_RE = /^\d{1,12}$/;
 
 function sanitizeInt(value: unknown, fallback: number): number {
   const parsed = Number(value);
@@ -27,8 +28,7 @@ export function normalizeMatchShotsInput(
   sofascoreMatchId: string | null,
   params?: MatchShotsQueryParams,
 ): NormalizedMatchShotsInput {
-  const trimmedId = (sofascoreMatchId ?? "").trim();
-  const matchId = SOFASCORE_ID_RE.test(trimmedId) ? trimmedId : null;
+  const matchId = validateSofascoreId(sofascoreMatchId);
 
   const limit = Math.max(
     1,

@@ -565,3 +565,122 @@ describe("GET /api/health", () => {
     expect(body.etlError).toBe("etl down");
   });
 });
+
+describe("GET /api/players/[id]", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  function mockApiResponsesModule() {
+    vi.doMock("@/lib/api/responses", () => ({
+      jsonError: (message: string, status: number) =>
+        new Response(JSON.stringify({ error: message }), {
+          status,
+          headers: { "Cache-Control": "no-store" },
+        }),
+      jsonRateLimited: (retryAfter: number) =>
+        new Response(JSON.stringify({ error: "Too many requests" }), {
+          status: 429,
+          headers: {
+            "Cache-Control": "no-store",
+            "Retry-After": String(retryAfter),
+          },
+        }),
+    }));
+  }
+
+  it("skips ETL call when player has invalid sofascoreId", async () => {
+    const findUnique = vi.fn().mockResolvedValue({
+      id: "p1",
+      sofascoreId: "invalid-id",
+      matchStats: [],
+      marketAnalyses: [],
+    });
+    const etlPlayerShots = vi.fn();
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { player: { findUnique } },
+    }));
+    vi.doMock("@/lib/etl/client", () => ({ etlPlayerShots }));
+    vi.doMock("@/lib/rate-limit", () => ({
+      checkRateLimit: vi.fn(() => ({ allowed: true })),
+      getClientIp: vi.fn(() => "127.0.0.1"),
+    }));
+    vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
+    vi.doMock("@/lib/api/query-params", () => ({
+      normalizePlayerShotsDateRangeQueryParams: vi.fn(() => ({
+        from: undefined,
+        to: undefined,
+      })),
+    }));
+    vi.doMock("@/lib/validation", () => ({
+      validateId: vi.fn((id: string) => id),
+      validateSofascoreId: vi.fn(() => null),
+    }));
+    mockApiResponsesModule();
+
+    const { GET } = await import("../src/app/api/players/[id]/route");
+    const response = await GET(new Request("http://localhost/api/players/p1"), {
+      params: Promise.resolve({ id: "p1" }),
+    });
+    const body = (await response.json()) as {
+      player: { id: string };
+      etlShots: unknown[];
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.player.id).toBe("p1");
+    expect(body.etlShots).toEqual([]);
+    expect(etlPlayerShots).not.toHaveBeenCalled();
+  });
+
+  it("calls ETL when player has valid numeric sofascoreId", async () => {
+    const findUnique = vi.fn().mockResolvedValue({
+      id: "p1",
+      sofascoreId: "12345",
+      matchStats: [],
+      marketAnalyses: [],
+    });
+    const etlPlayerShots = vi.fn().mockResolvedValue({
+      data: { items: [{ shotType: "goal" }] },
+    });
+
+    vi.doMock("@/lib/db/prisma", () => ({
+      default: { player: { findUnique } },
+    }));
+    vi.doMock("@/lib/etl/client", () => ({ etlPlayerShots }));
+    vi.doMock("@/lib/rate-limit", () => ({
+      checkRateLimit: vi.fn(() => ({ allowed: true })),
+      getClientIp: vi.fn(() => "127.0.0.1"),
+    }));
+    vi.doMock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
+    vi.doMock("@/lib/api/query-params", () => ({
+      normalizePlayerShotsDateRangeQueryParams: vi.fn(() => ({
+        from: undefined,
+        to: undefined,
+      })),
+    }));
+    vi.doMock("@/lib/validation", () => ({
+      validateId: vi.fn((id: string) => id),
+      validateSofascoreId: vi.fn((id: string) => id),
+    }));
+    mockApiResponsesModule();
+
+    const { GET } = await import("../src/app/api/players/[id]/route");
+    const response = await GET(new Request("http://localhost/api/players/p1"), {
+      params: Promise.resolve({ id: "p1" }),
+    });
+    const body = (await response.json()) as {
+      etlShots: Array<{ shotType: string }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(etlPlayerShots).toHaveBeenCalledWith("12345", {
+      limit: 50,
+      from: undefined,
+      to: undefined,
+    });
+    expect(body.etlShots).toEqual([{ shotType: "goal" }]);
+  });
+});
