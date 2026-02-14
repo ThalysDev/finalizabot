@@ -1,10 +1,11 @@
 import prisma from "@/lib/db/prisma";
 import { logger } from "@/lib/logger";
+import { NextResponse } from "next/server";
 
 // Force dynamic to avoid DB queries during build
 export const dynamic = 'force-dynamic';
 
-export async function GET(): Promise<Response> {
+export async function GET(): Promise<NextResponse> {
   try {
     const lastRun = await prisma.etlIngestRun.findFirst({
       where: {
@@ -19,21 +20,22 @@ export async function GET(): Promise<Response> {
       lastSync: lastRun?.finishedAt ? lastRun.finishedAt.toISOString() : null,
     };
 
-    return new Response(JSON.stringify(payload), {
+    return NextResponse.json(payload, {
       headers: {
-        "Content-Type": "application/json",
         "Cache-Control": "s-maxage=60, stale-while-revalidate=300",
       },
     });
   } catch (error) {
     logger.error("[/api/sync-status] query failed", error);
 
-    return new Response(JSON.stringify({ lastSync: null }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-store",
+    return NextResponse.json(
+      { lastSync: null },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "no-store",
+        },
       },
-    });
+    );
   }
 }
