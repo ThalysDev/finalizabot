@@ -21,6 +21,10 @@ describe("mean()", () => {
   it("handles decimals correctly", () => {
     expect(mean([1.5, 2.5])).toBe(2);
   });
+
+  it("ignores non-finite values", () => {
+    expect(mean([1, Number.NaN, 3, Number.POSITIVE_INFINITY])).toBe(2);
+  });
 });
 
 /* ============================================================================
@@ -48,6 +52,10 @@ describe("stdev()", () => {
   it("calculates population stdev of [1, 2, 3]", () => {
     const result = stdev([1, 2, 3])!;
     expect(result).toBeCloseTo(0.8165, 3);
+  });
+
+  it("returns null when all values are non-finite", () => {
+    expect(stdev([Number.NaN, Number.POSITIVE_INFINITY])).toBeNull();
   });
 });
 
@@ -81,6 +89,11 @@ describe("calcCV()", () => {
     const result = calcCV(shots)!;
     expect(result).toBeGreaterThan(0);
     expect(result).toBeLessThan(2);
+  });
+
+  it("ignores non-finite values when computing CV", () => {
+    const result = calcCV([2, Number.NaN, 4, Number.POSITIVE_INFINITY])!;
+    expect(result).toBeCloseTo(0.3333, 3);
   });
 });
 
@@ -126,5 +139,17 @@ describe("calcHits()", () => {
   it("includes exact line value as a hit", () => {
     // >= line, so exact match counts
     expect(calcHits([1.5], 1.5, 5)).toBe(1);
+  });
+
+  it("returns 0 when lastN is zero or invalid", () => {
+    expect(calcHits([1, 2, 3], 1.5, 0)).toBe(0);
+    expect(calcHits([1, 2, 3], 1.5, -3)).toBe(0);
+    expect(calcHits([1, 2, 3], 1.5, Number.NaN)).toBe(0);
+  });
+
+  it("ignores non-finite shot values", () => {
+    expect(calcHits([1, Number.NaN, 2, Number.POSITIVE_INFINITY], 1.5, 10)).toBe(
+      1,
+    );
   });
 });

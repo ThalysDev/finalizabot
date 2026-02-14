@@ -203,6 +203,20 @@ export function DashboardContent({
     return result;
   }, [matches, dayFilter, compFilter, searchQuery]);
 
+  const hasActiveFilters =
+    dayFilter !== "all" || compFilter !== "all" || searchQuery.trim().length > 0;
+
+  const activeFilterCount =
+    (dayFilter !== "all" ? 1 : 0) +
+    (compFilter !== "all" ? 1 : 0) +
+    (searchQuery.trim() ? 1 : 0);
+
+  function resetFilters() {
+    setDayFilter("all");
+    setCompFilter("all");
+    setSearchQuery("");
+  }
+
   // Group matches by competition
   const groupedMatches = useMemo(() => {
     const groups = new Map<string, MatchCardData[]>();
@@ -279,7 +293,22 @@ export function DashboardContent({
           >
             Amanhã ({tomorrowCount})
           </button>
+
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-fb-surface text-fb-text-secondary hover:text-fb-text border border-fb-border/40"
+            >
+              Limpar filtros
+            </button>
+          )}
         </div>
+
+        {hasActiveFilters && (
+          <div className="mb-4 text-xs text-fb-text-muted">
+            Filtros ativos: {activeFilterCount}
+          </div>
+        )}
 
         {/* ── Competition filter tabs ─────────────────────────────── */}
         {competitions.length > 2 && (
