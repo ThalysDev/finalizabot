@@ -9,6 +9,8 @@
 
 import { prisma } from "@finalizabot/shared";
 import { calcHits, mean, stdev, calcCV } from "@finalizabot/shared";
+import { appendFile, mkdir, readFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import { logger } from "../lib/logger.js";
 import { syncAllImages } from "../services/imageDownloader.js";
 import { isNumericId, mapStatus } from "./utils.js";
@@ -35,6 +37,87 @@ const BRIDGE_PAGE_SIZE = Math.max(
   100,
   parseInt(process.env.BRIDGE_PAGE_SIZE ?? "500", 10) || 500,
 );
+const BRIDGE_TIMINGS_FILE =
+  process.env.BRIDGE_TIMINGS_FILE?.trim() ||
+  resolve(process.cwd(), "logs", "bridge-timings.jsonl");
+const BRIDGE_TIMINGS_HISTORY = Math.max(
+  20,
+  parseInt(process.env.BRIDGE_TIMINGS_HISTORY ?? "200", 10) || 200,
+);
+
+type BridgeTimingRun = {
+  ts: string;
+  status: "success" | "failed";
+  totalMs: number;
+  stages: Record<string, number>;
+};
+
+function percentile(values: number[], p: number): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = Math.min(
+    sorted.length - 1,
+    Math.max(0, Math.ceil(p * sorted.length) - 1),
+  );
+  return sorted[index] ?? null;
+}
+
+async function persistTimingBaseline(
+  run: BridgeTimingRun,
+): Promise<{
+  runs: number;
+  totals: { p50: number | null; p95: number | null };
+  stages: Record<string, { p50: number | null; p95: number | null }>;
+}> {
+  await mkdir(dirname(BRIDGE_TIMINGS_FILE), { recursive: true });
+  await appendFile(BRIDGE_TIMINGS_FILE, `${JSON.stringify(run)}\n`, "utf8");
+
+  const content = await readFile(BRIDGE_TIMINGS_FILE, "utf8");
+  const lines = content
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(-BRIDGE_TIMINGS_HISTORY);
+
+  const history = lines
+    .map((line) => {
+      try {
+        return JSON.parse(line) as BridgeTimingRun;
+      } catch {
+        return null;
+      }
+    })
+    .filter((entry): entry is BridgeTimingRun => Boolean(entry));
+
+  const totalValues = history.map((entry) => entry.totalMs).filter(Number.isFinite);
+  const stageValues = new Map<string, number[]>();
+
+  for (const entry of history) {
+    for (const [stage, elapsedMs] of Object.entries(entry.stages ?? {})) {
+      if (!Number.isFinite(elapsedMs)) continue;
+      const values = stageValues.get(stage) ?? [];
+      values.push(elapsedMs);
+      stageValues.set(stage, values);
+    }
+  }
+
+  const stageSummary: Record<string, { p50: number | null; p95: number | null }> = {};
+  for (const [stage, values] of stageValues.entries()) {
+    stageSummary[stage] = {
+      p50: percentile(values, 0.5),
+      p95: percentile(values, 0.95),
+    };
+  }
+
+  return {
+    runs: history.length,
+    totals: {
+      p50: percentile(totalValues, 0.5),
+      p95: percentile(totalValues, 0.95),
+    },
+    stages: stageSummary,
+  };
+}
 
 /* ============================================================================
    Main bridge function
@@ -42,6 +125,9 @@ const BRIDGE_PAGE_SIZE = Math.max(
 
 export async function runBridge(): Promise<void> {
   logger.info("[Bridge] Iniciando sincronização ETL → Public...");
+  const runStartedAt = Date.now();
+  const stageDurations: Record<string, number> = {};
+  let runStatus: "success" | "failed" = "success";
 
   const runTimed = async <T>(
     stage: string,
@@ -52,6 +138,7 @@ export async function runBridge(): Promise<void> {
       return await action();
     } finally {
       const elapsedMs = Date.now() - start;
+      stageDurations[stage] = elapsedMs;
       logger.info(`[Bridge] ${stage} concluída em ${elapsedMs}ms`);
     }
   };
@@ -112,7 +199,37 @@ export async function runBridge(): Promise<void> {
     }
 
     logger.info("[Bridge] Sincronização concluída!");
+  } catch (err) {
+    runStatus = "failed";
+    throw err;
   } finally {
+    const totalMs = Date.now() - runStartedAt;
+    try {
+      const baseline = await persistTimingBaseline({
+        ts: new Date().toISOString(),
+        status: runStatus,
+        totalMs,
+        stages: stageDurations,
+      });
+      logger.info("[Bridge] Timing baseline atualizado", {
+        file: BRIDGE_TIMINGS_FILE,
+        runs: baseline.runs,
+        totalMs,
+        totalP50Ms: baseline.totals.p50,
+        totalP95Ms: baseline.totals.p95,
+        stageP95Ms: Object.fromEntries(
+          Object.entries(baseline.stages).map(([stage, values]) => [
+            stage,
+            values.p95,
+          ]),
+        ),
+      });
+    } catch (timingErr) {
+      logger.warn(
+        `[Bridge] Falha ao persistir baseline de timing: ${timingErr instanceof Error ? timingErr.message : timingErr}`,
+      );
+    }
+
     await prisma.$queryRaw`
       SELECT pg_advisory_unlock(${BRIDGE_LOCK_ID})
     `;

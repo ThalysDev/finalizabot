@@ -10,7 +10,8 @@
 - ✅ Web API risk reduced: no remaining `$queryRawUnsafe` usage in `apps/web/src`.
 - ✅ ETL bridge risk reduced: no remaining `$queryRawUnsafe` usage in `apps/etl/src`.
 - ✅ ETL bridge now emits stage-level timing logs and uses stricter payload selection in key reads.
-- ⚠️ ETL bridge still has potential bottlenecks under larger datasets and needs timing-baseline follow-up.
+- ✅ ETL bridge now persists timing history with p50/p95 baseline aggregation per run.
+- ⚠️ ETL bridge still has potential bottlenecks under larger datasets and needs optimization on the top hotspot.
 
 ## Prioritized Risks
 
@@ -24,7 +25,7 @@
   - risk of degraded sync performance and long-running jobs under data growth;
   - potential timeout/resource pressure in constrained runtime.
 - **Recommendation**:
-  1. Collect p50/p95 timings per bridge stage over multiple sync runs.
+  1. Track the stage with highest p95 for a representative sample window.
   2. Move more aggregation logic to SQL windows/CTEs where practical.
   3. Apply pagination/windowing refinements in the heaviest remaining stage.
 - **Priority**: Next cycle (P1)
@@ -54,6 +55,8 @@
   - market-analysis player stats now read only `playerId`
 - Added stage-level timing logs in ETL bridge:
   - `syncMatches`, `syncPlayers`, `syncPlayerMatchStats`, `generateMarketAnalysis`
+- Added persisted baseline file with percentile aggregation:
+  - `logs/bridge-timings.jsonl` (rolling history with p50/p95 summaries)
 - Updated contract tests accordingly:
   - `apps/web/__tests__/api-responses.test.ts`
   - `apps/web/__tests__/user-preferences-routes.test.ts`
@@ -63,5 +66,5 @@
 ## Exit Criteria for closing current risk items
 
 - Capture ETL stage timing baseline (p50/p95) across representative sync runs.
-- Optimize the top remaining ETL hotspot identified by those timing baselines.
+- Optimize the top remaining ETL hotspot identified by current p95 baseline.
 - Post-deploy smoke (`scripts/verify-deployment.ps1 -Detailed`) green.
