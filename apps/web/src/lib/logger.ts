@@ -5,17 +5,26 @@
 
 type Level = "debug" | "info" | "warn" | "error";
 
+function safeStringify(data: unknown): string {
+  try {
+    return JSON.stringify(data);
+  } catch {
+    return JSON.stringify({ message: "Unserializable log payload" });
+  }
+}
+
 function serialize(data: unknown): string {
   if (data instanceof Error) {
     const obj: Record<string, unknown> = {
       message: data.message,
       name: data.name,
     };
-    if (data.stack) obj.stack = data.stack;
-    if (data.cause !== undefined) obj.cause = data.cause;
-    return JSON.stringify(obj);
+    const includeDetails = process.env.NODE_ENV !== "production";
+    if (includeDetails && data.stack) obj.stack = data.stack;
+    if (includeDetails && data.cause !== undefined) obj.cause = data.cause;
+    return safeStringify(obj);
   }
-  return JSON.stringify(data);
+  return safeStringify(data);
 }
 
 function format(level: Level, msg: string, data?: unknown): string {

@@ -28,20 +28,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
 
-      - name: Build shared
-        run: npm run build:shared
-
-      - name: Test
-        run: npm test
-
-      - name: Build web
-        run: npm run build:web
+      - name: Quality gate
+        run: npm run quality:ci
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
-
-      - name: Build ETL
-        run: npm run build:etl
-
-      - name: Lint
-        run: npm run lint

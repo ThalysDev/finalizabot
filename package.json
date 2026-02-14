@@ -19,6 +19,7 @@
     "sync:full": "npm -w @finalizabot/etl run sync:full",
     "sync:images": "npm -w @finalizabot/etl run sync:images",
     "lint": "npm -w @finalizabot/web run lint",
+    "quality:ci": "npm run lint && npm run test && npm run build && npm run build:etl",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "npm -w @finalizabot/shared run generate",
