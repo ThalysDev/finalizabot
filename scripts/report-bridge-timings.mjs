@@ -1,14 +1,23 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-const inputPath = process.argv[2]?.trim() || process.env.BRIDGE_TIMINGS_FILE || "logs/bridge-timings.jsonl";
-const historyLimit = Math.max(20, parseInt(process.env.BRIDGE_TIMINGS_HISTORY ?? "200", 10) || 200);
+const inputPath =
+  process.argv[2]?.trim() ||
+  process.env.BRIDGE_TIMINGS_FILE ||
+  "logs/bridge-timings.jsonl";
+const historyLimit = Math.max(
+  20,
+  parseInt(process.env.BRIDGE_TIMINGS_HISTORY ?? "200", 10) || 200,
+);
 const filePath = resolve(process.cwd(), inputPath);
 
 function percentile(values, p) {
   if (!values.length) return null;
   const sorted = [...values].sort((a, b) => a - b);
-  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(p * sorted.length) - 1));
+  const index = Math.min(
+    sorted.length - 1,
+    Math.max(0, Math.ceil(p * sorted.length) - 1),
+  );
   return sorted[index] ?? null;
 }
 
@@ -31,7 +40,12 @@ function parseHistory(text) {
       }
     })
     .filter(Boolean)
-    .filter((entry) => typeof entry.totalMs === "number" && entry.stages && typeof entry.stages === "object");
+    .filter(
+      (entry) =>
+        typeof entry.totalMs === "number" &&
+        entry.stages &&
+        typeof entry.stages === "object",
+    );
 }
 
 async function main() {
@@ -39,9 +53,16 @@ async function main() {
   try {
     content = await readFile(filePath, "utf8");
   } catch (err) {
-    if (err && typeof err === "object" && "code" in err && err.code === "ENOENT") {
+    if (
+      err &&
+      typeof err === "object" &&
+      "code" in err &&
+      err.code === "ENOENT"
+    ) {
       console.log(`[Bridge Timings] Arquivo não encontrado: ${filePath}`);
-      console.log("[Bridge Timings] Execute o bridge ao menos uma vez para gerar baseline.");
+      console.log(
+        "[Bridge Timings] Execute o bridge ao menos uma vez para gerar baseline.",
+      );
       process.exit(0);
     }
     throw err;
@@ -49,7 +70,9 @@ async function main() {
 
   const runs = parseHistory(content);
   if (runs.length === 0) {
-    console.log(`[Bridge Timings] Sem dados válidos no histórico (${filePath}).`);
+    console.log(
+      `[Bridge Timings] Sem dados válidos no histórico (${filePath}).`,
+    );
     process.exit(0);
   }
 
@@ -79,12 +102,18 @@ async function main() {
   stageSummary.sort((a, b) => (b.p95 ?? -1) - (a.p95 ?? -1));
   const topStage = stageSummary[0] ?? null;
 
-  console.log("===============================================================");
+  console.log(
+    "===============================================================",
+  );
   console.log(" Bridge Timings Baseline Report");
-  console.log("===============================================================");
+  console.log(
+    "===============================================================",
+  );
   console.log(`File:   ${filePath}`);
   console.log(`Runs:   ${runs.length} (sample usadas: ${sample.length})`);
-  console.log(`Total:  p50=${formatMs(percentile(totalValues, 0.5))} | p95=${formatMs(percentile(totalValues, 0.95))}`);
+  console.log(
+    `Total:  p50=${formatMs(percentile(totalValues, 0.5))} | p95=${formatMs(percentile(totalValues, 0.95))}`,
+  );
 
   if (topStage) {
     console.log(`Hotspot p95: ${topStage.stage} (${formatMs(topStage.p95)})`);

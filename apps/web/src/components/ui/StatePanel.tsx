@@ -22,7 +22,9 @@ export function StatePanel({
     <div
       className={`flex flex-col items-center justify-center py-20 text-center ${className ?? ""}`}
     >
-      <div className={`size-16 rounded-full bg-fb-surface flex items-center justify-center mb-4 ${iconClassName ?? ""}`}>
+      <div
+        className={`size-16 rounded-full bg-fb-surface flex items-center justify-center mb-4 ${iconClassName ?? ""}`}
+      >
         <Icon className="size-8 text-fb-text-muted" />
       </div>
       <h3 className="text-fb-text font-semibold text-lg mb-2">{title}</h3>

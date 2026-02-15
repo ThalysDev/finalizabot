@@ -93,7 +93,10 @@ async function runBridgeWithRetries() {
         `[BridgeMeasure] Advisory lock ocupado. Aguardando ${delayMs}ms para retry...`,
       );
       await sleep(delayMs);
-      delayMs = Math.min(MAX_DELAY_MS, Math.round(delayMs * BACKOFF_MULTIPLIER));
+      delayMs = Math.min(
+        MAX_DELAY_MS,
+        Math.round(delayMs * BACKOFF_MULTIPLIER),
+      );
       continue;
     }
 
@@ -104,7 +107,9 @@ async function runBridgeWithRetries() {
 }
 
 async function main() {
-  console.log("[BridgeMeasure] Iniciando fluxo sync:bridge + report:bridge-timings");
+  console.log(
+    "[BridgeMeasure] Iniciando fluxo sync:bridge + report:bridge-timings",
+  );
   console.log(
     `[BridgeMeasure] Config: attempts=${MAX_ATTEMPTS}, delay=${INITIAL_DELAY_MS}ms, backoff=${BACKOFF_MULTIPLIER}, maxDelay=${MAX_DELAY_MS}ms`,
   );

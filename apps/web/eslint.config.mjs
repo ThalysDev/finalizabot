@@ -16,7 +16,7 @@ const eslintConfig = defineConfig([
             {
               group: ["@/lib/copy/*"],
               message:
-                "Use o entrypoint \"@/lib/copy\" em vez de importar submódulos diretamente.",
+                'Use o entrypoint "@/lib/copy" em vez de importar submódulos diretamente.',
             },
           ],
         },
