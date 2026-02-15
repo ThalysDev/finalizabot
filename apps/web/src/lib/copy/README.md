@@ -21,6 +21,8 @@ Avoid importing from domain files directly in app/components unless there is a s
 
 This is enforced by ESLint (`no-restricted-imports`) in `apps/web/eslint.config.mjs`.
 
+Additionally, CI runs a fast contract check with `npm run check:copy-imports` before the full quality gate.
+
 ## Editing Rule
 
 When adding or changing text:
@@ -29,3 +31,5 @@ When adding or changing text:
 2. Keep keys stable and descriptive.
 3. Prefer reusing existing keys over creating duplicates.
 4. Validate with `npm --workspace @finalizabot/web run lint` and `npm --workspace @finalizabot/web run build`.
+
+For a quick import-contract validation only, run `npm run check:copy-imports` from the repository root.

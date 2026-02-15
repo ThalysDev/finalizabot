@@ -21,6 +21,7 @@
     "sync:bridge:measure": "node scripts/sync-bridge-measure.mjs",
     "report:bridge-timings": "node scripts/report-bridge-timings.mjs",
     "lint": "npm -w @finalizabot/web run lint",
+    "check:copy-imports": "npm -w @finalizabot/web run check:copy-imports",
     "quality:ci": "npm run lint && npm run test && npm run build && npm run build:etl",
     "test": "vitest run",
     "test:watch": "vitest",

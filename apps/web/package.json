@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:copy-imports": "node ../../scripts/check-copy-imports.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.37.3",
