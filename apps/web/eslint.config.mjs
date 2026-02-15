@@ -9,6 +9,24 @@ const eslintConfig = defineConfig([
     rules: {
       "react-hooks/purity": "off",
       "react-hooks/set-state-in-effect": "off",
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/lib/copy/*"],
+              message:
+                "Use o entrypoint \"@/lib/copy\" em vez de importar submódulos diretamente.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/lib/copy/index.ts"],
+    rules: {
+      "no-restricted-imports": "off",
     },
   },
   // Override default ignores of eslint-config-next.

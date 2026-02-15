@@ -19,6 +19,8 @@ Always import from the entrypoint:
 
 Avoid importing from domain files directly in app/components unless there is a strong technical reason.
 
+This is enforced by ESLint (`no-restricted-imports`) in `apps/web/eslint.config.mjs`.
+
 ## Editing Rule
 
 When adding or changing text:
