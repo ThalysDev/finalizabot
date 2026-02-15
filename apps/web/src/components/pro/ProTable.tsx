@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { ChevronUp, ChevronDown, Search } from "lucide-react";
 import { StatePanel } from "@/components/ui/StatePanel";
-import { STATE_COPY } from "@/lib/copy/navigation";
+import { STATE_COPY } from "@/lib/copy";
 import type { ProPlayerRow } from "@/data/types";
 
 const headers = [

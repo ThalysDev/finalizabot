@@ -4,7 +4,7 @@ import Link from "next/link";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Container } from "@/components/primitives";
 import { LastSyncBadge } from "@/components/layout/LastSyncBadge";
-import { NAV_COPY } from "@/lib/copy/navigation";
+import { NAV_COPY } from "@/lib/copy";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 

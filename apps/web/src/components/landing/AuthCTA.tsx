@@ -3,7 +3,7 @@
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
-import { CTA_COPY, NAV_COPY } from "@/lib/copy/navigation";
+import { CTA_COPY, NAV_COPY } from "@/lib/copy";
 
 /**
  * AuthCTA — Componente unificado de Call-to-Action com auth.

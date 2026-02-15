@@ -1,6 +1,6 @@
 import { LoadingState, TableLoading } from "@/components/ui/LoadingState";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LOADING_COPY } from "@/lib/copy/navigation";
+import { LOADING_COPY } from "@/lib/copy";
 
 /**
  * Loading skeleton for the PRO analytics table.

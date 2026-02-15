@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { LastSyncBadge } from "@/components/layout/LastSyncBadge";
-import { NAV_COPY, STATE_COPY } from "@/lib/copy/navigation";
+import { NAV_COPY, STATE_COPY } from "@/lib/copy";
 
 const navLinks = [
   { href: "/dashboard", label: NAV_COPY.dashboard, icon: LayoutDashboard },

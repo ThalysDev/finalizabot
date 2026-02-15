@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { ERROR_COPY, NAV_COPY } from "@/lib/copy/navigation";
+import { ERROR_COPY, NAV_COPY } from "@/lib/copy";
 import { logger } from "@/lib/logger";
 
 export default function DashboardError({

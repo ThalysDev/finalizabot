@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Home, SearchX } from "lucide-react";
-import { STATE_COPY } from "@/lib/copy/navigation";
+import { STATE_COPY } from "@/lib/copy";
 
 type ActionIcon = "home" | "none";
 

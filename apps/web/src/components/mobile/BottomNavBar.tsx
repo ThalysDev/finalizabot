@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Trophy, Bell, Activity, Crown } from "lucide-react";
-import { NAV_COPY } from "@/lib/copy/navigation";
+import { NAV_COPY } from "@/lib/copy";
 
 const tabs = [
   {

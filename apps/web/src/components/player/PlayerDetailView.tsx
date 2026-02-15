@@ -16,7 +16,7 @@ import {
 import { calcCV } from "@finalizabot/shared/calc";
 import { PlayerHeroCard } from "./PlayerHeroCard";
 import { MatchHistoryTable } from "./MatchHistoryTable";
-import { NAV_COPY } from "@/lib/copy/navigation";
+import { NAV_COPY } from "@/lib/copy";
 
 const ShotBarChart = dynamic(
   () =>

@@ -1,7 +1,7 @@
 "use client";
 
 import { ErrorState } from "@/components/ui/ErrorState";
-import { ERROR_COPY, NAV_COPY } from "@/lib/copy/navigation";
+import { ERROR_COPY, NAV_COPY } from "@/lib/copy";
 
 export default function PlayerError({
   error,

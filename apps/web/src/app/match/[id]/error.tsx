@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AlertTriangle, RefreshCw, ArrowLeft } from "lucide-react";
-import { ERROR_COPY, NAV_COPY } from "@/lib/copy/navigation";
+import { ERROR_COPY, NAV_COPY } from "@/lib/copy";
 
 export default function MatchError({
   error,

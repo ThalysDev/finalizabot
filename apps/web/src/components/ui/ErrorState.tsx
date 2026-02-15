@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
-import { ERROR_COPY } from "@/lib/copy/navigation";
+import { ERROR_COPY } from "@/lib/copy";
 
 type ErrorStateProps = {
   title: string;

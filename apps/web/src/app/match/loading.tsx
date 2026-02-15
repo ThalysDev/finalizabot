@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { LOADING_COPY } from "@/lib/copy/navigation";
+import { LOADING_COPY } from "@/lib/copy";
 
 /**
  * Loading state para página de partida (/match/[id]).

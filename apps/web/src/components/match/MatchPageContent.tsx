@@ -12,7 +12,7 @@ import {
 import { SafeImage } from "@/components/ui/SafeImage";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { formatLine } from "@/lib/helpers";
-import { NAV_COPY } from "@/lib/copy/navigation";
+import { NAV_COPY } from "@/lib/copy";
 import type { PlayerCardData } from "@/data/types";
 
 /* ============================================================================

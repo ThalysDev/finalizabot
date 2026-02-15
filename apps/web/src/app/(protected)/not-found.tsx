@@ -1,5 +1,5 @@
 import { NotFoundState } from "@/components/ui/NotFoundState";
-import { NAV_COPY, STATE_COPY } from "@/lib/copy/navigation";
+import { NAV_COPY, STATE_COPY } from "@/lib/copy";
 
 /**
  * 404 para rotas protegidas.

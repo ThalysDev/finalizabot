@@ -1,5 +1,5 @@
 import { LoadingState } from "@/components/ui/LoadingState";
-import { LOADING_COPY } from "@/lib/copy/navigation";
+import { LOADING_COPY } from "@/lib/copy";
 
 export default function AlertsLoading() {
   return (

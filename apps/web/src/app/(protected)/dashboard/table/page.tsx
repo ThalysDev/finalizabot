@@ -9,7 +9,7 @@ import prisma from "@/lib/db/prisma";
 import { calcCV, calcHits, mean } from "@finalizabot/shared/calc";
 import { formatDateTime } from "@/lib/format/date";
 import { logger } from "@/lib/logger";
-import { STATE_COPY } from "@/lib/copy/navigation";
+import { STATE_COPY } from "@/lib/copy";
 
 export const metadata: Metadata = {
   title: "Tabela Avançada - FinalizaBOT",
