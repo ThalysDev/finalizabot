@@ -3,7 +3,7 @@
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
-import { NAV_COPY } from "@/lib/copy/navigation";
+import { CTA_COPY, NAV_COPY } from "@/lib/copy/navigation";
 
 /**
  * AuthCTA — Componente unificado de Call-to-Action com auth.
@@ -42,7 +42,7 @@ export function AuthCTA({ variant = "inline" }: AuthCTAProps) {
           href="/sign-up"
           className={`${variant === "hero" ? "w-full sm:w-auto " : ""}${primaryClasses} ${padding}`}
         >
-          Criar conta grátis
+          {CTA_COPY.createFreeAccount}
           <ArrowRight className="size-4" />
         </Link>
 
@@ -52,7 +52,7 @@ export function AuthCTA({ variant = "inline" }: AuthCTAProps) {
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 text-base font-medium text-fb-text border border-fb-border hover:border-fb-primary/30 bg-fb-surface/60 backdrop-blur-sm rounded-xl hover:bg-fb-primary/5 transition-all duration-300"
           >
             <Play className="size-4" />
-            Ver exemplo
+            {CTA_COPY.seeExample}
           </Link>
         )}
       </SignedOut>
